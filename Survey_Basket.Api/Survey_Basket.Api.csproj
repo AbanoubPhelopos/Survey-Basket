@@ -8,6 +8,16 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.6">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Survey_Basket.Application\Survey_Basket.Application.csproj" />
+    <ProjectReference Include="..\Survey_Basket.Domain\Survey_Basket.Domain.csproj" />
+    <ProjectReference Include="..\Survey_Basket.Infrastructure\Survey_Basket.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
