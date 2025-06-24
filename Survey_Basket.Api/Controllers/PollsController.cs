@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Survey_Basket.Application.Abstraction;
 using Survey_Basket.Domain.Models;
-using Survey_Basket.Infrastructure.Data;
 
 namespace Survey_Basket.Api.Controllers
 {
@@ -8,29 +8,27 @@ namespace Survey_Basket.Api.Controllers
     [ApiController]
     public class PollsController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IPollService _pollService;
 
-        public PollsController(ApplicationDbContext context)
+        public PollsController(IPollService pollService)
         {
-            _context = context;
+            _pollService = pollService;
         }
 
         [HttpGet]
         public Task<IActionResult> GetPolls()
         {
-            var polls = _context.Polls.ToList();
+            var polls = _pollService.GetPolls();
             return Task.FromResult<IActionResult>(Ok(polls));
         }
 
         [HttpGet("{id}")]
         public Task<IActionResult> GetPoll(Guid id)
         {
-            var poll = _context.Polls.FirstOrDefault(p => p.Id == id);
-            if (poll == null)
-            {
-                return Task.FromResult<IActionResult>(NotFound());
-            }
-            return Task.FromResult<IActionResult>(Ok(poll));
+            var poll = _pollService.GetPoll(id);
+            return poll is null ?
+                Task.FromResult<IActionResult>(NotFound()) :
+                Task.FromResult<IActionResult>(Ok(poll));
         }
         [HttpPost]
         public Task<IActionResult> CreatePoll([FromBody] Poll poll)
@@ -39,37 +37,20 @@ namespace Survey_Basket.Api.Controllers
             {
                 return Task.FromResult<IActionResult>(BadRequest("Poll cannot be null"));
             }
-            _context.Polls.Add(poll);
-            _context.SaveChanges();
+            _pollService.CreatePoll(poll);
             return Task.FromResult<IActionResult>(CreatedAtAction(nameof(GetPoll), new { id = poll.Id }, poll));
         }
         [HttpDelete("{id}")]
         public Task<IActionResult> DeletePoll(Guid id)
         {
-            var poll = _context.Polls.FirstOrDefault(p => p.Id == id);
-            if (poll == null)
-            {
-                return Task.FromResult<IActionResult>(NotFound());
-            }
-            _context.Polls.Remove(poll);
-            _context.SaveChanges();
-            return Task.FromResult<IActionResult>(NoContent());
+            var isDeleted = _pollService.DeletePoll(id);
+            return isDeleted ? Task.FromResult<IActionResult>(NoContent()) : Task.FromResult<IActionResult>(NotFound());
         }
         [HttpPut("{id}")]
         public Task<IActionResult> UpdatePoll(Guid id, [FromBody] Poll updatedPoll)
         {
-            if (updatedPoll == null || updatedPoll.Id != id)
-            {
-                return Task.FromResult<IActionResult>(BadRequest("Invalid poll data"));
-            }
-            var existingPoll = _context.Polls.FirstOrDefault(p => p.Id == id);
-            if (existingPoll == null)
-            {
-                return Task.FromResult<IActionResult>(NotFound());
-            }
-            existingPoll.Title = updatedPoll.Title;
-            _context.SaveChanges();
-            return Task.FromResult<IActionResult>(NoContent());
+            var isUpdated = _pollService.UpdatePoll(id, updatedPoll);
+            return isUpdated ? Task.FromResult<IActionResult>(NoContent()) : Task.FromResult<IActionResult>(NotFound());
         }
     }
 }
