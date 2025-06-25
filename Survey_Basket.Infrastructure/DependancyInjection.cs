@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using MapsterMapper;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Survey_Basket.Application.Abstraction;
@@ -11,6 +12,12 @@ public static class DependancyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+
+        var mappingConfig = Mapster.TypeAdapterConfig.GlobalSettings;
+        mappingConfig.Scan(AppDomain.CurrentDomain.GetAssemblies());
+        services.AddSingleton<IMapper>(new Mapper(mappingConfig));
+
+
         services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
         services.AddScoped<IPollService, PollService>();
