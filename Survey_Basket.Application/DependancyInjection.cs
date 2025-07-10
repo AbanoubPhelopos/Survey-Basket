@@ -1,10 +1,12 @@
 ﻿using FluentValidation;
 using FluentValidation.AspNetCore;
 using MapsterMapper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using Survey_Basket.Application.Abstraction;
 using Survey_Basket.Application.Implementation;
 using Survey_Basket.Domain.Models;
@@ -35,8 +37,31 @@ public static class DependancyInjection
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IPollService, PollService>();
 
+
+        services.AddSingleton<IJwtProvider, JwtProvider>();
+        services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        }).AddJwtBearer(o =>
+        {
+            o.SaveToken = true;
+            o.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = "Survey_Basket",
+                ValidAudience = "Survey_Basket users",
+                IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes("gwvOEFH1SAscazoGhTAOtBxJR8Zn0jaH"))
+            };
+        });
+
+
         ///Registering the Identity services
         services.AddIdentity<ApplicationUser, IdentityRole<Guid>>().AddEntityFrameworkStores<ApplicationDbContext>();
+
 
 
         return services;
