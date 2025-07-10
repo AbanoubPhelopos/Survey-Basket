@@ -1,9 +1,8 @@
 ﻿using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using Survey_Basket.Application.Abstraction;
+using Survey_Basket.Application.Contracts.Polls;
 using Survey_Basket.Domain.Models;
-using Survey_Basket.Infrastructure.Contracts.Requests;
-using Survey_Basket.Infrastructure.Contracts.Responses;
 
 namespace Survey_Basket.Api.Controllers
 {
