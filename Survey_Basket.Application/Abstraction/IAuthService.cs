@@ -1,6 +1,8 @@
-﻿namespace Survey_Basket.Application.Abstraction;
+﻿using Survey_Basket.Application.Contracts.Authentication;
+
+namespace Survey_Basket.Application.Abstraction;
 
 public interface IAuthService
 {
-    ///Task<AuthResponse>
+    Task<AuthResponse?> GetTokenAsync(string email, string password, CancellationToken cancellationToken);
 }

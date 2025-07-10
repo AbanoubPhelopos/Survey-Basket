@@ -2,9 +2,9 @@
 
 namespace Survey_Basket.Application.Contracts.Polls;
 
-public class CreatePollRequestValidation : AbstractValidator<CreatePollRequests>
+public class LoginRequestValidator : AbstractValidator<CreatePollRequests>
 {
-    public CreatePollRequestValidation()
+    public LoginRequestValidator()
     {
         RuleFor(x => x.Title)
             .NotEmpty()
