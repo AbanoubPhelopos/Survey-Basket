@@ -42,6 +42,44 @@ public class AuthService(UserManager<ApplicationUser> userManager, IJwtProvider 
         return new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, Token, ExpiresIn, refreshToken, refreshTokenExpiration);
     }
 
-    private static string GenerateRefreshToken() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
 
+    public async Task<AuthResponse?> GetRefreshTokenAsync(string token, string refreshToken, CancellationToken cancellationToken)
+    {
+        var userId = _jwtProvider.ValidateToken(token);
+        if (userId is null)
+        {
+            return null;
+        }
+
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user is null)
+        {
+            return null;
+        }
+
+        var existingRefreshToken = user.RefreshTokens.FirstOrDefault(rt => rt.Token == refreshToken && rt.IsActive);
+        if (existingRefreshToken is null)
+        {
+            return null;
+        }
+
+        existingRefreshToken.RevokedAt = DateTime.UtcNow;
+
+        var (Token, ExpiresIn) = _jwtProvider.GenerateToken(user);
+        var newrefreshToken = GenerateRefreshToken();
+        var refreshTokenExpiration = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays);
+
+        user.RefreshTokens.Add(new RefreshToken
+        {
+            Token = newrefreshToken,
+            ExpiresAt = refreshTokenExpiration
+        });
+
+        await _userManager.UpdateAsync(user);
+
+        return new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, Token, ExpiresIn, newrefreshToken, refreshTokenExpiration);
+
+    }
+
+    private static string GenerateRefreshToken() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
 }
