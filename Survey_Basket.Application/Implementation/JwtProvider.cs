@@ -1,5 +1,7 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Survey_Basket.Application.Abstraction;
+using Survey_Basket.Application.Contracts.Authentication;
 using Survey_Basket.Domain.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -7,8 +9,10 @@ using System.Text;
 
 namespace Survey_Basket.Application.Implementation;
 
-public class JwtProvider : IJwtProvider
+public class JwtProvider(IOptions<JwtOptions> jwtOptions) : IJwtProvider
 {
+    private readonly JwtOptions _jwtOptions = jwtOptions.Value;
+
     public (string Token, int ExpiresIn) GenerateToken(ApplicationUser user)
     {
         Claim[] claims =
@@ -20,14 +24,14 @@ public class JwtProvider : IJwtProvider
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             ];
 
-        var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("gwvOEFH1SAscazoGhTAOtBxJR8Zn0jaH"));
+        var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.Key!));
         var signingCredentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
 
-        var expiresIn = 3600;
+        var expiresIn = _jwtOptions.ExpiresIn!;
 
         var jwtSecurityToken = new JwtSecurityToken(
-            issuer: "Survey_Basket",
-            audience: "Survey_Basket users",
+            issuer: _jwtOptions.Issuer!,
+            audience: _jwtOptions.Audience!,
             claims: claims,
             expires: DateTime.UtcNow.AddSeconds(expiresIn),
             signingCredentials: signingCredentials

@@ -8,11 +8,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Survey_Basket.Application.Abstraction;
+using Survey_Basket.Application.Contracts.Authentication;
 using Survey_Basket.Application.Implementation;
 using Survey_Basket.Domain.Models;
 using Survey_Basket.Infrastructure.Data;
 using Survey_Basket.Infrastructure.Implementation;
 using System.Reflection;
+using System.Text;
 
 namespace Survey_Basket.Infrastructure;
 
@@ -20,6 +22,8 @@ public static class DependancyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+
+
         /// Registering Mapster for object mapping
         var mappingConfig = Mapster.TypeAdapterConfig.GlobalSettings;
         mappingConfig.Scan(AppDomain.CurrentDomain.GetAssemblies());
@@ -38,6 +42,14 @@ public static class DependancyInjection
         services.AddScoped<IPollService, PollService>();
 
 
+
+        services.AddOptions<JwtOptions>()
+            .Bind(configuration.GetSection(JwtOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        var jwtSettings = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>();
+
         services.AddSingleton<IJwtProvider, JwtProvider>();
         services.AddAuthentication(options =>
         {
@@ -52,17 +64,15 @@ public static class DependancyInjection
                 ValidateAudience = true,
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
-                ValidIssuer = "Survey_Basket",
-                ValidAudience = "Survey_Basket users",
-                IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes("gwvOEFH1SAscazoGhTAOtBxJR8Zn0jaH"))
+                ValidIssuer = jwtSettings?.Issuer!,
+                ValidAudience = jwtSettings?.Audience!,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings?.Key!))
             };
         });
 
 
         ///Registering the Identity services
         services.AddIdentity<ApplicationUser, IdentityRole<Guid>>().AddEntityFrameworkStores<ApplicationDbContext>();
-
-
 
         return services;
     }

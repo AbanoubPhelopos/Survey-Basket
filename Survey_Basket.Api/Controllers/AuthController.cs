@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Survey_Basket.Application.Abstraction;
 using Survey_Basket.Application.Contracts.Authentication;
 
@@ -6,9 +7,10 @@ namespace Survey_Basket.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AuthController(IAuthService authService) : ControllerBase
+    public class AuthController(IAuthService authService, IOptions<JwtOptions> jwtOptions) : ControllerBase
     {
         private readonly IAuthService _authService = authService;
+        private readonly JwtOptions _jwtOptions = jwtOptions.Value;
 
 
         [HttpPost("")]
