@@ -14,7 +14,7 @@ namespace Survey_Basket.Api.Controllers
 
 
         [HttpPost("")]
-        public async Task<IActionResult> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
+        public async Task<IActionResult> LoginAsync([FromBody] LoginRequest request, CancellationToken cancellationToken)
         {
             var authResault = await _authService.GetTokenAsync(request.Email, request.Password, cancellationToken);
 
@@ -24,13 +24,23 @@ namespace Survey_Basket.Api.Controllers
         }
 
         [HttpPost("refresh")]
-        public async Task<IActionResult> RefreshAsync(RefreshTokenRequest request, CancellationToken cancellationToken)
+        public async Task<IActionResult> RefreshAsync([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
         {
             var authResault = await _authService.GetRefreshTokenAsync(request.Token, request.RefreshToken, cancellationToken);
 
             return authResault is not null
                 ? Ok(authResault)
                 : BadRequest(new { message = "Invalid Token" });
+        }
+
+        [HttpPut("revoke-refresh-token")]
+        public async Task<IActionResult> RevokeRefreshTokenAsync([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
+        {
+            var isRevoked = await _authService.RevokeRefreshTokenAsync(request.Token, request.RefreshToken, cancellationToken);
+
+            return isRevoked
+                ? Ok()
+                : BadRequest(new { message = "Operation Field" });
         }
     }
 }

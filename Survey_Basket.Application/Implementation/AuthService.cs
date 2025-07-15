@@ -81,5 +81,33 @@ public class AuthService(UserManager<ApplicationUser> userManager, IJwtProvider 
 
     }
 
+
+    public async Task<bool> RevokeRefreshTokenAsync(string token, string refreshToken, CancellationToken cancellationToken)
+    {
+        var userId = _jwtProvider.ValidateToken(token);
+        if (userId is null)
+        {
+            return false;
+        }
+
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user is null)
+        {
+            return false;
+        }
+
+        var existingRefreshToken = user.RefreshTokens.FirstOrDefault(rt => rt.Token == refreshToken && rt.IsActive);
+        if (existingRefreshToken is null)
+        {
+            return false;
+        }
+
+        existingRefreshToken.RevokedAt = DateTime.UtcNow;
+
+        await _userManager.UpdateAsync(user);
+
+        return true;
+    }
+
     private static string GenerateRefreshToken() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
 }
