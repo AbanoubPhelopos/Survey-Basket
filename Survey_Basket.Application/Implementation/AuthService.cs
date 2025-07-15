@@ -2,12 +2,16 @@
 using Survey_Basket.Application.Abstraction;
 using Survey_Basket.Application.Contracts.Authentication;
 using Survey_Basket.Domain.Models;
+using System.Security.Cryptography;
 
 namespace Survey_Basket.Application.Implementation;
 public class AuthService(UserManager<ApplicationUser> userManager, IJwtProvider jwtProvider) : IAuthService
 {
     private readonly UserManager<ApplicationUser> _userManager = userManager;
     private readonly IJwtProvider _jwtProvider = jwtProvider;
+
+    private readonly int _refreshTokenExpirationDays = 14;
+
     public async Task<AuthResponse?> GetTokenAsync(string email, string password, CancellationToken cancellationToken = default!)
     {
         ///check user 
@@ -24,8 +28,20 @@ public class AuthService(UserManager<ApplicationUser> userManager, IJwtProvider 
         }
 
         var (Token, ExpiresIn) = _jwtProvider.GenerateToken(user);
+        var refreshToken = GenerateRefreshToken();
+        var refreshTokenExpiration = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays);
 
+        user.RefreshTokens.Add(new RefreshToken
+        {
+            Token = refreshToken,
+            ExpiresAt = refreshTokenExpiration
+        });
 
-        return new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, Token, ExpiresIn);
+        await _userManager.UpdateAsync(user);
+
+        return new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, Token, ExpiresIn, refreshToken, refreshTokenExpiration);
     }
+
+    private static string GenerateRefreshToken() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+
 }

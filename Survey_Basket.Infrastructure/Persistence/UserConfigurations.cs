@@ -14,5 +14,8 @@ public class UserConfigurations : IEntityTypeConfiguration<ApplicationUser>
         builder.Property(u => u.LastName)
             .HasMaxLength(50)
             .IsRequired();
+
+        builder.OwnsMany(u => u.RefreshTokens).ToTable("RefreshTokens").WithOwner().HasForeignKey("UserId");
+
     }
 }
