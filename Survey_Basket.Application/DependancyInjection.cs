@@ -23,6 +23,15 @@ public static class DependancyInjection
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
 
+        services.AddCors(services =>
+        {
+            services.AddPolicy("AllowAll", builder =>
+            {
+                builder.AllowAnyOrigin()
+                       .AllowAnyMethod()
+                       .AllowAnyHeader();
+            });
+        });
 
         /// Registering Mapster for object mapping
         var mappingConfig = Mapster.TypeAdapterConfig.GlobalSettings;
