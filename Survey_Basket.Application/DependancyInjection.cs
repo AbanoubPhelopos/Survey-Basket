@@ -27,14 +27,13 @@ public static class DependancyInjection
 
         services.AddCors(options =>
         {
-            options.AddPolicy("AllowAll",
-                builder =>
-                {
-                    builder.WithOrigins(allowedOrigins)
-                        .AllowAnyMethod()
-                        .AllowAnyHeader()
-                        .AllowCredentials();
-                });
+            options.AddDefaultPolicy(builder =>
+            {
+                builder.WithOrigins(allowedOrigins)
+                       .AllowAnyHeader()
+                       .AllowAnyMethod()
+                       .AllowCredentials();
+            });
         });
 
 
