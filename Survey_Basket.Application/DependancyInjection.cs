@@ -22,16 +22,21 @@ public static class DependancyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        /// Registering the HttpContextAccessor
+        var allowedOrigins = configuration.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
 
-        services.AddCors(services =>
+        services.AddCors(options =>
         {
-            services.AddPolicy("AllowAll", builder =>
-            {
-                builder.AllowAnyOrigin()
-                       .AllowAnyMethod()
-                       .AllowAnyHeader();
-            });
+            options.AddPolicy("AllowAll",
+                builder =>
+                {
+                    builder.WithOrigins(allowedOrigins)
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials();
+                });
         });
+
 
         /// Registering Mapster for object mapping
         var mappingConfig = Mapster.TypeAdapterConfig.GlobalSettings;
