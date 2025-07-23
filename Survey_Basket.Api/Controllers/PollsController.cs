@@ -5,6 +5,7 @@ using Survey_Basket.Application.Contracts.Polls;
 
 namespace Survey_Basket.Api.Controllers;
 
+
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
@@ -18,7 +19,7 @@ public class PollsController(IPollService pollService) : ControllerBase
         var result = await _pollService.Get(cancellationToken);
         return result.IsSuccess
             ? Ok(result.Value)
-            : StatusCode(500, result.Error);
+            : Problem(result.Error.Message, statusCode: 500, title: result.Error.Code);
     }
 
     [HttpGet("{id}")]
@@ -27,19 +28,19 @@ public class PollsController(IPollService pollService) : ControllerBase
         var result = await _pollService.Get(id, cancellationToken);
         return result.IsSuccess
             ? Ok(result.Value)
-            : NotFound(result.Error);
+            : Problem(result.Error.Message, statusCode: 404, title: result.Error.Code);
     }
 
     [HttpPost]
     public async Task<IActionResult> CreatePoll([FromBody] CreatePollRequests request)
     {
         if (request is null)
-            return BadRequest("Poll cannot be null");
+            return Problem("Poll cannot be null", statusCode: 400);
 
         var result = await _pollService.CreatePollAsync(request);
         return result.IsSuccess
             ? Ok()
-            : StatusCode(500, result.Error);
+            : Problem(result.Error.Message, statusCode: 500, title: result.Error.Code);
     }
 
     [HttpDelete("{id}")]
@@ -48,7 +49,7 @@ public class PollsController(IPollService pollService) : ControllerBase
         var result = await _pollService.DeletePoll(id);
         return result.IsSuccess
             ? NoContent()
-            : NotFound(result.Error);
+            : Problem(result.Error.Message, statusCode: 404, title: result.Error.Code);
     }
 
     [HttpPut("{id}")]
@@ -57,6 +58,6 @@ public class PollsController(IPollService pollService) : ControllerBase
         var result = await _pollService.UpdatePoll(id, updatedPoll);
         return result.IsSuccess
             ? NoContent()
-            : NotFound(result.Error);
+            : Problem(result.Error.Message, statusCode: 404, title: result.Error.Code);
     }
 }

@@ -17,7 +17,7 @@ public class AuthController(IAuthService authService, IOptions<JwtOptions> jwtOp
         var result = await _authService.GetTokenAsync(request.Email, request.Password, cancellationToken);
         return result.IsSuccess
             ? Ok(result.Value)
-            : Unauthorized(result.Error);
+            : Problem(result.Error.Message, statusCode: 401, title: result.Error.Code);
     }
 
     [HttpPost("refresh")]
@@ -26,7 +26,7 @@ public class AuthController(IAuthService authService, IOptions<JwtOptions> jwtOp
         var result = await _authService.GetRefreshTokenAsync(request.Token, request.RefreshToken, cancellationToken);
         return result.IsSuccess
             ? Ok(result.Value)
-            : BadRequest(result.Error);
+            : Problem(result.Error.Message, statusCode: 400, title: result.Error.Code);
     }
 
     [HttpPut("revoke-refresh-token")]
@@ -35,6 +35,6 @@ public class AuthController(IAuthService authService, IOptions<JwtOptions> jwtOp
         var result = await _authService.RevokeRefreshTokenAsync(request.Token, request.RefreshToken, cancellationToken);
         return result.IsSuccess
             ? Ok()
-            : BadRequest(result.Error);
+            : Problem(result.Error.Message, statusCode: 400, title: result.Error.Code);
     }
 }
