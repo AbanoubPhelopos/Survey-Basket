@@ -43,6 +43,7 @@ namespace Survey_Basket.Infrastructure.Data
                         break;
                 }
             }
+            return base.SaveChangesAsync(cancellationToken);
         }
     }
 }
