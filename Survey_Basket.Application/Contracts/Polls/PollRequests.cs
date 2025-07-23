@@ -5,3 +5,7 @@ public sealed record CreatePollRequests(
     string Description
     );
 
+public sealed record UpdatePollRequests(
+    string Title,
+    string Description
+    );

@@ -1,12 +1,12 @@
-﻿using Survey_Basket.Domain.Models;
+﻿using Survey_Basket.Application.Contracts.Polls;
 
 namespace Survey_Basket.Application.Abstraction;
 
 public interface IPollService
 {
-    IEnumerable<Poll> GetPolls();
-    Poll? GetPoll(Guid id);
-    void CreatePoll(Poll poll);
-    bool DeletePoll(Guid id);
-    bool UpdatePoll(Guid id, Poll updatedPoll);
+    Task<Result<IEnumerable<PollResponse>>> Get(CancellationToken cancellationToken = default);
+    Task<Result<PollResponse>> Get(Guid id, CancellationToken cancellationToken = default);
+    Task<Result> CreatePollAsync(CreatePollRequests poll);
+    Task<Result> DeletePoll(Guid id);
+    Task<Result> UpdatePoll(Guid id, UpdatePollRequests updatedPoll);
 }

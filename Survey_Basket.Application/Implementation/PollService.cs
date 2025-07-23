@@ -1,4 +1,8 @@
-﻿using Survey_Basket.Application.Abstraction;
+﻿using Mapster;
+using Microsoft.EntityFrameworkCore;
+using Survey_Basket.Application.Abstraction;
+using Survey_Basket.Application.Contracts.Polls;
+using Survey_Basket.Application.Errors;
 using Survey_Basket.Domain.Models;
 using Survey_Basket.Infrastructure.Data;
 
@@ -7,41 +11,63 @@ namespace Survey_Basket.Infrastructure.Implementation;
 public class PollService : IPollService
 {
     private readonly ApplicationDbContext _context;
+
     public PollService(ApplicationDbContext context)
     {
         _context = context;
     }
-    public void CreatePoll(Poll poll)
+
+    public async Task<Result> CreatePollAsync(CreatePollRequests poll)
     {
-        _context.Polls.Add(poll);
-        _context.SaveChanges();
+        try
+        {
+            var entity = poll.Adapt<Poll>();
+            await _context.Polls.AddAsync(entity);
+            await _context.SaveChangesAsync();
+            return Result.Success();
+        }
+        catch
+        {
+            return Result.Failure(PollErrors.PollCreationFailed);
+        }
     }
 
-    public bool DeletePoll(Guid id)
+    public async Task<Result> DeletePoll(Guid id)
     {
-        var existingPoll = _context.Polls.SingleOrDefault(p => p.Id == id);
+        var existingPoll = await _context.Polls.SingleOrDefaultAsync(p => p.Id == id);
         if (existingPoll is null)
-        {
-            return false;
-        }
+            return Result.Failure(PollErrors.PollNotFound);
+
         _context.Polls.Remove(existingPoll);
-        _context.SaveChanges();
-        return true;
+        await _context.SaveChangesAsync();
+        return Result.Success();
     }
 
-    public Poll? GetPoll(Guid id) => _context.Polls.SingleOrDefault(p => p.Id == id);
-
-    public IEnumerable<Poll> GetPolls() => _context.Polls.ToList();
-
-    public bool UpdatePoll(Guid id, Poll updatedPoll)
+    public async Task<Result<PollResponse>> Get(Guid id, CancellationToken cancellationToken = default)
     {
-        var existingPoll = _context.Polls.SingleOrDefault(p => p.Id == id);
+        var poll = await _context.Polls.FindAsync(new object[] { id }, cancellationToken);
+        return poll is not null
+            ? Result.Success(poll.Adapt<PollResponse>())
+            : Result.Failure<PollResponse>(PollErrors.PollNotFound);
+    }
+
+    public async Task<Result<IEnumerable<PollResponse>>> Get(CancellationToken cancellationToken = default)
+    {
+        var polls = await _context.Polls.ToListAsync(cancellationToken);
+        var response = polls.Adapt<IEnumerable<PollResponse>>();
+        return Result.Success(response);
+    }
+
+    public async Task<Result> UpdatePoll(Guid id, UpdatePollRequests updatedPoll)
+    {
+        var existingPoll = await _context.Polls.SingleOrDefaultAsync(p => p.Id == id);
+
         if (existingPoll is null)
-        {
-            return false;
-        }
+            return Result.Failure(PollErrors.PollNotFound);
+
+        updatedPoll.Adapt(existingPoll);
         _context.Polls.Update(existingPoll);
-        _context.SaveChanges();
-        return true;
+        await _context.SaveChangesAsync();
+        return Result.Success();
     }
 }

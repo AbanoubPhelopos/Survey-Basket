@@ -1,67 +1,62 @@
-﻿using Mapster;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Survey_Basket.Application.Abstraction;
 using Survey_Basket.Application.Contracts.Polls;
-using Survey_Basket.Domain.Models;
 
-namespace Survey_Basket.Api.Controllers
+namespace Survey_Basket.Api.Controllers;
+
+[Route("api/[controller]")]
+[ApiController]
+[Authorize]
+public class PollsController(IPollService pollService) : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    [Authorize]
-    public class PollsController(IPollService pollService) : ControllerBase
+    private readonly IPollService _pollService = pollService;
+
+    [HttpGet]
+    public async Task<IActionResult> GetPolls(CancellationToken cancellationToken)
     {
-        private readonly IPollService _pollService = pollService;
+        var result = await _pollService.Get(cancellationToken);
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : StatusCode(500, result.Error);
+    }
 
-        [HttpGet]
-        public Task<IActionResult> GetPolls()
-        {
-            var polls = _pollService.GetPolls();
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetPoll([FromRoute] Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _pollService.Get(id, cancellationToken);
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : NotFound(result.Error);
+    }
 
-            /// Mapping the domain model to the response model
-            var pollsResponse = polls.Adapt<IEnumerable<PollResponse>>();
-            return Task.FromResult<IActionResult>(Ok(pollsResponse));
-        }
+    [HttpPost]
+    public async Task<IActionResult> CreatePoll([FromBody] CreatePollRequests request)
+    {
+        if (request is null)
+            return BadRequest("Poll cannot be null");
 
-        [HttpGet("{id}")]
-        public Task<IActionResult> GetPoll([FromRoute] Guid id)
-        {
-            var poll = _pollService.GetPoll(id);
+        var result = await _pollService.CreatePollAsync(request);
+        return result.IsSuccess
+            ? Ok()
+            : StatusCode(500, result.Error);
+    }
 
-            if (poll is not null)
-            {
-                /// Mapping the domain model to the response model
-                var pollResponse = poll.Adapt<PollResponse>();
-                return Task.FromResult<IActionResult>(Ok(poll));
-            }
-            return Task.FromResult<IActionResult>(NotFound());
-        }
-        [HttpPost]
-        public Task<IActionResult> CreatePoll([FromBody] CreatePollRequests poll)
-        {
-            if (poll == null)
-            {
-                return Task.FromResult<IActionResult>(BadRequest("Poll cannot be null"));
-            }
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeletePoll([FromRoute] Guid id)
+    {
+        var result = await _pollService.DeletePoll(id);
+        return result.IsSuccess
+            ? NoContent()
+            : NotFound(result.Error);
+    }
 
-            ///mapping the request to the domain model
-            var requestedPoll = poll.Adapt<Poll>();
-            _pollService.CreatePoll(requestedPoll);
-
-            return Task.FromResult<IActionResult>(CreatedAtAction(nameof(GetPoll), new { id = requestedPoll.Id }, poll));
-        }
-        [HttpDelete("{id}")]
-        public Task<IActionResult> DeletePoll([FromRoute] Guid id)
-        {
-            var isDeleted = _pollService.DeletePoll(id);
-            return isDeleted ? Task.FromResult<IActionResult>(NoContent()) : Task.FromResult<IActionResult>(NotFound());
-        }
-        [HttpPut("{id}")]
-        public Task<IActionResult> UpdatePoll([FromRoute] Guid id, [FromBody] Poll updatedPoll)
-        {
-            var isUpdated = _pollService.UpdatePoll(id, updatedPoll);
-            return isUpdated ? Task.FromResult<IActionResult>(NoContent()) : Task.FromResult<IActionResult>(NotFound());
-        }
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdatePoll([FromRoute] Guid id, [FromBody] UpdatePollRequests updatedPoll)
+    {
+        var result = await _pollService.UpdatePoll(id, updatedPoll);
+        return result.IsSuccess
+            ? NoContent()
+            : NotFound(result.Error);
     }
 }
