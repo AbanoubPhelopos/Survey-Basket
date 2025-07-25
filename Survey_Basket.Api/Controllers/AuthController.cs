@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using Survey_Basket.Application.Abstraction;
 using Survey_Basket.Application.Contracts.Authentication;
 
@@ -7,7 +6,7 @@ namespace Survey_Basket.Api.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class AuthController(IAuthService authService, IOptions<JwtOptions> jwtOptions) : ControllerBase
+public class AuthController(IAuthService authService) : ControllerBase
 {
     private readonly IAuthService _authService = authService;
 
@@ -17,7 +16,7 @@ public class AuthController(IAuthService authService, IOptions<JwtOptions> jwtOp
         var result = await _authService.GetTokenAsync(request.Email, request.Password, cancellationToken);
         return result.IsSuccess
             ? Ok(result.Value)
-            : Problem(result.Error.Message, statusCode: 401, title: result.Error.Code);
+            : result.ToProblemDetails(401);
     }
 
     [HttpPost("refresh")]
@@ -26,7 +25,7 @@ public class AuthController(IAuthService authService, IOptions<JwtOptions> jwtOp
         var result = await _authService.GetRefreshTokenAsync(request.Token, request.RefreshToken, cancellationToken);
         return result.IsSuccess
             ? Ok(result.Value)
-            : Problem(result.Error.Message, statusCode: 400, title: result.Error.Code);
+            : result.ToProblemDetails(401);
     }
 
     [HttpPut("revoke-refresh-token")]
@@ -35,6 +34,6 @@ public class AuthController(IAuthService authService, IOptions<JwtOptions> jwtOp
         var result = await _authService.RevokeRefreshTokenAsync(request.Token, request.RefreshToken, cancellationToken);
         return result.IsSuccess
             ? Ok()
-            : Problem(result.Error.Message, statusCode: 400, title: result.Error.Code);
+            : result.ToProblemDetails(400);
     }
 }
