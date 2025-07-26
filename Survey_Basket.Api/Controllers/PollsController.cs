@@ -69,7 +69,7 @@ public class PollsController(IPollService pollService) : ControllerBase
             return NoContent();
         }
 
-        return result.IsFailure && result.Error == PollErrors.PollNotFound
+        return result.Error.Equals(PollErrors.PollNotFound)
             ? result.ToProblemDetails(404)
             : result.ToProblemDetails(409);
     }
