@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Survey_Basket.Application.Abstraction;
 using Survey_Basket.Application.Contracts.Polls;
+using Survey_Basket.Application.Errors;
 
 namespace Survey_Basket.Api.Controllers;
 
@@ -45,7 +46,7 @@ public class PollsController(IPollService pollService) : ControllerBase
         var result = await _pollService.CreatePollAsync(request);
         return result.IsSuccess
             ? Ok()
-            : result.ToProblemDetails(500);
+            : result.ToProblemDetails(409);
     }
 
     [HttpDelete("{id}")]
@@ -61,8 +62,14 @@ public class PollsController(IPollService pollService) : ControllerBase
     public async Task<IActionResult> UpdatePoll([FromRoute] Guid id, [FromBody] UpdatePollRequests updatedPoll)
     {
         var result = await _pollService.UpdatePoll(id, updatedPoll);
-        return result.IsSuccess
-            ? NoContent()
-            : result.ToProblemDetails(404);
+
+        if (result.IsSuccess)
+        {
+            return NoContent();
+        }
+
+        return result.IsFailure && result.Error == PollErrors.PollNotFound
+            ? result.ToProblemDetails(404)
+            : result.ToProblemDetails(409);
     }
 }

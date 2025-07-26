@@ -19,6 +19,11 @@ public class PollService : IPollService
 
     public async Task<Result> CreatePollAsync(CreatePollRequests poll)
     {
+        var existingPoll = await _context.Polls
+            .AnyAsync(p => p.Title == poll.Title);
+        if (existingPoll)
+            return Result.Failure(PollErrors.PollAlreadyExists);
+
         try
         {
             var entity = poll.Adapt<Poll>();
@@ -64,6 +69,10 @@ public class PollService : IPollService
 
         if (existingPoll is null)
             return Result.Failure(PollErrors.PollNotFound);
+
+        var pollWithSameTitle = await _context.Polls.AnyAsync(p => p.Title == updatedPoll.Title && p.Id != id);
+        if (pollWithSameTitle)
+            return Result.Failure(PollErrors.PollAlreadyExists);
 
         updatedPoll.Adapt(existingPoll);
         _context.Polls.Update(existingPoll);
