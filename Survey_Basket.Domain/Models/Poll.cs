@@ -9,5 +9,5 @@ public class Poll : AuditableEntity
     public DateOnly StartedAt { get; set; }
     public DateOnly? EndedAt { get; set; }
 
-
+    public ICollection<Question> Questions { get; set; } = [];
 }

@@ -13,15 +13,25 @@ namespace Survey_Basket.Infrastructure.Data
     {
         private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
 
+        public DbSet<Answer> Answers { get; set; } = null!;
         public DbSet<Poll> Polls { get; set; } = null!;
+        public DbSet<Question> Questions { get; set; } = null!;
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
 
+            var cascadeFKs = modelBuilder.Model.GetEntityTypes()
+                .SelectMany(t => t.GetForeignKeys())
+                .Where(fk => !fk.IsOwnership && fk.DeleteBehavior == DeleteBehavior.Cascade);
+
+            foreach (var fk in cascadeFKs)
+            {
+                fk.DeleteBehavior = DeleteBehavior.Restrict;
+            }
+
             base.OnModelCreating(modelBuilder);
-
-
         }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
