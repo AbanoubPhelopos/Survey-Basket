@@ -1,6 +1,7 @@
-﻿using Survey_Basket.Application.Contracts.Polls;
+﻿using Survey_Basket.Application.Abstraction;
+using Survey_Basket.Application.Contracts.Polls;
 
-namespace Survey_Basket.Application.Abstraction;
+namespace Survey_Basket.Application.Services.PollServices;
 
 public interface IPollService
 {

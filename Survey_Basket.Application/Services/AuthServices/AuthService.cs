@@ -5,7 +5,7 @@ using Survey_Basket.Application.Errors;
 using Survey_Basket.Domain.Models;
 using System.Security.Cryptography;
 
-namespace Survey_Basket.Application.Implementation;
+namespace Survey_Basket.Application.Services.AuthServices;
 public class AuthService(UserManager<ApplicationUser> userManager, IJwtProvider jwtProvider) : IAuthService
 {
     private readonly UserManager<ApplicationUser> _userManager = userManager;

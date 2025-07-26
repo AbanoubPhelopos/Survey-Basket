@@ -7,13 +7,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
-using Survey_Basket.Application.Abstraction;
 using Survey_Basket.Application.Contracts.Authentication;
 using Survey_Basket.Application.Errors;
-using Survey_Basket.Application.Implementation;
+using Survey_Basket.Application.Services.AuthServices;
+using Survey_Basket.Application.Services.PollServices;
+using Survey_Basket.Application.Services.QuestionServices;
 using Survey_Basket.Domain.Models;
 using Survey_Basket.Infrastructure.Data;
-using Survey_Basket.Infrastructure.Implementation;
 using System.Reflection;
 using System.Text;
 
@@ -58,6 +58,7 @@ public static class DependancyInjection
         /// Registering the application services 
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IPollService, PollService>();
+        services.AddScoped<IQuestionService, QuestionService>();
 
 
 

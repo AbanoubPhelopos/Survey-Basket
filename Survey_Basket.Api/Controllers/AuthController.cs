@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Survey_Basket.Application.Abstraction;
 using Survey_Basket.Application.Contracts.Authentication;
+using Survey_Basket.Application.Services.AuthServices;
 
 namespace Survey_Basket.Api.Controllers;
 

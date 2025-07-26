@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Contracts\Answer\" />
+    <Folder Include="Contracts\Answer - Copy\" />
   </ItemGroup>
 
 </Project>

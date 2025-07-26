@@ -6,7 +6,7 @@ using Survey_Basket.Application.Errors;
 using Survey_Basket.Domain.Models;
 using Survey_Basket.Infrastructure.Data;
 
-namespace Survey_Basket.Infrastructure.Implementation;
+namespace Survey_Basket.Application.Services.PollServices;
 
 public class PollService : IPollService
 {

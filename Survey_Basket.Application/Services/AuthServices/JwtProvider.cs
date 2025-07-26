@@ -1,13 +1,12 @@
 ﻿using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Survey_Basket.Application.Abstraction;
 using Survey_Basket.Application.Contracts.Authentication;
 using Survey_Basket.Domain.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace Survey_Basket.Application.Implementation;
+namespace Survey_Basket.Application.Services.AuthServices;
 
 public class JwtProvider(IOptions<JwtOptions> jwtOptions) : IJwtProvider
 {

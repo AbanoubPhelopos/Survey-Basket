@@ -1,6 +1,7 @@
-﻿using Survey_Basket.Application.Contracts.Authentication;
+﻿using Survey_Basket.Application.Abstraction;
+using Survey_Basket.Application.Contracts.Authentication;
 
-namespace Survey_Basket.Application.Abstraction;
+namespace Survey_Basket.Application.Services.AuthServices;
 
 public interface IAuthService
 {

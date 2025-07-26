@@ -1,5 +1,9 @@
-﻿namespace Survey_Basket.Application.Contracts.Question;
+﻿using Survey_Basket.Application.Contracts.Answer;
 
-public class QuestionResponse
-{
-}
+namespace Survey_Basket.Application.Contracts.Question;
+
+public record QuestionResponse(
+    Guid Id,
+    string Content,
+    IEnumerable<AnswerResponse> Answers
+    );
