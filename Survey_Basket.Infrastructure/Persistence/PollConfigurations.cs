@@ -10,6 +10,7 @@ public class PollConfigurations : IEntityTypeConfiguration<Poll>
     {
         builder.HasKey(p => p.Id);
         builder.HasIndex(p => p.Title).IsUnique();
+
         builder.Property(p => p.Title).HasMaxLength(200);
         builder.Property(p => p.Summary).HasMaxLength(500);
     }

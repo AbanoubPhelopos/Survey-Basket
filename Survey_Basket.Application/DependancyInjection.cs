@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Survey_Basket.Application.Abstraction;
 using Survey_Basket.Application.Contracts.Authentication;
+using Survey_Basket.Application.Errors;
 using Survey_Basket.Application.Implementation;
 using Survey_Basket.Domain.Models;
 using Survey_Basket.Infrastructure.Data;
@@ -35,6 +36,10 @@ public static class DependancyInjection
                        .AllowCredentials();
             });
         });
+
+
+        services.AddExceptionHandler<GlobalExceptionHandler>();
+        services.AddProblemDetails();
 
 
         /// Registering Mapster for object mapping
