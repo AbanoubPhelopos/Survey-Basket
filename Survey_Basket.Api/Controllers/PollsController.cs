@@ -14,10 +14,19 @@ public class PollsController(IPollService pollService) : ControllerBase
 {
     private readonly IPollService _pollService = pollService;
 
-    [HttpGet]
+    [HttpGet("")]
     public async Task<IActionResult> GetPolls(CancellationToken cancellationToken)
     {
         var result = await _pollService.Get(cancellationToken);
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : result.ToProblemDetails(500);
+    }
+
+    [HttpGet("current")]
+    public async Task<IActionResult> GetCurrentPolls(CancellationToken cancellationToken)
+    {
+        var result = await _pollService.GetCurrent(cancellationToken);
         return result.IsSuccess
             ? Ok(result.Value)
             : result.ToProblemDetails(500);
@@ -73,4 +82,6 @@ public class PollsController(IPollService pollService) : ControllerBase
             ? result.ToProblemDetails(404)
             : result.ToProblemDetails(409);
     }
+
+
 }
