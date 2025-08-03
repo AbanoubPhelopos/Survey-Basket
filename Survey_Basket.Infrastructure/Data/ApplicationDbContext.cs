@@ -16,6 +16,8 @@ namespace Survey_Basket.Infrastructure.Data
         public DbSet<Answer> Answers { get; set; } = null!;
         public DbSet<Poll> Polls { get; set; } = null!;
         public DbSet<Question> Questions { get; set; } = null!;
+        public DbSet<Vote> Votes { get; set; } = null!;
+        public DbSet<VoteAnswers> VoteAnswers { get; set; } = null!;
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
