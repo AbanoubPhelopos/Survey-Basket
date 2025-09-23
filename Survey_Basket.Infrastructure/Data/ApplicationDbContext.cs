@@ -43,6 +43,7 @@ namespace Survey_Basket.Infrastructure.Data
             foreach (var entry in entries)
             {
                 var currentUserId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+
                 switch (entry.State)
                 {
                     case EntityState.Added:
