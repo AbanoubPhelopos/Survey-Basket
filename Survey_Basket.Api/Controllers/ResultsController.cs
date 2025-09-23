@@ -25,7 +25,7 @@ namespace Survey_Basket.Api.Controllers
                 : result.ToProblemDetails();
         }
 
-        [HttpGet]
+        [HttpGet("votes-per-day")]
         public async Task<ActionResult> VotesPerDay([FromRoute] Guid pollId, CancellationToken cancellationToken)
         {
             var result = await _resultService.GetPollVotesPerDayAsync(pollId, cancellationToken);
@@ -34,5 +34,13 @@ namespace Survey_Basket.Api.Controllers
                 : result.ToProblemDetails();
         }
 
+        [HttpGet("votes-per-question")]
+        public async Task<ActionResult> VotesPerQuestion([FromRoute] Guid pollId, CancellationToken cancellationToken)
+        {
+            var result = await _resultService.GetPollVotesPerQuestionAsync(pollId, cancellationToken);
+            return result.IsSuccess
+                ? Ok(result.Value)
+                : result.ToProblemDetails();
+        }
     }
 }
