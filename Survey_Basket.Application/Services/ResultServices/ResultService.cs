@@ -36,4 +36,24 @@ public class ResultService : IResultService
             ? Result.Failure<PollVotesResponse>(PollErrors.PollNotFound)
             : Result.Success(pollVotes);
     }
+
+
+    public async Task<Result<IEnumerable<VotesPerDayResponse>>> GetPollVotesPerDayAsync(Guid pollId, CancellationToken cancellationToken = default)
+    {
+        var isPollExist = await _context.Polls.AnyAsync(p => p.Id == pollId && p.IsPublished && p.StartedAt <= DateOnly.FromDateTime(DateTime.UtcNow)
+                           && p.EndedAt >= DateOnly.FromDateTime(DateTime.UtcNow), cancellationToken);
+        if (!isPollExist)
+            return Result.Failure<IEnumerable<VotesPerDayResponse>>(PollErrors.PollNotFound);
+
+        var votesPerDay = await _context.Votes
+            .Where(x => x.PollId == pollId)
+            .GroupBy(x => new { Data = DateOnly.FromDateTime(x.SubmittedOn) })
+            .Select(g => new VotesPerDayResponse(
+                g.Key.Data,
+                g.Count()
+                )).ToListAsync(cancellationToken);
+
+        return Result.Success<IEnumerable<VotesPerDayResponse>>(votesPerDay);
+    }
+
 }
