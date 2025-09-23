@@ -17,7 +17,7 @@ public class AuthController(IAuthService authService) : ControllerBase
         var result = await _authService.GetTokenAsync(request.Email, request.Password, cancellationToken);
         return result.IsSuccess
             ? Ok(result.Value)
-            : result.ToProblemDetails(401);
+            : result.ToProblemDetails();
     }
 
     [HttpPost("refresh")]
@@ -26,7 +26,7 @@ public class AuthController(IAuthService authService) : ControllerBase
         var result = await _authService.GetRefreshTokenAsync(request.Token, request.RefreshToken, cancellationToken);
         return result.IsSuccess
             ? Ok(result.Value)
-            : result.ToProblemDetails(401);
+            : result.ToProblemDetails();
     }
 
     [HttpPut("revoke-refresh-token")]
@@ -35,6 +35,6 @@ public class AuthController(IAuthService authService) : ControllerBase
         var result = await _authService.RevokeRefreshTokenAsync(request.Token, request.RefreshToken, cancellationToken);
         return result.IsSuccess
             ? Ok()
-            : result.ToProblemDetails(400);
+            : result.ToProblemDetails();
     }
 }

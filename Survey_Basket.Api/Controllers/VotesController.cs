@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Survey_Basket.Application.Abstraction;
 using Survey_Basket.Application.Contracts.Votes;
-using Survey_Basket.Application.Errors;
 using Survey_Basket.Application.Extensions;
 using Survey_Basket.Application.Services.QuestionServices;
 using Survey_Basket.Application.Services.VoteServices;
@@ -28,13 +27,7 @@ public class VotesController : ControllerBase
 
         var result = _questionService.GetAvailableQuestionsAsync(pollId, userId, cancellationToken);
 
-        if (result.Result.IsSuccess)
-        {
-            return Ok(result.Result.Value);
-        }
-        return result.Result.Error.Equals(PollErrors.PollNotFound)
-            ? result.Result.ToProblemDetails(404)
-            : result.Result.ToProblemDetails(409);
+        return result.Result.IsSuccess ? Ok(result.Result.Value) : result.Result.ToProblemDetails();
     }
 
     [HttpPost("")]
@@ -42,11 +35,6 @@ public class VotesController : ControllerBase
     {
         var result = await _voteService.AddAsync(pollId, User.GetUserId(), request, cancellationToken);
         return result.IsSuccess
-            ? Created()
-            : result.Error.Equals(PollErrors.PollNotFound)
-                ? result.ToProblemDetails(404)
-                : result.Error.Equals(VoteErrors.VoteAlreadyExists) || result.Error.Equals(VoteErrors.InvalidQuestionsInVote)
-                    ? result.ToProblemDetails(409)
-                    : result.ToProblemDetails(400);
+            ? Created() : result.ToProblemDetails();
     }
 }

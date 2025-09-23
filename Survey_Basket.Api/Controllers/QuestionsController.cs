@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Survey_Basket.Application.Abstraction;
 using Survey_Basket.Application.Contracts.Question;
-using Survey_Basket.Application.Errors;
 using Survey_Basket.Application.Services.QuestionServices;
 
 namespace Survey_Basket.Api.Controllers;
@@ -20,7 +19,7 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
         var result = await _questionService.GetQuestionsAsync(pollId, cancellationToken);
         return result.IsSuccess
             ? Ok(result.Value)
-            : result.ToProblemDetails(404);
+            : result.ToProblemDetails();
     }
 
 
@@ -30,7 +29,7 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
         var result = await _questionService.GetQuestionAsync(pollId, Id, cancellationToken);
         return result.IsSuccess
             ? Ok(result.Value)
-            : result.ToProblemDetails(404);
+            : result.ToProblemDetails();
     }
 
 
@@ -47,13 +46,8 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
         }
 
         var result = await _questionService.CreateQuestionAsync(pollId, request, cancellationToken);
-        if (result.IsSuccess)
-        {
-            return CreatedAtAction(nameof(Get), new { pollId, result.Value.Id }, result.Value);
-        }
-        return result.Error.Equals(PollErrors.PollNotFound)
-            ? result.ToProblemDetails(404)
-            : result.ToProblemDetails(409);
+        return result.IsSuccess ? CreatedAtAction(nameof(Get), new { pollId, result.Value.Id }, result.Value)
+            : result.ToProblemDetails();
     }
 
     [HttpPut("{Id:guid}")]
@@ -71,11 +65,8 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
         var result = await _questionService.UpdateAsync(pollId, Id, request, cancellationToken);
         return result.IsSuccess
             ? NoContent()
-            : result.Error.Equals(QuestionErrors.QuestionNotFound) ?
-            result.ToProblemDetails(404) :
-            result.ToProblemDetails(409);
+            : result.ToProblemDetails();
     }
-
 
     [HttpPut("{Id:guid}/toggle-status")]
     public async Task<IActionResult> ToggleStatus([FromRoute] Guid pollId, [FromRoute] Guid Id, CancellationToken cancellationToken)
@@ -83,6 +74,6 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
         var result = await _questionService.ToggleStatusAsync(pollId, Id, cancellationToken);
         return result.IsSuccess
             ? NoContent()
-            : result.ToProblemDetails(404);
+            : result.ToProblemDetails();
     }
 }

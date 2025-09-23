@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Survey_Basket.Application.Abstraction;
 using Survey_Basket.Application.Contracts.Polls;
-using Survey_Basket.Application.Errors;
 using Survey_Basket.Application.Services.PollServices;
 
 namespace Survey_Basket.Api.Controllers;
@@ -20,7 +19,7 @@ public class PollsController(IPollService pollService) : ControllerBase
         var result = await _pollService.Get(cancellationToken);
         return result.IsSuccess
             ? Ok(result.Value)
-            : result.ToProblemDetails(500);
+            : result.ToProblemDetails();
     }
 
     [HttpGet("current")]
@@ -29,7 +28,7 @@ public class PollsController(IPollService pollService) : ControllerBase
         var result = await _pollService.GetCurrent(cancellationToken);
         return result.IsSuccess
             ? Ok(result.Value)
-            : result.ToProblemDetails(500);
+            : result.ToProblemDetails();
     }
 
     [HttpGet("{id}")]
@@ -38,7 +37,7 @@ public class PollsController(IPollService pollService) : ControllerBase
         var result = await _pollService.Get(id, cancellationToken);
         return result.IsSuccess
             ? Ok(result.Value)
-            : result.ToProblemDetails(404);
+            : result.ToProblemDetails();
     }
 
     [HttpPost]
@@ -56,7 +55,7 @@ public class PollsController(IPollService pollService) : ControllerBase
         var result = await _pollService.CreatePollAsync(request);
         return result.IsSuccess
             ? Ok()
-            : result.ToProblemDetails(409);
+            : result.ToProblemDetails();
     }
 
     [HttpDelete("{id}")]
@@ -65,7 +64,7 @@ public class PollsController(IPollService pollService) : ControllerBase
         var result = await _pollService.DeletePoll(id);
         return result.IsSuccess
             ? NoContent()
-            : result.ToProblemDetails(404);
+            : result.ToProblemDetails();
     }
 
     [HttpPut("{id}")]
@@ -73,14 +72,8 @@ public class PollsController(IPollService pollService) : ControllerBase
     {
         var result = await _pollService.UpdatePoll(id, updatedPoll);
 
-        if (result.IsSuccess)
-        {
-            return NoContent();
-        }
-
-        return result.Error.Equals(PollErrors.PollNotFound)
-            ? result.ToProblemDetails(404)
-            : result.ToProblemDetails(409);
+        return result.IsSuccess ?
+            NoContent() : result.ToProblemDetails();
     }
 
 
