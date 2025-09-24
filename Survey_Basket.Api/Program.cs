@@ -1,37 +1,56 @@
-using Survey_Basket.Infrastructure;
+using Serilog;
 
-var builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-// Add services to the container.
+Log.Information("Starting up the host...");
 
-builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
-
-builder.Services.AddInfrastructure(builder.Configuration);
-
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+try
 {
-    app.MapOpenApi();
+    var builder = WebApplication.CreateBuilder(args);
 
-    app.UseSwaggerUI(c =>
+    builder.Host.UseSerilog((context, configuration)
+                => configuration.ReadFrom.Configuration(context.Configuration));
+
+    builder.Services.AddControllers();
+    builder.Services.AddOpenApi();
+
+    builder.Services.AddCors(options =>
     {
-        c.SwaggerEndpoint("/openapi/v1.json", "Survey Basket API V1");
+        options.AddDefaultPolicy(policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
     });
+
+    var app = builder.Build();
+
+    if (app.Environment.IsDevelopment())
+    {
+        app.MapOpenApi();
+        app.UseSwaggerUI(c =>
+        {
+            c.SwaggerEndpoint("/openapi/v1.json", "Survey Basket API V1");
+        });
+    }
+
+
+    app.UseSerilogRequestLogging();
+    app.UseHttpsRedirection();
+    app.UseCors();
+    app.UseAuthorization();
+    app.MapControllers();
+
+    app.Run();
 }
-
-app.UseHttpsRedirection();
-
-app.UseCors();
-
-app.UseAuthorization();
-
-app.MapControllers();
-
-app.UseExceptionHandler();
-
-app.Run();
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Host terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
