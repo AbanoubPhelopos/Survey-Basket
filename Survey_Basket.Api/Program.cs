@@ -1,4 +1,5 @@
 using Serilog;
+using Survey_Basket.Infrastructure;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -12,6 +13,9 @@ try
 
     builder.Host.UseSerilog((context, configuration)
                 => configuration.ReadFrom.Configuration(context.Configuration));
+
+    builder.Services.AddInfrastructure(builder.Configuration);
+
 
     builder.Services.AddControllers();
     builder.Services.AddOpenApi();
@@ -42,10 +46,7 @@ try
     app.UseHttpsRedirection();
     app.UseCors();
     app.UseAuthorization();
-
-
     app.MapControllers();
-    app.UseExceptionHandler();
 
     app.Run();
 }

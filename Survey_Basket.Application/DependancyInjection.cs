@@ -10,7 +10,6 @@ using Microsoft.IdentityModel.Tokens;
 using Survey_Basket.Application.Contracts.Authentication;
 using Survey_Basket.Application.Errors;
 using Survey_Basket.Application.Services.AuthServices;
-using Survey_Basket.Application.Services.CacheService;
 using Survey_Basket.Application.Services.PollServices;
 using Survey_Basket.Application.Services.QuestionServices;
 using Survey_Basket.Application.Services.ResultServices;
@@ -65,8 +64,7 @@ public static class DependancyInjection
         services.AddScoped<IVoteService, VoteService>();
         services.AddScoped<IResultService, ResultService>();
 
-
-        services.AddScoped<ICacheService, CacheService>();
+        services.AddHybridCache();
 
 
 
