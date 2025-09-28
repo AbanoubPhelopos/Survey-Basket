@@ -43,7 +43,7 @@ public class AuthController(IAuthService authService) : ControllerBase
     {
         var result = await _authService.RegisterAsync(request, cancellationToken);
         return result.IsSuccess
-            ? Ok(result.Value)
+            ? Ok()
             : result.ToProblemDetails();
     }
 
@@ -51,6 +51,15 @@ public class AuthController(IAuthService authService) : ControllerBase
     public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailRequest request)
     {
         var result = await _authService.ConfirmEmailAsync(request);
+        return result.IsSuccess
+            ? Ok()
+            : result.ToProblemDetails();
+    }
+
+    [HttpPost("resend-confirmation-email")]
+    public async Task<IActionResult> ResendConfirmationEmail([FromBody] ResendConfirmationEmailRequest request)
+    {
+        var result = await _authService.ResendConfirmEmailAsync(request);
         return result.IsSuccess
             ? Ok()
             : result.ToProblemDetails();
