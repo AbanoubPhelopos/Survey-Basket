@@ -17,4 +17,8 @@
     <ProjectReference Include="..\Survey_Basket.Infrastructure\Survey_Basket.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Templates\" />
+  </ItemGroup>
+
 </Project>

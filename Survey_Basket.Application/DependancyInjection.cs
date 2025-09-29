@@ -107,7 +107,6 @@ public static class DependancyInjection
 
         ///Registering the Identity services
         services.AddIdentity<ApplicationUser, IdentityRole<Guid>>().AddEntityFrameworkStores<ApplicationDbContext>();
-
         return services;
     }
 }

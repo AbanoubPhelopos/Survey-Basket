@@ -1,4 +1,5 @@
 using Serilog;
+using Survey_Basket.Api.Settings;
 using Survey_Basket.Infrastructure;
 
 Log.Logger = new LoggerConfiguration()
@@ -15,7 +16,7 @@ try
                 => configuration.ReadFrom.Configuration(context.Configuration));
 
     builder.Services.AddInfrastructure(builder.Configuration);
-
+    builder.Services.Configure<MailSettings>(builder.Configuration.GetSection(nameof(MailSettings)));
 
     builder.Services.AddControllers();
     builder.Services.AddOpenApi();
