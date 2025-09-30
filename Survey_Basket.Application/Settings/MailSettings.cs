@@ -1,4 +1,4 @@
-﻿namespace Survey_Basket.Api.Settings;
+﻿namespace Survey_Basket.Application.Settings;
 
 public class MailSettings
 {
