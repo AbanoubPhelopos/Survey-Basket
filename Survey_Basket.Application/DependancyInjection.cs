@@ -66,9 +66,10 @@ public static class DependancyInjection
         services.AddScoped<IResultService, ResultService>();
         services.AddScoped<IEmailSender, EmailService>();
 
+
         services.AddHybridCache();
 
-
+        services.AddHttpContextAccessor();
 
 
         services.AddOptions<JwtOptions>()

@@ -25,6 +25,7 @@ public class EmailService(IOptions<MailSettings> mailSettings) : IEmailSender
 
         using var smtp = new SmtpClient();
 
+
         try
         {
             await smtp.ConnectAsync(_mailSettings.Host, _mailSettings.Port, SecureSocketOptions.StartTls);

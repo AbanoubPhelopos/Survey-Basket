@@ -1,19 +1,23 @@
 ﻿using Mapster;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.WebUtilities;
 using Survey_Basket.Application.Abstraction;
 using Survey_Basket.Application.Contracts.Authentication;
 using Survey_Basket.Application.Errors;
+using Survey_Basket.Application.Helpers;
 using Survey_Basket.Domain.Models;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace Survey_Basket.Application.Services.AuthServices;
-public class AuthService(UserManager<ApplicationUser> userManager, IJwtProvider jwtProvider) : IAuthService
+public class AuthService(UserManager<ApplicationUser> userManager, IJwtProvider jwtProvider, IEmailSender emailSender, IHttpContextAccessor httpContextAccessor) : IAuthService
 {
     private readonly UserManager<ApplicationUser> _userManager = userManager;
     private readonly IJwtProvider _jwtProvider = jwtProvider;
+    private readonly IEmailSender _emailSender = emailSender;
+    private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
     private readonly int _refreshTokenExpirationDays = 14;
 
     public async Task<Result<AuthResponse>> GetTokenAsync(string email, string password, CancellationToken cancellationToken = default)
@@ -110,6 +114,8 @@ public class AuthService(UserManager<ApplicationUser> userManager, IJwtProvider 
             code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
 
 
+            await SendConfirmationEmail(user, code);
+
 
             return Result.Success();
         }
@@ -157,7 +163,7 @@ public class AuthService(UserManager<ApplicationUser> userManager, IJwtProvider 
         var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
 
-
+        await SendConfirmationEmail(user, code);
 
         return Result.Success();
     }
@@ -165,4 +171,18 @@ public class AuthService(UserManager<ApplicationUser> userManager, IJwtProvider 
 
     private static string GenerateRefreshToken() =>
         Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+
+    private async Task SendConfirmationEmail(ApplicationUser user, string code)
+    {
+        var origin = _httpContextAccessor.HttpContext?.Request.Headers.Origin;
+
+        var emailBody = EmailBodyBuilder.BuildEmailBody("EmailConfirmation",
+            new Dictionary<string, string>
+            {
+                    { "{{name}}", user.FirstName },
+                    { "{{actionurl}}", $"{origin}/auth/emailConfirmation?userId={user.Id}&code={code}" },
+            });
+
+        await _emailSender.SendEmailAsync(user.Email!, "Confirm your email", emailBody);
+    }
 }

@@ -1,5 +1,5 @@
 using Serilog;
-using Survey_Basket.Api.Settings;
+using Survey_Basket.Application.Settings;
 using Survey_Basket.Infrastructure;
 
 Log.Logger = new LoggerConfiguration()
