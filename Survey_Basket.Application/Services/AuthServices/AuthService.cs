@@ -106,6 +106,7 @@ public class AuthService(UserManager<ApplicationUser> userManager, IJwtProvider 
             return Result.Failure<AuthResponse>(UserErrors.EmailAlreadyExists);
 
         var user = request.Adapt<ApplicationUser>();
+        user.UserName = request.Email;
 
         var result = await _userManager.CreateAsync(user, request.Password);
         if (result.Succeeded)

@@ -13,7 +13,7 @@ public class PollsController(IPollService pollService) : ControllerBase
 {
     private readonly IPollService _pollService = pollService;
 
-    [HttpGet("")]
+    [HttpGet]
     public async Task<IActionResult> GetPolls(CancellationToken cancellationToken)
     {
         var result = await _pollService.Get(cancellationToken);

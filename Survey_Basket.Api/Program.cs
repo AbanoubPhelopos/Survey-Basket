@@ -1,6 +1,8 @@
+using Microsoft.OpenApi.Models;
 using Serilog;
 using Survey_Basket.Application.Settings;
 using Survey_Basket.Infrastructure;
+
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -19,7 +21,37 @@ try
     builder.Services.Configure<MailSettings>(builder.Configuration.GetSection(nameof(MailSettings)));
 
     builder.Services.AddControllers();
-    builder.Services.AddOpenApi();
+
+    builder.Services.AddSwaggerGen(options =>
+
+    {
+        options.SwaggerDoc("v1", new OpenApiInfo { Title = "Survey Basket API", Version = "v1" });
+
+        options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+        {
+            In = ParameterLocation.Header,
+            Description = "Please enter a valid token",
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            BearerFormat = "JWT",
+            Scheme = "Bearer"
+        });
+
+        options.AddSecurityRequirement(new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                },
+                Array.Empty<string>()
+            }
+        });
+    });
 
     builder.Services.AddCors(options =>
     {
@@ -35,10 +67,11 @@ try
 
     if (app.Environment.IsDevelopment())
     {
-        app.MapOpenApi();
+        app.UseSwagger();
+
         app.UseSwaggerUI(c =>
         {
-            c.SwaggerEndpoint("/openapi/v1.json", "Survey Basket API V1");
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "Survey Basket API V1");
         });
     }
 
@@ -46,6 +79,9 @@ try
     app.UseSerilogRequestLogging();
     app.UseHttpsRedirection();
     app.UseCors();
+
+    app.UseAuthentication();
+
     app.UseAuthorization();
     app.MapControllers();
 
