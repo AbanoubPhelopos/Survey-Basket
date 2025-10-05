@@ -1,5 +1,7 @@
 ﻿using FluentValidation;
 using FluentValidation.AspNetCore;
+using Hangfire;
+using Hangfire.PostgreSql;
 using MapsterMapper;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -42,6 +44,8 @@ public static class DependancyInjection
 
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails();
+        services.AddBackgroundJobs(configuration);
+
 
         var mappingConfig = Mapster.TypeAdapterConfig.GlobalSettings;
         mappingConfig.Scan(AppDomain.CurrentDomain.GetAssemblies());
@@ -109,6 +113,20 @@ public static class DependancyInjection
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
             options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
         });
+
+        return services;
+    }
+
+    public static IServiceCollection AddBackgroundJobs(this IServiceCollection services, IConfiguration configuration)
+    {
+
+        services.AddHangfire(config => config
+        .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+        .UseSimpleAssemblyNameTypeSerializer()
+        .UseRecommendedSerializerSettings()
+        .UsePostgreSqlStorage(configuration.GetConnectionString("HangFireConnection")));
+
+        services.AddHangfireServer();
 
         return services;
     }

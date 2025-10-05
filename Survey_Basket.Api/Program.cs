@@ -1,3 +1,4 @@
+using Hangfire;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using Survey_Basket.Application.Settings;
@@ -78,6 +79,9 @@ try
 
     app.UseSerilogRequestLogging();
     app.UseHttpsRedirection();
+
+    app.UseHangfireDashboard("/jobs");
+
     app.UseCors();
 
     app.UseAuthentication();
