@@ -1,4 +1,5 @@
-﻿using Mapster;
+﻿using Hangfire;
+using Mapster;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -114,7 +115,7 @@ public class AuthService(UserManager<ApplicationUser> userManager, IJwtProvider 
             var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
             code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
 
-
+            //BackgroundJob.Enqueue(() => SendConfirmationEmail(user, code));
             await SendConfirmationEmail(user, code);
 
 
@@ -184,6 +185,8 @@ public class AuthService(UserManager<ApplicationUser> userManager, IJwtProvider 
                     { "{{actionurl}}", $"{origin}/auth/emailConfirmation?userId={user.Id}&code={code}" },
             });
 
-        await _emailSender.SendEmailAsync(user.Email!, "Confirm your email", emailBody);
+        BackgroundJob.Enqueue(() => _emailSender.SendEmailAsync(user.Email!, "Confirm your email", emailBody));
+        //await _emailSender.SendEmailAsync(user.Email!, "Confirm your email", emailBody);
+        await Task.CompletedTask;
     }
 }
