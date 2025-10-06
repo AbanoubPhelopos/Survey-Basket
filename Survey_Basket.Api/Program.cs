@@ -2,6 +2,7 @@ using Hangfire;
 using HangfireBasicAuthenticationFilter;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using Survey_Basket.Application.Services.NotificationServices;
 using Survey_Basket.Application.Settings;
 using Survey_Basket.Infrastructure;
 
@@ -90,6 +91,18 @@ try
             Pass = app.Configuration.GetValue<string>("HangfireSettings:password")
         } }
     });
+
+
+    var scopeFactory = app.Services.GetRequiredService<IServiceScopeFactory>();
+    using var scope = scopeFactory.CreateScope();
+    var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+
+    RecurringJob.AddOrUpdate(
+        "send-daily-poll-notification",
+        () => notificationService.SendNewPollsNotification(null),
+        Cron.Daily
+    );
+
 
     app.UseCors();
 
