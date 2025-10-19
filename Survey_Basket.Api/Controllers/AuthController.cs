@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Survey_Basket.Application.Abstraction;
 using Survey_Basket.Application.Contracts.Authentication;
+using Survey_Basket.Application.Contracts.User;
 using Survey_Basket.Application.Services.AuthServices;
 
 namespace Survey_Basket.Api.Controllers;
@@ -64,4 +65,22 @@ public class AuthController(IAuthService authService) : ControllerBase
             ? Ok()
             : result.ToProblemDetails();
     }
+
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgetPasswordRequest request)
+    {
+        var result = await _authService.SendResetPasswordCode(request.Email);
+        return result.IsSuccess
+            ? Ok()
+            : result.ToProblemDetails();
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        var result = await _authService.ResetPasswordAsync(request);
+        return result.IsSuccess
+            ? Ok()
+            : result.ToProblemDetails();
+    } 
 }

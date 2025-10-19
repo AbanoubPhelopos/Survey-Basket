@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.WebUtilities;
 using Survey_Basket.Application.Abstraction;
 using Survey_Basket.Application.Contracts.Authentication;
+using Survey_Basket.Application.Contracts.User;
 using Survey_Basket.Application.Errors;
 using Survey_Basket.Application.Helpers;
 using Survey_Basket.Domain.Models;
@@ -165,11 +166,49 @@ public class AuthService(UserManager<ApplicationUser> userManager, IJwtProvider 
         var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
 
+        await SendResetPasswordEmail(user, code);
+
+        return Result.Success();
+    }
+
+    public async Task<Result> SendResetPasswordCode(string email)
+    {
+        if(await _userManager.FindByEmailAsync(email) is not { } user)
+            return Result.Success();
+        if(!user.EmailConfirmed)
+            return Result.Failure(UserErrors.EmailNotConfirmed);
+
+        var code = await _userManager.GeneratePasswordResetTokenAsync(user);
+        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+
         await SendConfirmationEmail(user, code);
 
         return Result.Success();
     }
 
+    public async Task<Result> ResetPasswordAsync(ResetPasswordRequest request)
+    {
+        if (await _userManager.FindByEmailAsync(request.Email) is not { } user || !user.EmailConfirmed)
+            return Result.Failure(UserErrors.InvalidCode);
+
+        IdentityResult result;
+        var code = request.Code;
+        try
+        {
+            code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(request.Code));
+            result = await _userManager.ResetPasswordAsync(user, code, request.NewPassword);
+        }
+        catch (FormatException)
+        {
+            result = IdentityResult.Failed(_userManager.ErrorDescriber.InvalidToken());
+        }
+
+        if (result.Succeeded)
+            return Result.Success();
+
+        var error = result.Errors.First();
+        return Result.Failure(new Error(error.Code, error.Description, StatusCodes.Status401Unauthorized));
+    }
 
     private static string GenerateRefreshToken() =>
         Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
@@ -187,6 +226,22 @@ public class AuthService(UserManager<ApplicationUser> userManager, IJwtProvider 
 
         BackgroundJob.Enqueue(() => _emailSender.SendEmailAsync(user.Email!, "Confirm your email", emailBody));
         //await _emailSender.SendEmailAsync(user.Email!, "Confirm your email", emailBody);
+        await Task.CompletedTask;
+    }
+
+    private async Task SendResetPasswordEmail(ApplicationUser user, string code)
+    {
+        var origin = _httpContextAccessor.HttpContext?.Request.Headers.Origin;
+
+        var emailBody = EmailBodyBuilder.BuildEmailBody("ForgotPassword",
+            new Dictionary<string, string>
+            {
+                    { "{{name}}", user.FirstName },
+                    { "{{actionurl}}", $"{origin}/auth/ForgotPassword?email={user.Email}&code={code}" },
+            });
+
+        BackgroundJob.Enqueue(() => _emailSender.SendEmailAsync(user.Email!, "Reset your password", emailBody));
+        //await _emailSender.SendEmailAsync(user.Email!, "Reset your password", emailBody);
         await Task.CompletedTask;
     }
 }

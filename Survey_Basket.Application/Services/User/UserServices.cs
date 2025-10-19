@@ -24,12 +24,18 @@ public class UserServices(UserManager<ApplicationUser> userManager) : IUserServi
     } 
     public async Task<Result> UpdateUserProfile(Guid userId, UpdateProfileRequest request,CancellationToken cancellationToken)
     {
-        var user = await _userManager.FindByIdAsync(userId.ToString());
+        /*var user = await _userManager.FindByIdAsync(userId.ToString());
 
         user = request.Adapt(user);
 
-        var result = await _userManager.UpdateAsync(user!);
-        
+        var result = await _userManager.UpdateAsync(user!);*/
+
+        await _userManager.Users
+            .Where(u => u.Id == userId)
+            .ExecuteUpdateAsync(u => u
+                .SetProperty(u => u.FirstName, request.FirstName)
+                .SetProperty(u => u.LastName, request.LastName), cancellationToken);
+
         return Result.Success();
     }
 
@@ -46,5 +52,4 @@ public class UserServices(UserManager<ApplicationUser> userManager) : IUserServi
             return Result.Failure(new Error(error.Code, error.Description,StatusCodes.Status400BadRequest));
 
     }
-
 }
