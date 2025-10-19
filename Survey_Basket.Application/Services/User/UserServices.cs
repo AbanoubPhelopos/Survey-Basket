@@ -21,5 +21,14 @@ public class UserServices(UserManager<ApplicationUser> userManager) : IUserServi
 
         return Result.Success(user);
     } 
+    public async Task<Result> UpdateUserProfile(Guid userId, UpdateProfileRequest request,CancellationToken cancellationToken)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
 
+        user = request.Adapt(user);
+
+        var result = await _userManager.UpdateAsync(user!);
+        
+        return Result.Success();
+    }
 }
