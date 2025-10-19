@@ -1,4 +1,5 @@
 ﻿using Mapster;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Survey_Basket.Application.Abstraction;
@@ -31,4 +32,19 @@ public class UserServices(UserManager<ApplicationUser> userManager) : IUserServi
         
         return Result.Success();
     }
+
+    public async Task<Result> ChangePassword(Guid userId, ChangePasswordRequest request, CancellationToken cancellationToken)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+
+        var result = await _userManager.ChangePasswordAsync(user!, request.CurrentPassword, request.NewPassword);
+
+        if (result.Succeeded)
+            return Result.Success();
+        
+        var error = result.Errors.First();
+            return Result.Failure(new Error(error.Code, error.Description,StatusCodes.Status400BadRequest));
+
+    }
+
 }
