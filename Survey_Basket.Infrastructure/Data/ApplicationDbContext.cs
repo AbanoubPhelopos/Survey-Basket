@@ -9,7 +9,7 @@ using System.Security.Claims;
 namespace Survey_Basket.Infrastructure.Data
 {
     public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IHttpContextAccessor httpContextAccessor)
-                : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>(options)
+                : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>(options)
     {
         private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
 

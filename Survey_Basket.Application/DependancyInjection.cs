@@ -106,8 +106,7 @@ public static class DependancyInjection
             options.User.RequireUniqueEmail = true;
         });
 
-        services.AddIdentityCore<ApplicationUser>()
-            .AddRoles<IdentityRole<Guid>>()
+        services.AddIdentity<ApplicationUser, ApplicationRole>()
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
 

@@ -10,6 +10,7 @@ using Survey_Basket.Application.Contracts.User;
 using Survey_Basket.Application.Errors;
 using Survey_Basket.Application.Helpers;
 using Survey_Basket.Domain.Models;
+using Survey_Basket.Infrastructure.Abstraction.Const;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -148,6 +149,7 @@ public class AuthService(UserManager<ApplicationUser> userManager, IJwtProvider 
 
         if (result.Succeeded)
         {
+            await _userManager.AddToRoleAsync(user, DefaultRoles.Member);
             return Result.Success();
         }
 
