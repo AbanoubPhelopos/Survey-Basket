@@ -18,6 +18,7 @@ using Survey_Basket.Application.Services.NotificationServices;
 using Survey_Basket.Application.Services.PollServices;
 using Survey_Basket.Application.Services.QuestionServices;
 using Survey_Basket.Application.Services.ResultServices;
+using Survey_Basket.Application.Services.User;
 using Survey_Basket.Application.Services.VoteServices;
 using Survey_Basket.Domain.Models;
 using Survey_Basket.Infrastructure.Data;
@@ -66,6 +67,7 @@ public static class DependancyInjection
         services.AddScoped<IResultService, ResultService>();
         services.AddScoped<IEmailSender, EmailService>();
         services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<IUserServices, UserServices>();
 
         services.AddHybridCache();
         services.AddHttpContextAccessor();

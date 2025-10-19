@@ -11,4 +11,5 @@ public interface IPollService
     Task<Result> CreatePollAsync(CreatePollRequests poll);
     Task<Result> DeletePoll(Guid id);
     Task<Result> UpdatePoll(Guid id, UpdatePollRequests updatedPoll);
+    Task<Result> TogglePublishStatusAsync(int id, CancellationToken cancellationToken = default);
 }

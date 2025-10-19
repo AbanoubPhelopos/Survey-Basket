@@ -85,11 +85,14 @@ try
     app.UseHangfireDashboard("/jobs", new DashboardOptions
     {
         DashboardTitle = "Survey Basket - Background Jobs",
-        Authorization = new[] { new HangfireCustomBasicAuthenticationFilter
-        {
-            User = app.Configuration.GetValue<string>("HangfireSettings:username"),
-            Pass = app.Configuration.GetValue<string>("HangfireSettings:password")
-        } }
+        Authorization = [
+            new HangfireCustomBasicAuthenticationFilter
+            {
+                User = app.Configuration.GetValue<string>("HangfireSettings:username"),
+                Pass = app.Configuration.GetValue<string>("HangfireSettings:password")
+            }
+        ],
+        //IsReadOnlyFunc = (DashboardContext context) => true
     });
 
 

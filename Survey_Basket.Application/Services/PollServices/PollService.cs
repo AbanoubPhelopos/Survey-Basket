@@ -1,8 +1,10 @@
-﻿using Mapster;
+﻿using Hangfire;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 using Survey_Basket.Application.Abstraction;
 using Survey_Basket.Application.Contracts.Polls;
 using Survey_Basket.Application.Errors;
+using Survey_Basket.Application.Services.NotificationServices;
 using Survey_Basket.Domain.Models;
 using Survey_Basket.Infrastructure.Data;
 
@@ -11,10 +13,12 @@ namespace Survey_Basket.Application.Services.PollServices;
 public class PollService : IPollService
 {
     private readonly ApplicationDbContext _context;
+    private readonly INotificationService _notificationService;
 
-    public PollService(ApplicationDbContext context)
+    public PollService(ApplicationDbContext context, INotificationService notificationService)
     {
         _context = context;
+        _notificationService = notificationService;
     }
 
     public async Task<Result> CreatePollAsync(CreatePollRequests poll)
@@ -89,6 +93,23 @@ public class PollService : IPollService
         updatedPoll.Adapt(existingPoll);
         _context.Polls.Update(existingPoll);
         await _context.SaveChangesAsync();
+        return Result.Success();
+    }
+
+    public async Task<Result> TogglePublishStatusAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var poll = await _context.Polls.FindAsync(id, cancellationToken);
+
+        if (poll is null)
+            return Result.Failure(PollErrors.PollNotFound);
+
+        poll.IsPublished = !poll.IsPublished;
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        if (poll.IsPublished && poll.StartedAt == DateOnly.FromDateTime(DateTime.UtcNow))
+            BackgroundJob.Enqueue(() => _notificationService.SendNewPollsNotification(poll.Id));
+
         return Result.Success();
     }
 }
