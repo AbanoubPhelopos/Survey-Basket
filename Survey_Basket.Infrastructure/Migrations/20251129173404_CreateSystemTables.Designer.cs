@@ -12,8 +12,8 @@ using Survey_Basket.Infrastructure.Data;
 namespace Survey_Basket.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251019172429_SeedIdentityTables")]
-    partial class SeedIdentityTables
+    [Migration("20251129173404_CreateSystemTables")]
+    partial class CreateSystemTables
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -400,7 +400,7 @@ namespace Survey_Basket.Infrastructure.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@SURVEY-BASKET.COM",
                             NormalizedUserName = "ADMIN@SURVEY-BASKET.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEC/kkJc3Or5wPLWGiFYs0xTwNutl8qhETSTWJGaHm37VTdJ6rTGrDHJtBqPihsxdMQ==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEKpmT4S7ZgT1MSi05zzZ52s35/cDGYOCqx14N8/+c8aB9Z9RgMilFy9XA7Y3lexE+g==",
                             PhoneNumberConfirmed = false,
                             SecurityStamp = "F66F472946EC4BBB86994AFF718329A7",
                             TwoFactorEnabled = false,
