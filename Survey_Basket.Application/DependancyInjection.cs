@@ -5,6 +5,7 @@ using Hangfire.PostgreSql;
 using MapsterMapper;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,7 @@ using Microsoft.IdentityModel.Tokens;
 using Survey_Basket.Application.Contracts.Authentication;
 using Survey_Basket.Application.Errors;
 using Survey_Basket.Application.Services.AuthServices;
+using Survey_Basket.Application.Services.AuthServices.Filter;
 using Survey_Basket.Application.Services.NotificationServices;
 using Survey_Basket.Application.Services.PollServices;
 using Survey_Basket.Application.Services.QuestionServices;
@@ -109,6 +111,9 @@ public static class DependancyInjection
         services.AddIdentity<ApplicationUser, ApplicationRole>()
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
+
+        services.AddTransient<IAuthorizationHandler, PermissionAuthorizationHandler>();
+        services.AddTransient<IAuthorizationPolicyProvider, PermissionAuthorizationPolicyProvider>();
 
         services.Configure<AuthenticationOptions>(options =>
         {

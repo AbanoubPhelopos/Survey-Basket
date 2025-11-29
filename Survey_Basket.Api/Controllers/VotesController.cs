@@ -5,12 +5,13 @@ using Survey_Basket.Application.Contracts.Votes;
 using Survey_Basket.Application.Extensions;
 using Survey_Basket.Application.Services.QuestionServices;
 using Survey_Basket.Application.Services.VoteServices;
+using Survey_Basket.Infrastructure.Abstraction.Const;
 
 namespace Survey_Basket.Api.Controllers;
 
 [Route("api/polls/{pollId:guid}/[controller]")]
 [ApiController]
-[Authorize]
+[Authorize(Roles = DefaultRoles.Member)]
 public class VotesController : ControllerBase
 {
     private readonly IQuestionService _questionService;

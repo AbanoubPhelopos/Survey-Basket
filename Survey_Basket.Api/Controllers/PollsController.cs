@@ -2,18 +2,21 @@
 using Microsoft.AspNetCore.Mvc;
 using Survey_Basket.Application.Abstraction;
 using Survey_Basket.Application.Contracts.Polls;
+using Survey_Basket.Application.Services.AuthServices.Filter;
 using Survey_Basket.Application.Services.PollServices;
+using Survey_Basket.Infrastructure.Abstraction.Const;
+using SurveyBasket.Abstractions.Consts;
 
 namespace Survey_Basket.Api.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize]
 public class PollsController(IPollService pollService) : ControllerBase
 {
     private readonly IPollService _pollService = pollService;
 
     [HttpGet]
+    [HasPermission(Permissions.GetPolls)]
     public async Task<IActionResult> GetPolls(CancellationToken cancellationToken)
     {
         var result = await _pollService.Get(cancellationToken);
@@ -23,6 +26,7 @@ public class PollsController(IPollService pollService) : ControllerBase
     }
 
     [HttpGet("current")]
+    [Authorize(Roles = DefaultRoles.Member)]
     public async Task<IActionResult> GetCurrentPolls(CancellationToken cancellationToken)
     {
         var result = await _pollService.GetCurrent(cancellationToken);
