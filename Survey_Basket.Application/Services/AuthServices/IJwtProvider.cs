@@ -4,6 +4,6 @@ namespace Survey_Basket.Application.Services.AuthServices;
 
 public interface IJwtProvider
 {
-    (string Token, int ExpiresIn) GenerateToken(ApplicationUser user);
+    (string Token, int ExpiresIn) GenerateToken(ApplicationUser user, IEnumerable<string> roles, IEnumerable<string> permissions);
     string? ValidateToken(string token);
 }
