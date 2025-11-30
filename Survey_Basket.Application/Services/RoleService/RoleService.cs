@@ -110,5 +110,15 @@ namespace Survey_Basket.Application.Services.RoleService
             var error = result.Errors.First();
             return Result.Failure<RoleDetailResponse>(new Error(error.Code, error.Description, StatusCodes.Status400BadRequest));
         }
+
+        public async Task<Result> ToggleRole(string roleId, CancellationToken cancellationToken = default)
+        {
+            if (await _roleManager.FindByIdAsync(roleId) is not { } role)
+                return Result.Failure(RoleErrors.RoleNotFound);
+
+            role.IsDeleted = !role.IsDeleted;
+            await _roleManager.UpdateAsync(role);
+            return Result.Success();
+        }
     }
 }

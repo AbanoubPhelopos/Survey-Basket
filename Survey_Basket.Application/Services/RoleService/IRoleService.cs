@@ -9,5 +9,7 @@ namespace Survey_Basket.Application.Services.RoleService
         Task<Result<RoleDetailResponse>> GetRole(string roleId, CancellationToken cancellationToken = default);
         Task<Result<RoleDetailResponse>> CreateRole(RoleRequest request, CancellationToken cancellationToken = default);
         Task<Result> UpdateRole(string roleId, RoleRequest request, CancellationToken cancellationToken = default);
+
+        Task<Result> ToggleRole(string roleId, CancellationToken cancellationToken = default);
     }
 }

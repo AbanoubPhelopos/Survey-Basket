@@ -32,7 +32,7 @@ namespace Survey_Basket.Api.Controllers
 
         [HttpPost("")]
         [HasPermission(Permissions.AddRoles)]
-        public async Task<IActionResult> create([FromBody] RoleRequest roleRequest, CancellationToken cancellationToken)
+        public async Task<IActionResult> Create([FromBody] RoleRequest roleRequest, CancellationToken cancellationToken)
         {
             var result = await _roleService.CreateRole(roleRequest, cancellationToken);
             return result.IsSuccess
@@ -42,12 +42,22 @@ namespace Survey_Basket.Api.Controllers
 
         [HttpPut("{roleId}")]
         [HasPermission(Permissions.UpdateRoles)]
-        public async Task<IActionResult> update(string roleId, [FromBody] RoleRequest roleRequest, CancellationToken cancellationToken)
+        public async Task<IActionResult> Update(string roleId, [FromBody] RoleRequest roleRequest, CancellationToken cancellationToken)
         {
             var result = await _roleService.UpdateRole(roleId, roleRequest, cancellationToken);
             return result.IsSuccess
             ? NoContent()
             : result.ToProblemDetails();
         }
+
+        [HttpPut("{roleId}/toggle")]
+        [HasPermission(Permissions.UpdateRoles)]
+        public async Task<IActionResult> Toggle(string roleId, CancellationToken cancellationToken)
+        {
+            var result = await _roleService.ToggleRole(roleId, cancellationToken);
+            return result.IsSuccess
+            ? NoContent()
+            : result.ToProblemDetails();
+        }
     }
-} 
+}
