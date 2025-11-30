@@ -36,9 +36,18 @@ namespace Survey_Basket.Api.Controllers
         {
             var result = await _roleService.CreateRole(roleRequest, cancellationToken);
             return result.IsSuccess
-            ? Ok(result.Value)
+            ? CreatedAtAction(nameof(Get), new { result.Value.Id }, result.Value)
             : result.ToProblemDetails();
         }
 
+        [HttpPut("{roleId}")]
+        [HasPermission(Permissions.UpdateRoles)]
+        public async Task<IActionResult> update(string roleId, [FromBody] RoleRequest roleRequest, CancellationToken cancellationToken)
+        {
+            var result = await _roleService.UpdateRole(roleId, roleRequest, cancellationToken);
+            return result.IsSuccess
+            ? NoContent()
+            : result.ToProblemDetails();
+        }
     }
-}
+} 
