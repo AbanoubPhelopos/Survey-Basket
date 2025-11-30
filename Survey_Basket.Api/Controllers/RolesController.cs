@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Survey_Basket.Application.Abstraction;
+using Survey_Basket.Application.Contracts.Roles;
 using Survey_Basket.Application.Services.AuthServices.Filter;
 using Survey_Basket.Application.Services.RoleService;
 using SurveyBasket.Abstractions.Consts;
@@ -20,9 +21,20 @@ namespace Survey_Basket.Api.Controllers
         }
 
         [HttpGet("{Id}")]
+        [HasPermission(Permissions.GetRoles)]
         public async Task<IActionResult> Get(string Id, CancellationToken cancellationToken)
         {
             var result = await _roleService.GetRole(Id, cancellationToken);
+            return result.IsSuccess
+            ? Ok(result.Value)
+            : result.ToProblemDetails();
+        }
+
+        [HttpPost("")]
+        [HasPermission(Permissions.AddRoles)]
+        public async Task<IActionResult> create([FromBody] RoleRequest roleRequest, CancellationToken cancellationToken)
+        {
+            var result = await _roleService.CreateRole(roleRequest, cancellationToken);
             return result.IsSuccess
             ? Ok(result.Value)
             : result.ToProblemDetails();
