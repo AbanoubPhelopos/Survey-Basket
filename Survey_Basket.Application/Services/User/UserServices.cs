@@ -6,11 +6,14 @@ using Survey_Basket.Application.Abstraction;
 using Survey_Basket.Application.Contracts.User;
 using Survey_Basket.Application.Errors;
 using Survey_Basket.Domain.Models;
+using Survey_Basket.Infrastructure.Abstraction.Const;
+using Survey_Basket.Infrastructure.Data;
 
 namespace Survey_Basket.Application.Services.User;
 
-public class UserServices(UserManager<ApplicationUser> userManager) : IUserServices
+public class UserServices(UserManager<ApplicationUser> userManager, ApplicationDbContext context) : IUserServices
 {
+    private readonly ApplicationDbContext _context = context;
     private readonly UserManager<ApplicationUser> _userManager = userManager;
 
 
@@ -52,4 +55,32 @@ public class UserServices(UserManager<ApplicationUser> userManager) : IUserServi
             return Result.Failure(new Error(error.Code, error.Description,StatusCodes.Status400BadRequest));
 
     }
+    
+    public async Task<IEnumerable<UserResponse>> GetUsersAsync(CancellationToken cancellationToken = default) =>
+        await (from u in _context.Users
+            join ur in _context.UserRoles 
+                on u.Id equals ur.UserId 
+            join r in _context.Roles 
+                on ur.RoleId equals r.Id into roles
+            where !roles.Any(x=>x.Name == DefaultRoles.Member)
+            select new
+                {
+                    u.Id,
+                    u.FirstName,
+                    u.LastName,
+                    u.Email,
+                    u.IsDisabled,
+                    Roles = roles.Select(x=>x.Name!).ToList()
+                }
+            ).GroupBy(u=> new 
+                { u.Id, u.FirstName, u.LastName, u.Email, u.IsDisabled })
+            .Select( u=> new UserResponse(
+                    u.Key.Id.ToString(),
+                    u.Key.FirstName,
+                    u.Key.LastName,
+                    u.Key.Email,
+                    u.Key.IsDisabled,
+                    u.SelectMany(x=>x.Roles!)
+                ))
+            .ToListAsync(cancellationToken);
 }
