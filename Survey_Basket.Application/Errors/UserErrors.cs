@@ -12,6 +12,9 @@ public static class UserErrors
     public static readonly Error InvalidToken = new("Auth.InvalidToken", "Token is invalid or expired.", StatusCodes.Status401Unauthorized);
     public static readonly Error InvalidRefreshToken = new("Auth.InvalidRefreshToken", "Refresh token is invalid or has been revoked.", StatusCodes.Status401Unauthorized);
 
+    public static  readonly Error DisabledUser = new("User.DisabledUser", "Disabled User please contact your administrator ", StatusCodes.Status400BadRequest);
+    public static  readonly Error LockedUser = new("User.LockedUser", "Locked User please contact your administrator ", StatusCodes.Status400BadRequest);
+
     public static readonly Error EmailAlreadyExists = new("User.EmailAlreadyExists", "Email already exists", StatusCodes.Status409Conflict);
     public static readonly Error UserCreationFailed = new("User.CreationFailed", "User creation failed", StatusCodes.Status500InternalServerError);
 

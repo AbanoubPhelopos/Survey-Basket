@@ -1,4 +1,5 @@
 using Hangfire;
+using Microsoft.Extensions.Hosting;
 using HangfireBasicAuthenticationFilter;
 using Microsoft.OpenApi.Models;
 using Serilog;
@@ -116,7 +117,7 @@ try
 
     app.Run();
 }
-catch (Exception ex)
+catch (Exception ex) when (ex is not HostAbortedException)
 {
     Log.Fatal(ex, "Host terminated unexpectedly");
 }
