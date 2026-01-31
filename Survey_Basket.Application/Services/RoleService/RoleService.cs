@@ -2,19 +2,20 @@ using Mapster;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Survey_Basket.Application.Abstraction;
+using Survey_Basket.Application.Abstractions.Const;
+using Survey_Basket.Application.Abstractions;
 using Survey_Basket.Application.Contracts.Roles;
 using Survey_Basket.Application.Errors;
+using Survey_Basket.Domain.Abstractions;
+using Survey_Basket.Domain.Entities;
 using Survey_Basket.Domain.Models;
-using Survey_Basket.Infrastructure.Data;
-using SurveyBasket.Abstractions.Consts;
 
 namespace Survey_Basket.Application.Services.RoleService
 {
-    public class RoleService(RoleManager<ApplicationRole> roleManager, ApplicationDbContext context) : IRoleService
+    public class RoleService(RoleManager<ApplicationRole> roleManager, IUnitOfWork unitOfWork) : IRoleService
     {
         private readonly RoleManager<ApplicationRole> _roleManager = roleManager;
-        private readonly ApplicationDbContext _context = context;
+        private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
         public async Task<IEnumerable<RoleResponse>> GetRoles(bool? includeDisables = false, CancellationToken cancellationToken = default)
         => await _roleManager.Roles.Where(x => !x.IsDefault && (!x.IsDeleted || (includeDisables.HasValue && includeDisables.Value)))
@@ -50,15 +51,7 @@ namespace Survey_Basket.Application.Services.RoleService
             var result = await _roleManager.CreateAsync(role);
             if (result.Succeeded)
             {
-                var permissions = request.permissions.Select(x => new IdentityRoleClaim<string>
-                {
-                    ClaimType = Permissions.Type,
-                    ClaimValue = x,
-                    RoleId = role.Id.ToString()
-                });
-
-                await _context.AddRangeAsync(permissions);
-                await _context.SaveChangesAsync();
+                await _unitOfWork.Roles.UpdateRolePermissionsAsync(role.Id, request.permissions, cancellationToken);
 
                 var response = new RoleDetailResponse(role.Id, role.Name, role.IsDeleted, request.permissions);
                 return Result.Success(response);
@@ -87,22 +80,7 @@ namespace Survey_Basket.Application.Services.RoleService
             var result = await _roleManager.UpdateAsync(role);
             if (result.Succeeded)
             {
-                var currentPermissions = await _context.RoleClaims.Where(x => x.RoleId == role.Id && x.ClaimType == Permissions.Type).Select(x => x.ClaimValue).ToListAsync(cancellationToken);
-
-                var permissionsToAdd = request.permissions.Except(currentPermissions).Select(x => new IdentityRoleClaim<string>
-                {
-                    ClaimType = Permissions.Type,
-                    ClaimValue = x,
-                    RoleId = role.Id.ToString()
-                });
-
-                var permissionsToRemove = currentPermissions.Except(request.permissions);
-
-                await _context.RoleClaims.Where(x => x.RoleId == role.Id && permissionsToRemove.Contains(x.ClaimValue))
-                .ExecuteDeleteAsync();
-
-                await _context.AddRangeAsync(permissionsToAdd);
-                await _context.SaveChangesAsync();
+                await _unitOfWork.Roles.UpdateRolePermissionsAsync(role.Id, request.permissions, cancellationToken);
 
                 return Result.Success();
             }

@@ -1,80 +1,67 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Survey_Basket.Application.Abstraction;
+﻿using Survey_Basket.Application.Abstractions;
 using Survey_Basket.Application.Contracts.Results;
 using Survey_Basket.Application.Errors;
-using Survey_Basket.Infrastructure.Data;
+using Survey_Basket.Domain.Abstractions;
 
 namespace Survey_Basket.Application.Services.ResultServices;
 
-public class ResultService : IResultService
+public class ResultService(IUnitOfWork unitOfWork) : IResultService
 {
-    private readonly ApplicationDbContext _context;
-    public ResultService(ApplicationDbContext context)
-    {
-        _context = context;
-    }
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+
     public async Task<Result<PollVotesResponse>> GetPollVotesAsync(Guid pollId, CancellationToken cancellationToken = default)
     {
-        var pollVotes = await _context.Polls
-            .Where(p => p.Id == pollId)
-            .Select(p => new PollVotesResponse
-            (
-                p.Title,
-                p.Votes.Select(v => new VotesResponse(
-                    $"{v.User.FirstName} {v.User.LastName}",
-                    v.SubmittedOn,
-                    v.Answers.Select(a => new QuestionAnswerResponse(
-                        a.Question.Content,
-                        a.Answer.Content
-                        ))
+        var pollVotes = await _unitOfWork.Polls.GetPollVotesAsync(pollId, cancellationToken);
 
-                    ))
+        if (pollVotes is null)
+            return Result.Failure<PollVotesResponse>(PollErrors.PollNotFound);
+
+        // Map Domain Result to Contract Response
+        var response = new PollVotesResponse(
+            pollVotes.Title,
+            pollVotes.Votes.Select(v => new VotesResponse(
+                v.VoterName,
+                v.SubmittedOn,
+                v.Answers.Select(a => new QuestionAnswerResponse(
+                    a.Question,
+                    a.Answer
+                ))
             ))
-            .SingleOrDefaultAsync(cancellationToken);
+        );
 
-        return pollVotes is null
-            ? Result.Failure<PollVotesResponse>(PollErrors.PollNotFound)
-            : Result.Success(pollVotes);
+        return Result.Success(response);
     }
 
 
     public async Task<Result<IEnumerable<VotesPerDayResponse>>> GetPollVotesPerDayAsync(Guid pollId, CancellationToken cancellationToken = default)
     {
-        var isPollExist = await _context.Polls.AnyAsync(p => p.Id == pollId && p.IsPublished && p.StartedAt <= DateOnly.FromDateTime(DateTime.UtcNow)
+        var isPollExist = await _unitOfWork.Polls.AnyAsync(p => p.Id == pollId && p.IsPublished && p.StartedAt <= DateOnly.FromDateTime(DateTime.UtcNow)
                            && p.EndedAt >= DateOnly.FromDateTime(DateTime.UtcNow), cancellationToken);
         if (!isPollExist)
             return Result.Failure<IEnumerable<VotesPerDayResponse>>(PollErrors.PollNotFound);
 
-        var votesPerDay = await _context.Votes
-            .Where(x => x.PollId == pollId)
-            .GroupBy(x => new { Data = DateOnly.FromDateTime(x.SubmittedOn) })
-            .Select(g => new VotesPerDayResponse(
-                g.Key.Data,
-                g.Count()
-                )).ToListAsync(cancellationToken);
+        var votesPerDay = await _unitOfWork.Votes.GetVotesPerDayAsync(pollId, cancellationToken);
 
-        return Result.Success<IEnumerable<VotesPerDayResponse>>(votesPerDay);
+        var response = votesPerDay.Select(x => new VotesPerDayResponse(x.Date, x.Count));
+
+        return Result.Success(response);
     }
 
     public async Task<Result<IEnumerable<VotesPerQuestionResponse>>> GetPollVotesPerQuestionAsync(Guid pollId, CancellationToken cancellationToken = default)
     {
-        var isPollExist = await _context.Polls.AnyAsync(p => p.Id == pollId && p.IsPublished && p.StartedAt <= DateOnly.FromDateTime(DateTime.UtcNow)
+        var isPollExist = await _unitOfWork.Polls.AnyAsync(p => p.Id == pollId && p.IsPublished && p.StartedAt <= DateOnly.FromDateTime(DateTime.UtcNow)
                            && p.EndedAt >= DateOnly.FromDateTime(DateTime.UtcNow), cancellationToken);
         if (!isPollExist)
             return Result.Failure<IEnumerable<VotesPerQuestionResponse>>(PollErrors.PollNotFound);
 
-        var votesPerQuestion = await _context.VoteAnswers
-            .Where(x => x.Vote.PollId == pollId)
-            .Select(x => new VotesPerQuestionResponse(
-                x.Question.Content,
-                x.Question.Votes.GroupBy(x => new { AnswerId = x.Answer.Id, AnswerContent = x.Answer.Content })
-                .Select(g => new VotesPerAnswerResponse(
-                    g.Key.AnswerContent,
-                    g.Count()
-                    ))
-                )).ToListAsync(cancellationToken);
+        var votesPerQuestion = await _unitOfWork.Votes.GetVotesPerQuestionAsync(pollId, cancellationToken);
 
-        return Result.Success<IEnumerable<VotesPerQuestionResponse>>(votesPerQuestion);
+        var response = votesPerQuestion.Select(x => new VotesPerQuestionResponse(
+            x.QuestionContent,
+            x.VoteAnswers.Select(a => new VotesPerAnswerResponse(a.AnswerContent, a.Count))
+        ));
+
+        return Result.Success(response);
     }
 
 }

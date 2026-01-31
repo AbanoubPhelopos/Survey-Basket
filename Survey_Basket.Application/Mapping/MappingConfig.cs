@@ -1,7 +1,7 @@
 ﻿using Mapster;
 using Microsoft.AspNetCore.Identity.Data;
 using Survey_Basket.Application.Contracts.Question;
-using Survey_Basket.Domain.Models;
+using Survey_Basket.Domain.Entities;
 
 namespace Survey_Basket.Application.Mapping;
 

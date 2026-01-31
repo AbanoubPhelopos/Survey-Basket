@@ -1,10 +1,5 @@
 ﻿using FluentValidation;
-using Survey_Basket.Application.Abstraction.Const;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Survey_Basket.Application.Abstractions.Const;
 
 namespace Survey_Basket.Application.Contracts.User;
 

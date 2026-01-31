@@ -1,11 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Survey_Basket.Application.Abstraction;
+using Survey_Basket.Application.Abstractions.Const;
 using Survey_Basket.Application.Contracts.Polls;
 using Survey_Basket.Application.Services.AuthServices.Filter;
 using Survey_Basket.Application.Services.PollServices;
-using Survey_Basket.Infrastructure.Abstraction.Const;
-using SurveyBasket.Abstractions.Consts;
+
 
 namespace Survey_Basket.Api.Controllers;
 

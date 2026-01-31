@@ -1,11 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Survey_Basket.Application.Abstraction;
+using Survey_Basket.Application.Abstractions.Const;
 using Survey_Basket.Application.Contracts.User;
 using Survey_Basket.Application.Extensions;
 using Survey_Basket.Application.Services.User;
-using System.Security.Claims;
 
 namespace Survey_Basket.Api.Controllers;
 
@@ -38,7 +36,7 @@ public class AccountController(UserServices userServices) : ControllerBase
     {
         var userId = User.GetUserId();
         var result = await _userServices.ChangePassword(userId, request, cancellationToken);
-        return result.IsSuccess ?  NoContent()
+        return result.IsSuccess ? NoContent()
             : result.ToProblemDetails();
     }
 }

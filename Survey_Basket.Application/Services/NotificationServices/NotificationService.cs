@@ -1,21 +1,21 @@
-﻿
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Survey_Basket.Application.Helpers;
+using Survey_Basket.Domain.Abstractions;
+using Survey_Basket.Domain.Entities;
 using Survey_Basket.Domain.Models;
-using Survey_Basket.Infrastructure.Data;
 
 namespace Survey_Basket.Application.Services.NotificationServices;
 
 public class NotificationService(
-    ApplicationDbContext context,
+    IUnitOfWork unitOfWork,
     UserManager<ApplicationUser> userManager,
     IHttpContextAccessor httpContextAccessor,
     IEmailSender emailSender) : INotificationService
 {
-    private readonly ApplicationDbContext _context = context;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly UserManager<ApplicationUser> _userManager = userManager;
     private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
     private readonly IEmailSender _emailSender = emailSender;
@@ -26,16 +26,13 @@ public class NotificationService(
 
         if (pollId.HasValue)
         {
-            var poll = await _context.Polls.SingleOrDefaultAsync(x => x.Id == pollId && x.IsPublished);
+            var poll = await _unitOfWork.Polls.GetAsync(x => x.Id == pollId && x.IsPublished, null, default);
 
             polls = [poll!];
         }
         else
         {
-            polls = await _context.Polls
-                .Where(x => x.IsPublished && x.StartedAt == DateOnly.FromDateTime(DateTime.UtcNow))
-                .AsNoTracking()
-                .ToListAsync();
+            polls = await _unitOfWork.Polls.GetAllAsync(x => x.IsPublished && x.StartedAt == DateOnly.FromDateTime(DateTime.UtcNow), null, default);
         }
 
         //TODO: Select members only

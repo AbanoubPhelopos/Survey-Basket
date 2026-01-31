@@ -1,4 +1,4 @@
-﻿using Survey_Basket.Application.Abstraction;
+﻿using Survey_Basket.Application.Abstractions;
 using Survey_Basket.Application.Contracts.Votes;
 
 namespace Survey_Basket.Application.Services.VoteServices;

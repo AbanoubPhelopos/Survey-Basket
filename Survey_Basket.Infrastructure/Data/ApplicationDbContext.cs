@@ -1,12 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore;
-using Survey_Basket.Domain.Models;
-using System.Reflection;
-using System.Security.Claims;
-
-namespace Survey_Basket.Infrastructure.Data
+﻿namespace Survey_Basket.Infrastructure.Data
 {
     public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IHttpContextAccessor httpContextAccessor)
                 : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>(options)

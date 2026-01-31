@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Survey_Basket.Application.Abstraction;
+using Survey_Basket.Application.Abstractions;
+using Survey_Basket.Application.Abstractions.Const;
 using Survey_Basket.Application.Contracts.Authentication;
 using Survey_Basket.Application.Contracts.User;
 using Survey_Basket.Application.Services.AuthServices;
@@ -82,5 +83,5 @@ public class AuthController(IAuthService authService) : ControllerBase
         return result.IsSuccess
             ? Ok()
             : result.ToProblemDetails();
-    } 
+    }
 }

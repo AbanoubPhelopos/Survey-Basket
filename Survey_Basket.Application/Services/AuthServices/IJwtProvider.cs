@@ -1,4 +1,5 @@
-﻿using Survey_Basket.Domain.Models;
+﻿using Survey_Basket.Domain.Entities;
+using Survey_Basket.Domain.Models;
 
 namespace Survey_Basket.Application.Services.AuthServices;
 

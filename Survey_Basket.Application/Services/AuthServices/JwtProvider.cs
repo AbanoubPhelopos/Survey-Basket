@@ -6,6 +6,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using Survey_Basket.Domain.Entities;
 
 namespace Survey_Basket.Application.Services.AuthServices;
 

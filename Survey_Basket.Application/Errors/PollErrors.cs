@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
-using Survey_Basket.Application.Abstraction;
+using Survey_Basket.Application.Abstractions;
 
 namespace Survey_Basket.Application.Errors;
 

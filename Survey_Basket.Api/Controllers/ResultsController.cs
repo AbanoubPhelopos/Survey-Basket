@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Survey_Basket.Application.Abstraction;
+using Survey_Basket.Application.Abstractions;
+using Survey_Basket.Application.Abstractions.Const;
 using Survey_Basket.Application.Services.ResultServices;
 
 namespace Survey_Basket.Api.Controllers
@@ -8,13 +9,9 @@ namespace Survey_Basket.Api.Controllers
     [Route("api/polls/{pollId:guid}/[controller]")]
     [ApiController]
     [Authorize]
-    public class ResultsController : ControllerBase
+    public class ResultsController(IResultService resultService) : ControllerBase
     {
-        private readonly IResultService _resultService;
-        public ResultsController(IResultService resultService)
-        {
-            _resultService = resultService;
-        }
+        private readonly IResultService _resultService = resultService;
 
         [HttpGet("row-data")]
         public async Task<IActionResult> GetResults([FromRoute] Guid pollId, CancellationToken cancellationToken)

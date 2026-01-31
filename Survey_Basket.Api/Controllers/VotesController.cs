@@ -1,26 +1,21 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Survey_Basket.Application.Abstraction;
+using Survey_Basket.Application.Abstractions.Const;
 using Survey_Basket.Application.Contracts.Votes;
 using Survey_Basket.Application.Extensions;
 using Survey_Basket.Application.Services.QuestionServices;
 using Survey_Basket.Application.Services.VoteServices;
-using Survey_Basket.Infrastructure.Abstraction.Const;
 
 namespace Survey_Basket.Api.Controllers;
 
 [Route("api/polls/{pollId:guid}/[controller]")]
 [ApiController]
 [Authorize(Roles = DefaultRoles.Member)]
-public class VotesController : ControllerBase
+public class VotesController(IQuestionService questionService, IVoteService voteService) : ControllerBase
 {
-    private readonly IQuestionService _questionService;
-    private readonly IVoteService _voteService;
-    public VotesController(IQuestionService questionService, IVoteService voteService)
-    {
-        _voteService = voteService;
-        _questionService = questionService;
-    }
+    private readonly IQuestionService _questionService = questionService;
+    private readonly IVoteService _voteService = voteService;
+
     [HttpGet("")]
     public IActionResult Start([FromRoute] Guid pollId, CancellationToken cancellationToken)
     {

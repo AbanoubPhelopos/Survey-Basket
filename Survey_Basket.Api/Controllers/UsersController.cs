@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Survey_Basket.Application.Abstractions.Const;
 using Survey_Basket.Application.Services.AuthServices.Filter;
 using Survey_Basket.Application.Services.User;
-using SurveyBasket.Abstractions.Consts;
 
 namespace Survey_Basket.Api.Controllers;
 

@@ -4,19 +4,18 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.WebUtilities;
 using System.Text;
-using Mapster;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Survey_Basket.Application.Abstraction;
+using Survey_Basket.Application.Abstractions;
 using Survey_Basket.Application.Contracts.Authentication;
 using Survey_Basket.Application.Contracts.User;
 using Survey_Basket.Application.Errors;
 using Survey_Basket.Application.Helpers;
-using Survey_Basket.Application.Services.AuthServices;
-using Survey_Basket.Domain.Models;
-using Survey_Basket.Infrastructure.Abstraction.Const;
-using Survey_Basket.Infrastructure.Data;
+using Survey_Basket.Domain.Abstractions;
+using Survey_Basket.Domain.Entities;
+using Mapster;
+using Microsoft.EntityFrameworkCore;
+using Survey_Basket.Application.Abstractions.Const;
 
 namespace Survey_Basket.Application.Services.AuthServices;
 
@@ -27,7 +26,7 @@ public class AuthService(
     ILogger<AuthService> logger,
     IEmailSender emailSender,
     IHttpContextAccessor httpContextAccessor,
-    ApplicationDbContext context) : IAuthService
+    IUnitOfWork unitOfWork) : IAuthService
 {
     private readonly UserManager<ApplicationUser> _userManager = userManager;
     private readonly SignInManager<ApplicationUser> _signInManager = signInManager;
@@ -35,7 +34,7 @@ public class AuthService(
     private readonly ILogger<AuthService> _logger = logger;
     private readonly IEmailSender _emailSender = emailSender;
     private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
-    private readonly ApplicationDbContext _context = context;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
     private readonly int _refreshTokenExpiryDays = 14;
 
@@ -233,7 +232,7 @@ public class AuthService(
 
         return Result.Failure(new Error(error.Code, error.Description, StatusCodes.Status400BadRequest));
     }
-    
+
     public async Task<Result> ResendConfirmEmailAsync(ResendConfirmationEmailRequest request)
     {
         if (await _userManager.FindByEmailAsync(request.Email) is not { } user)
@@ -340,24 +339,7 @@ public class AuthService(
     {
         var userRoles = await _userManager.GetRolesAsync(user);
 
-        //var userPermissions = await _context.Roles
-        //    .Join(_context.RoleClaims,
-        //        role => role.Id,
-        //        claim => claim.RoleId,
-        //        (role, claim) => new { role, claim }
-        //    )
-        //    .Where(x => userRoles.Contains(x.role.Name!))
-        //    .Select(x => x.claim.ClaimValue!)
-        //    .Distinct()
-        //    .ToListAsync(cancellationToken);
-
-        var userPermissions = await (from r in _context.Roles
-                                     join p in _context.RoleClaims
-                                     on r.Id equals p.RoleId
-                                     where userRoles.Contains(r.Name!)
-                                     select p.ClaimValue!)
-                                     .Distinct()
-                                     .ToListAsync(cancellationToken);
+        var userPermissions = await _unitOfWork.Roles.GetPermissionsByRolesAsync(userRoles, cancellationToken);
 
         return (userRoles, userPermissions);
     }
