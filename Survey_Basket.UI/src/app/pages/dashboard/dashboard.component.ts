@@ -130,8 +130,13 @@ import { AuthService } from '../../core/services/auth.service';
                    </div>
                    
                    <div class="flex gap-2">
-                     <button class="flex-1 px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm font-medium rounded-lg transition-colors text-center border border-gray-200">
+                     <button [routerLink]="['/polls', poll.id, 'edit']" class="flex-1 px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm font-medium rounded-lg transition-colors text-center border border-gray-200">
                        Edit
+                     </button>
+                     <button (click)="deletePoll(poll.id)" class="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 text-sm font-medium rounded-lg transition-colors text-center border border-red-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
                      </button>
                      <button [routerLink]="['/polls', poll.id, 'results']" class="flex-1 px-3 py-2 bg-primary-50 hover:bg-primary-100 text-primary-700 text-sm font-medium rounded-lg transition-colors text-center border border-primary-100">
                        Results
@@ -200,6 +205,20 @@ export class DashboardComponent implements OnInit {
   changePage(page: number) {
     this.filters.pageNumber = page;
     this.loadPolls();
+  }
+
+  deletePoll(id: string) {
+    if (confirm('Are you sure you want to delete this poll? This action cannot be undone.')) {
+      this.pollService.deletePoll(id).subscribe({
+        next: () => {
+          this.loadPolls();
+        },
+        error: (err) => {
+          console.error(err);
+          alert('Failed to delete poll.');
+        }
+      });
+    }
   }
 
   logout() {

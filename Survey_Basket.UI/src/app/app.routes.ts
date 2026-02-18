@@ -3,6 +3,7 @@ import { LoginComponent } from './pages/auth/login.component';
 import { RegisterComponent } from './pages/auth/register.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { CreatePollComponent } from './pages/polls/create-poll.component';
+import { EditPollComponent } from './pages/polls/edit-poll.component';
 import { VoteComponent } from './pages/polls/vote.component';
 import { ResultsComponent } from './pages/polls/results.component';
 import { UsersComponent } from './pages/admin/users.component';
@@ -21,6 +22,11 @@ export const routes: Routes = [
   { 
     path: 'polls/new', 
     component: CreatePollComponent,
+    canActivate: [authGuard]
+  },
+  { 
+    path: 'polls/:id/edit', 
+    component: EditPollComponent,
     canActivate: [authGuard]
   },
   { 
