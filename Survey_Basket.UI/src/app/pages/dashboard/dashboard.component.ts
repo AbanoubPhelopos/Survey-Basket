@@ -125,7 +125,7 @@ import { AuthService } from '../../core/services/auth.service';
                      <button class="flex-1 px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm font-medium rounded-lg transition-colors text-center border border-gray-200">
                        Edit
                      </button>
-                     <button class="flex-1 px-3 py-2 bg-primary-50 hover:bg-primary-100 text-primary-700 text-sm font-medium rounded-lg transition-colors text-center border border-primary-100">
+                     <button [routerLink]="['/polls', poll.id, 'results']" class="flex-1 px-3 py-2 bg-primary-50 hover:bg-primary-100 text-primary-700 text-sm font-medium rounded-lg transition-colors text-center border border-primary-100">
                        Results
                      </button>
                      <button *ngIf="poll.isPublished" [routerLink]="['/polls', poll.id, 'vote']" class="flex-1 px-3 py-2 bg-green-50 hover:bg-green-100 text-green-700 text-sm font-medium rounded-lg transition-colors text-center border border-green-100">
