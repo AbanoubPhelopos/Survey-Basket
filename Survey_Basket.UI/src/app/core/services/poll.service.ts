@@ -24,6 +24,10 @@ export class PollService {
     return this.http.get<PagedList<PollResponse>>(this.apiUrl, { params });
   }
 
+  getCurrentPolls(): Observable<PollResponse[]> {
+    return this.http.get<PollResponse[]>(`${this.apiUrl}/current`);
+  }
+
   getPoll(id: string): Observable<Poll> {
     return this.http.get<Poll>(`${this.apiUrl}/${id}`);
   }
