@@ -5,13 +5,14 @@ Survey Basket is a robust and scalable Web API built with .NET 9, designed to fa
 
 ## Features
 - **User Management**: Secure user registration and authentication using ASP.NET Core Identity and JWT Bearer tokens.
-- **Role-Based Access Control (RBAC)**: Granular permission management with custom roles and policies.
+- **Role-Based Access Control (RBAC)**: Granular permission management using custom Policies and Requirements (`PermissionAuthorizationHandler`).
 - **Poll Management**: Create, update, delete, and toggle the status of polls.
 - **Question Management**: Add and manage questions for each poll.
 - **Voting System**: Secure and validated voting mechanism.
 - **Results & Analytics**: View detailed results of polls.
 - **Background Jobs**: Automated tasks (e.g., daily notifications) using Hangfire.
 - **Validation**: Comprehensive request validation using FluentValidation.
+- **Caching**: Response caching using built-in mechanisms and HybridCache.
 - **Logging**: Structured logging with Serilog.
 - **Documentation**: Interactive API documentation via Swagger UI.
 
@@ -21,6 +22,8 @@ Survey Basket is a robust and scalable Web API built with .NET 9, designed to fa
 - **ORM**: Entity Framework Core
 - **Authentication**: JWT (JSON Web Tokens)
 - **Mapping**: Mapster
+- **Caching**: HybridCache (Microsoft.Extensions.Caching.Hybrid)
+- **Email**: MailKit
 - **Validation**: FluentValidation
 - **Background Jobs**: Hangfire (with PostgreSQL storage)
 - **Logging**: Serilog
@@ -28,10 +31,31 @@ Survey Basket is a robust and scalable Web API built with .NET 9, designed to fa
 
 ## Architecture
 The solution is structured following the Clean Architecture pattern:
-- **Survey_Basket.Api**: The entry point of the application (Controllers, Middleware).
-- **Survey_Basket.Application**: Business logic, Use Cases, Interfaces, DTOs, and Validators.
-- **Survey_Basket.Domain**: Enterprise logic, Entities, and Value Objects.
-- **Survey_Basket.Infrastructure**: Implementation of external concerns (Database, Identity, File System, etc.).
+
+### **Survey_Basket.Api**
+The entry point of the application. It contains Controllers, Middleware, and API configurations. It depends on the Application and Infrastructure layers.
+
+### **Survey_Basket.Application**
+Contains the core business logic and use cases. It defines interfaces and abstractions that are implemented by the Infrastructure layer.
+- **Services**: Business logic implementations (e.g., `PollService`, `AuthService`).
+- **Contracts**: DTOs (Data Transfer Objects) for requests and responses.
+- **Abstractions**: Core interfaces and base classes (e.g., `Result`, `Error`, `IUnitOfWork`), and Constants (in `Const`).
+- **Mapping**: Mapster configurations.
+- **Validators**: FluentValidation rules.
+- **Settings**: Configuration classes (e.g., `MailSettings`).
+- **Templates**: Email templates.
+
+### **Survey_Basket.Domain**
+The heart of the application, containing enterprise logic and entities.
+- **Entities**: Domain models (e.g., `Poll`, `Question`, `Vote`, `ApplicationUser`).
+- **Abstractions**: Repository interfaces (`generate generic repository interface`).
+
+### **Survey_Basket.Infrastructure**
+Implementation of external concerns.
+- **Persistence**: Database context (`ApplicationDbContext`), Repositories, and Unit of Work implementation.
+- **Configurations**: Entity Framework Core configurations for database entities.
+- **Services**: Infrastructure-specific services (e.g., Email Service).
+- **DependencyInjection**: Registers all infrastructure services.
 
 ## Getting Started
 
@@ -68,4 +92,4 @@ Once the application is running, you can access the Swagger UI to explore and te
 ### Background Jobs Dashboard
 Monitor background jobs via the Hangfire Dashboard:
 - URL: `https://localhost:7194/jobs`
-- *Note: Authentication may be required based on configuration.*
+- **Authentication**: Secured with Basic Authentication (configured in `appsettings.json` under `HangfireSettings`).

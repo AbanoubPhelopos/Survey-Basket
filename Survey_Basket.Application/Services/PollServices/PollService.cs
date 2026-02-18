@@ -1,4 +1,4 @@
-﻿using Hangfire;
+using Hangfire;
 using Mapster;
 using Survey_Basket.Application.Abstractions;
 using Survey_Basket.Application.Contracts.Polls;
@@ -6,6 +6,8 @@ using Survey_Basket.Application.Errors;
 using Survey_Basket.Application.Services.NotificationServices;
 using Survey_Basket.Domain.Abstractions;
 using Survey_Basket.Domain.Entities;
+
+using Survey_Basket.Application.Contracts.Common;
 
 namespace Survey_Basket.Application.Services.PollServices;
 
@@ -53,11 +55,20 @@ public class PollService(IUnitOfWork unitOfWork, INotificationService notificati
             : Result.Failure<PollResponse>(PollErrors.PollNotFound);
     }
 
-    public async Task<Result<IEnumerable<PollResponse>>> Get(CancellationToken cancellationToken = default)
+    public async Task<Result<PagedList<PollResponse>>> Get(RequestFilters filters, CancellationToken cancellationToken = default)
     {
-        var polls = await _unitOfWork.Repository<Poll>().GetAllAsync(cancellationToken);
-        var response = polls.Adapt<IEnumerable<PollResponse>>();
-        return Result.Success(response);
+        var (polls, totalCount) = await _unitOfWork.Repository<Poll>().GetPagedAsync(
+            filters.PageNumber,
+            filters.PageSize,
+            filters.SortColumn,
+            filters.SortDirection,
+            p => string.IsNullOrEmpty(filters.SearchTerm) || p.Title.Contains(filters.SearchTerm),
+            cancellationToken);
+
+        var pollResponses = polls.Adapt<IEnumerable<PollResponse>>();
+        var result = new PagedList<PollResponse>(pollResponses, filters.PageNumber, totalCount, filters.PageSize);
+
+        return Result.Success(result);
     }
 
     public async Task<Result<IEnumerable<PollResponse>>> GetCurrent(CancellationToken cancellationToken = default)

@@ -21,4 +21,12 @@ public interface IBaseRepository<TEntity> where TEntity : class
 
     Task<TEntity?> GetAsync(Expression<Func<TEntity, bool>> predicate, string[]? includes = null, CancellationToken cancellationToken = default);
     Task<IEnumerable<TEntity>> GetAllAsync(Expression<Func<TEntity, bool>> predicate, string[]? includes = null, CancellationToken cancellationToken = default);
+
+    Task<(IEnumerable<TEntity> Items, int TotalCount)> GetPagedAsync(
+        int pageNumber, 
+        int pageSize, 
+        string? sortColumn = null, 
+        string? sortDirection = "ASC", 
+        Expression<Func<TEntity, bool>>? predicate = null, 
+        CancellationToken cancellationToken = default);
 }

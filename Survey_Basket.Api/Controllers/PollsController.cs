@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Survey_Basket.Application.Abstractions.Const;
 using Survey_Basket.Application.Contracts.Polls;
 using Survey_Basket.Application.Services.AuthServices.Filter;
 using Survey_Basket.Application.Services.PollServices;
 
+
+using Survey_Basket.Application.Contracts.Common;
 
 namespace Survey_Basket.Api.Controllers;
 
@@ -16,9 +18,9 @@ public class PollsController(IPollService pollService) : ControllerBase
 
     [HttpGet]
     [HasPermission(Permissions.GetPolls)]
-    public async Task<IActionResult> GetPolls(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetPolls([FromQuery] RequestFilters filters, CancellationToken cancellationToken)
     {
-        var result = await _pollService.Get(cancellationToken);
+        var result = await _pollService.Get(filters, cancellationToken);
         return result.IsSuccess
             ? Ok(result.Value)
             : result.ToProblemDetails();

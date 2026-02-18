@@ -1,5 +1,7 @@
 using System.Linq.Expressions;
 
+using System.Linq.Dynamic.Core;
+
 namespace Survey_Basket.Infrastructure.Persistence.Repositories;
 
 public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : class
@@ -12,6 +14,37 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         _context = context;
         _dbSet = _context.Set<TEntity>();
     }
+
+    public async Task<(IEnumerable<TEntity> Items, int TotalCount)> GetPagedAsync(
+        int pageNumber,
+        int pageSize,
+        string? sortColumn = null,
+        string? sortDirection = "ASC",
+        Expression<Func<TEntity, bool>>? predicate = null,
+        CancellationToken cancellationToken = default)
+    {
+        IQueryable<TEntity> query = _dbSet;
+
+        if (predicate is not null)
+        {
+            query = query.Where(predicate);
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(sortColumn))
+        {
+            query = query.OrderBy($"{sortColumn} {sortDirection}");
+        }
+
+        var items = await query
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
+    }
+
 
     public async Task<TEntity?> GetByIdAsync(object id, CancellationToken cancellationToken = default)
     {
