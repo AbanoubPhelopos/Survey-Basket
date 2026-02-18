@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Survey_Basket.Infrastructure.Data;
 using Xunit;
@@ -15,6 +17,19 @@ public abstract class BaseIntegrationTest : IClassFixture<IntegrationTestWebAppF
         _scope = factory.Services.CreateScope();
         HttpClient = factory.CreateClient();
         DbContext = _scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        // Set up fake HttpContext so ApplicationDbContext.SaveChangesAsync 
+        // can populate CreatedById/UpdatedById from HttpContext.User
+        var httpContextAccessor = _scope.ServiceProvider.GetRequiredService<IHttpContextAccessor>();
+        httpContextAccessor.HttpContext = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(new ClaimsIdentity(new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
+                new Claim(ClaimTypes.Name, "TestUser"),
+            }, "Test"))
+        };
+
         DbContext.Database.EnsureCreated();
     }
 

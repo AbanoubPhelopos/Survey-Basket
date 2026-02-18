@@ -84,29 +84,31 @@ try
     app.UseSerilogRequestLogging();
     app.UseHttpsRedirection();
 
-    app.UseHangfireDashboard("/jobs", new DashboardOptions
+    if (!app.Environment.IsEnvironment("Testing"))
     {
-        DashboardTitle = "Survey Basket - Background Jobs",
-        Authorization = [
-            new HangfireCustomBasicAuthenticationFilter
-            {
-                User = app.Configuration.GetValue<string>("HangfireSettings:username"),
-                Pass = app.Configuration.GetValue<string>("HangfireSettings:password")
-            }
-        ],
-        //IsReadOnlyFunc = (DashboardContext context) => true
-    });
+        app.UseHangfireDashboard("/jobs", new DashboardOptions
+        {
+            DashboardTitle = "Survey Basket - Background Jobs",
+            Authorization = [
+                new HangfireCustomBasicAuthenticationFilter
+                {
+                    User = app.Configuration.GetValue<string>("HangfireSettings:username"),
+                    Pass = app.Configuration.GetValue<string>("HangfireSettings:password")
+                }
+            ],
+            //IsReadOnlyFunc = (DashboardContext context) => true
+        });
 
+        var scopeFactory = app.Services.GetRequiredService<IServiceScopeFactory>();
+        using var scope = scopeFactory.CreateScope();
+        var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
 
-    var scopeFactory = app.Services.GetRequiredService<IServiceScopeFactory>();
-    using var scope = scopeFactory.CreateScope();
-    var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
-
-    RecurringJob.AddOrUpdate(
-        "send-daily-poll-notification",
-        () => notificationService.SendNewPollsNotification(null),
-        Cron.Daily
-    );
+        RecurringJob.AddOrUpdate(
+            "send-daily-poll-notification",
+            () => notificationService.SendNewPollsNotification(null),
+            Cron.Daily
+        );
+    }
 
 
     app.UseCors();

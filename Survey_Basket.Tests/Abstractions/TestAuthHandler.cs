@@ -16,8 +16,31 @@ public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        var claims = new[] { new Claim(ClaimTypes.Name, "TestUser"), new Claim("permissions", "polls:read") };
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.Name, "TestUser"),
+            new(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
+            // Add all permissions so integration tests can access all endpoints
+            new("permissions", "polls:read"),
+            new("permissions", "polls:add"),
+            new("permissions", "polls:update"),
+            new("permissions", "polls:delete"),
+            new("permissions", "questions:read"),
+            new("permissions", "questions:add"),
+            new("permissions", "questions:update"),
+            new("permissions", "users:read"),
+            new("permissions", "users:add"),
+            new("permissions", "users:update"),
+            new("permissions", "roles:read"),
+            new("permissions", "roles:add"),
+            new("permissions", "roles:update"),
+            new("permissions", "results:read"),
+        };
+
         var identity = new ClaimsIdentity(claims, "Test");
+        identity.AddClaim(new Claim(ClaimTypes.Role, "Admin"));
+        identity.AddClaim(new Claim(ClaimTypes.Role, "Member"));
+
         var principal = new ClaimsPrincipal(identity);
         var ticket = new AuthenticationTicket(principal, "Test");
 
