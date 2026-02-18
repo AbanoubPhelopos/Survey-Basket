@@ -15,6 +15,12 @@ export interface LoginResponse {
   refreshToken: string;
   refreshTokenExpiration: Date;
   expiresIn: number;
+  roles: string[];
+  permissions: string[];
+  firstName: string;
+  lastName: string;
+  email: string;
+  userId: string;
 }
 
 export interface User {
@@ -23,4 +29,5 @@ export interface User {
   firstName: string;
   lastName: string;
   permissions: string[];
+  roles: string[];
 }

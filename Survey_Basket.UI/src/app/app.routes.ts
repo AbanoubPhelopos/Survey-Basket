@@ -5,6 +5,7 @@ import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { CreatePollComponent } from './pages/polls/create-poll.component';
 import { VoteComponent } from './pages/polls/vote.component';
 import { ResultsComponent } from './pages/polls/results.component';
+import { UsersComponent } from './pages/admin/users.component';
 import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
@@ -29,6 +30,11 @@ export const routes: Routes = [
   { 
     path: 'polls/:id/results', 
     component: ResultsComponent,
+    canActivate: [authGuard]
+  },
+  { 
+    path: 'users', 
+    component: UsersComponent,
     canActivate: [authGuard]
   },
   { path: '**', redirectTo: 'dashboard' }

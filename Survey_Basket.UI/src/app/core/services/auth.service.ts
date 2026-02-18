@@ -51,8 +51,16 @@ export class AuthService {
 
   private setSession(authResult: LoginResponse): void {
     localStorage.setItem(this.tokenKey, authResult.token);
-    // decode token or fetch user profile... simplified for now
-    const user: User = { id: '1', email: 'test@example.com', firstName: 'Test', lastName: 'User', permissions: [] };
+    
+    const user: User = { 
+      id: authResult.userId, 
+      email: authResult.email, 
+      firstName: authResult.firstName, 
+      lastName: authResult.lastName, 
+      permissions: authResult.permissions || [],
+      roles: authResult.roles || []
+    };
+    
     localStorage.setItem(this.userKey, JSON.stringify(user));
     this.user.set(user);
   }
