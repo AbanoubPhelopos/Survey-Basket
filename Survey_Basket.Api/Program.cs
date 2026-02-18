@@ -82,7 +82,7 @@ try
 
 
     app.UseSerilogRequestLogging();
-    app.UseHttpsRedirection();
+    // app.UseHttpsRedirection();
 
     if (!app.Environment.IsEnvironment("Testing"))
     {

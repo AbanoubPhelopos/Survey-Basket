@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { LoginComponent } from './pages/auth/login.component';
 import { RegisterComponent } from './pages/auth/register.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
+import { CreatePollComponent } from './pages/polls/create-poll.component';
 import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
@@ -11,6 +12,11 @@ export const routes: Routes = [
   { 
     path: 'dashboard', 
     component: DashboardComponent,
+    canActivate: [authGuard]
+  },
+  { 
+    path: 'polls/new', 
+    component: CreatePollComponent,
     canActivate: [authGuard]
   },
   { path: '**', redirectTo: 'dashboard' }

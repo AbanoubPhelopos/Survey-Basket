@@ -9,41 +9,72 @@ import { AuthService } from '../../core/services/auth.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
   template: `
-    <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div class="max-w-md w-full space-y-8">
-        <div>
-          <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">Sign in to your account</h2>
+    <div class="min-h-screen flex bg-gray-50">
+      <!-- Left: Decorative Image/Gradient -->
+      <div class="hidden lg:flex w-1/2 bg-gradient-to-br from-primary-600 to-indigo-800 items-center justify-center relative overflow-hidden">
+        <div class="absolute inset-0 bg-black/10"></div>
+        <div class="relative z-10 text-center text-white px-12">
+          <h1 class="text-5xl font-bold mb-6 tracking-tight">Survey Basket</h1>
+          <p class="text-xl opacity-90 leading-relaxed">
+            Create, manage, and analyze surveys effortlessly. <br>
+            Empower your decisions with real data.
+          </p>
         </div>
-        <form class="mt-8 space-y-6" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-          <div class="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label for="email-address" class="sr-only">Email address</label>
-              <input id="email-address" formControlName="email" type="email" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Email address">
-            </div>
-            <div>
-              <label for="password" class="sr-only">Password</label>
-              <input id="password" formControlName="password" type="password" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Password">
-            </div>
+        <!-- Abstract decorative circles -->
+        <div class="absolute top-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+        <div class="absolute bottom-0 right-0 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
+      </div>
+
+      <!-- Right: Login Form -->
+      <div class="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 lg:p-16">
+        <div class="w-full max-w-md space-y-8">
+          <div class="text-center lg:text-left">
+            <h2 class="text-3xl font-bold text-gray-900 tracking-tight">Welcome back</h2>
+            <p class="mt-2 text-sm text-gray-600">
+              Please enter your details to sign in.
+            </p>
           </div>
 
-          <div>
-            <button type="submit" [disabled]="loginForm.invalid || isLoading" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50">
-              <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-                <!-- Heroicon name: solid/lock-closed -->
-                <svg class="h-5 w-5 text-indigo-500 group-hover:text-indigo-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
-                </svg>
-              </span>
+          <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="mt-8 space-y-6">
+            <div class="space-y-4">
+              <div>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email address</label>
+                <input id="email" type="email" formControlName="email" class="input-fancy" placeholder="Enter your email">
+                <p *ngIf="loginForm.get('email')?.touched && loginForm.get('email')?.invalid" class="mt-1 text-xs text-red-500">
+                  Please enter a valid email address.
+                </p>
+              </div>
+
+              <div>
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input id="password" type="password" formControlName="password" class="input-fancy" placeholder="••••••••">
+                <p *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.invalid" class="mt-1 text-xs text-red-500">
+                  Password is required.
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between">
+              <div class="flex items-center">
+                <input id="remember-me" type="checkbox" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                <label for="remember-me" class="ml-2 block text-sm text-gray-600">Remember me</label>
+              </div>
+              <div class="text-sm">
+                <a href="#" class="font-medium text-primary-600 hover:text-primary-500 transition-colors">Forgot password?</a>
+              </div>
+            </div>
+
+            <button type="submit" [disabled]="loginForm.invalid || isLoading" class="btn-primary flex justify-center items-center gap-2">
+              <span *ngIf="isLoading" class="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
               {{ isLoading ? 'Signing in...' : 'Sign in' }}
             </button>
-          </div>
-          
-          <div class="text-sm text-center">
-            <a routerLink="/register" class="font-medium text-indigo-600 hover:text-indigo-500">
-              Don't have an account? Register here
-            </a>
-          </div>
-        </form>
+
+            <div class="mt-6 text-center text-sm text-gray-600">
+              Don't have an account? 
+              <a routerLink="/register" class="font-semibold text-primary-600 hover:text-primary-500 transition-colors">Sign up for free</a>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   `
@@ -71,7 +102,8 @@ export class LoginComponent {
         error: (err) => {
           console.error(err);
           this.isLoading = false;
-          // Handle error (show toast/alert)
+          // Ideally show a toast notification here
+          alert('Login failed. Please check your credentials.');
         }
       });
     }

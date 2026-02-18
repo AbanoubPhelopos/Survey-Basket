@@ -1,13 +1,13 @@
-﻿using Survey_Basket.Domain.Models;
+using Survey_Basket.Domain.Models;
 
 namespace Survey_Basket.Domain.Entities;
 
 public class AuditableEntity
 {
-    public string CreatedById { get; set; } = string.Empty;
+    public Guid CreatedById { get; set; }
     public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
 
-    public string? UpdatedById { get; set; }
+    public Guid? UpdatedById { get; set; }
     public DateTime? UpdatedOn { get; set; }
 
 

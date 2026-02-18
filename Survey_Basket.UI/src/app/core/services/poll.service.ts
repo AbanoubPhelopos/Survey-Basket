@@ -2,12 +2,13 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Poll, PollResponse, CreatePollRequest, UpdatePollRequest, RequestFilters, PagedList } from '../models/poll';
+import { API_BASE_URL } from '../constants/api.constants';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PollService {
-  private apiUrl = 'https://localhost:7232/api/polls'; // Adjust base URL
+  private apiUrl = `${API_BASE_URL}/polls`;
 
   constructor(private http: HttpClient) {}
 

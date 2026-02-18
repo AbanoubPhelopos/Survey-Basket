@@ -25,14 +25,22 @@ public class PollService(IUnitOfWork unitOfWork, INotificationService notificati
 
         try
         {
-            var entity = poll.Adapt<Poll>();
+            var entity = new Poll
+            {
+                Title = poll.Title,
+                Summary = poll.Summary,
+                StartedAt = poll.StartedAt,
+                EndedAt = poll.EndedAt,
+                IsPublished = false // Default
+            };
+            
             await _unitOfWork.Repository<Poll>().AddAsync(entity);
             await _unitOfWork.SaveChangesAsync();
             return Result.Success();
         }
-        catch
+        catch (Exception ex)
         {
-            return Result.Failure(PollErrors.PollCreationFailed);
+            return Result.Failure(new Error("Poll.Exception", ex.ToString(), 500));
         }
     }
 

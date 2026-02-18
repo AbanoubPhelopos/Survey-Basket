@@ -1,54 +1,66 @@
-﻿namespace Survey_Basket.Infrastructure.Data
+using System.Reflection;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using Survey_Basket.Domain.Entities;
+
+namespace Survey_Basket.Infrastructure.Data;
+
+public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IHttpContextAccessor httpContextAccessor)
+            : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>(options)
 {
-    public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IHttpContextAccessor httpContextAccessor)
-                : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>(options)
+    private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
+
+    public DbSet<Answer> Answers { get; set; } = null!;
+    public DbSet<Poll> Polls { get; set; } = null!;
+    public DbSet<Question> Questions { get; set; } = null!;
+    public DbSet<Vote> Votes { get; set; } = null!;
+    public DbSet<VoteAnswers> VoteAnswers { get; set; } = null!;
+
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
+        modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
 
-        public DbSet<Answer> Answers { get; set; } = null!;
-        public DbSet<Poll> Polls { get; set; } = null!;
-        public DbSet<Question> Questions { get; set; } = null!;
-        public DbSet<Vote> Votes { get; set; } = null!;
-        public DbSet<VoteAnswers> VoteAnswers { get; set; } = null!;
+        var cascadeFKs = modelBuilder.Model.GetEntityTypes()
+            .SelectMany(t => t.GetForeignKeys())
+            .Where(fk => !fk.IsOwnership && fk.DeleteBehavior == DeleteBehavior.Cascade);
 
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        foreach (var fk in cascadeFKs)
         {
-            modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
-
-            var cascadeFKs = modelBuilder.Model.GetEntityTypes()
-                .SelectMany(t => t.GetForeignKeys())
-                .Where(fk => !fk.IsOwnership && fk.DeleteBehavior == DeleteBehavior.Cascade);
-
-            foreach (var fk in cascadeFKs)
-            {
-                fk.DeleteBehavior = DeleteBehavior.Restrict;
-            }
-
-            base.OnModelCreating(modelBuilder);
+            fk.DeleteBehavior = DeleteBehavior.Restrict;
         }
 
-        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        base.OnModelCreating(modelBuilder);
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        var entries = ChangeTracker.Entries<AuditableEntity>();
+
+        foreach (var entry in entries)
         {
-            var entries = ChangeTracker.Entries<AuditableEntity>();
-
-            foreach (var entry in entries)
+            var currentUserId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            
+            Guid userIdGuid = Guid.Empty;
+            if (!string.IsNullOrEmpty(currentUserId))
             {
-                var currentUserId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
-
-                switch (entry.State)
-                {
-                    case EntityState.Added:
-                        entry.Property(x => x.CreatedById).CurrentValue = currentUserId!;
-
-                        break;
-                    case EntityState.Modified:
-                        entry.Property(x => x.UpdatedById).CurrentValue = currentUserId;
-                        entry.Property(x => x.UpdatedOn).CurrentValue = DateTime.UtcNow;
-                        break;
-                }
+                Guid.TryParse(currentUserId, out userIdGuid);
             }
-            return base.SaveChangesAsync(cancellationToken);
+
+            switch (entry.State)
+            {
+                case EntityState.Added:
+                    entry.Property(x => x.CreatedById).CurrentValue = userIdGuid;
+                    entry.Property(x => x.CreatedOn).CurrentValue = DateTime.UtcNow;
+                    break;
+                case EntityState.Modified:
+                    entry.Property(x => x.UpdatedById).CurrentValue = userIdGuid;
+                    entry.Property(x => x.UpdatedOn).CurrentValue = DateTime.UtcNow;
+                    break;
+            }
         }
+        return base.SaveChangesAsync(cancellationToken);
     }
 }

@@ -9,7 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Survey_Basket.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class CreateSystemTables : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -37,6 +37,7 @@ namespace Survey_Basket.Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     FirstName = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     LastName = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    IsDisabled = table.Column<bool>(type: "boolean", nullable: false),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -173,25 +174,23 @@ namespace Survey_Basket.Infrastructure.Migrations
                     IsPublished = table.Column<bool>(type: "boolean", nullable: false),
                     StartedAt = table.Column<DateOnly>(type: "date", nullable: false),
                     EndedAt = table.Column<DateOnly>(type: "date", nullable: true),
-                    CreatedById = table.Column<string>(type: "text", nullable: false),
+                    CreatedById = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedOn = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedById = table.Column<string>(type: "text", nullable: true),
-                    UpdatedOn = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    CreatedById1 = table.Column<Guid>(type: "uuid", nullable: false),
-                    UpdatedById1 = table.Column<Guid>(type: "uuid", nullable: true)
+                    UpdatedById = table.Column<Guid>(type: "uuid", nullable: true),
+                    UpdatedOn = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Polls", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Polls_AspNetUsers_CreatedById1",
-                        column: x => x.CreatedById1,
+                        name: "FK_Polls_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_Polls_AspNetUsers_UpdatedById1",
-                        column: x => x.UpdatedById1,
+                        name: "FK_Polls_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id");
                 });
@@ -227,25 +226,23 @@ namespace Survey_Basket.Infrastructure.Migrations
                     Content = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
                     PollId = table.Column<Guid>(type: "uuid", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    CreatedById = table.Column<string>(type: "text", nullable: false),
+                    CreatedById = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedOn = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedById = table.Column<string>(type: "text", nullable: true),
-                    UpdatedOn = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    CreatedById1 = table.Column<Guid>(type: "uuid", nullable: false),
-                    UpdatedById1 = table.Column<Guid>(type: "uuid", nullable: true)
+                    UpdatedById = table.Column<Guid>(type: "uuid", nullable: true),
+                    UpdatedOn = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Questions", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Questions_AspNetUsers_CreatedById1",
-                        column: x => x.CreatedById1,
+                        name: "FK_Questions_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_Questions_AspNetUsers_UpdatedById1",
-                        column: x => x.UpdatedById1,
+                        name: "FK_Questions_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id");
                     table.ForeignKey(
@@ -345,8 +342,8 @@ namespace Survey_Basket.Infrastructure.Migrations
 
             migrationBuilder.InsertData(
                 table: "AspNetUsers",
-                columns: new[] { "Id", "AccessFailedCount", "ConcurrencyStamp", "Email", "EmailConfirmed", "FirstName", "LastName", "LockoutEnabled", "LockoutEnd", "NormalizedEmail", "NormalizedUserName", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "SecurityStamp", "TwoFactorEnabled", "UserName" },
-                values: new object[] { new Guid("0199fd4b-3c1f-7eab-84c4-47f5aad20c86"), 0, "0199fd50-a461-715e-ae9c-ddf7d6ea249f", "admin@survey-basket.com", true, "System", "Admin", false, null, "ADMIN@SURVEY-BASKET.COM", "ADMIN@SURVEY-BASKET.COM", "AQAAAAIAAYagAAAAEKpmT4S7ZgT1MSi05zzZ52s35/cDGYOCqx14N8/+c8aB9Z9RgMilFy9XA7Y3lexE+g==", null, false, "F66F472946EC4BBB86994AFF718329A7", false, "admin@survey-basket.com" });
+                columns: new[] { "Id", "AccessFailedCount", "ConcurrencyStamp", "Email", "EmailConfirmed", "FirstName", "IsDisabled", "LastName", "LockoutEnabled", "LockoutEnd", "NormalizedEmail", "NormalizedUserName", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "SecurityStamp", "TwoFactorEnabled", "UserName" },
+                values: new object[] { new Guid("0199fd4b-3c1f-7eab-84c4-47f5aad20c86"), 0, "0199fd50-a461-715e-ae9c-ddf7d6ea249f", "admin@survey-basket.com", true, "System", false, "Admin", false, null, "ADMIN@SURVEY-BASKET.COM", "ADMIN@SURVEY-BASKET.COM", "AQAAAAIAAYagAAAAEKpmT4S7ZgT1MSi05zzZ52s35/cDGYOCqx14N8/+c8aB9Z9RgMilFy9XA7Y3lexE+g==", null, false, "F66F472946EC4BBB86994AFF718329A7", false, "admin@survey-basket.com" });
 
             migrationBuilder.InsertData(
                 table: "AspNetRoleClaims",
@@ -418,9 +415,9 @@ namespace Survey_Basket.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Polls_CreatedById1",
+                name: "IX_Polls_CreatedById",
                 table: "Polls",
-                column: "CreatedById1");
+                column: "CreatedById");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Polls_Title",
@@ -429,14 +426,14 @@ namespace Survey_Basket.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Polls_UpdatedById1",
+                name: "IX_Polls_UpdatedById",
                 table: "Polls",
-                column: "UpdatedById1");
+                column: "UpdatedById");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Questions_CreatedById1",
+                name: "IX_Questions_CreatedById",
                 table: "Questions",
-                column: "CreatedById1");
+                column: "CreatedById");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Questions_PollId_Content",
@@ -445,9 +442,9 @@ namespace Survey_Basket.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Questions_UpdatedById1",
+                name: "IX_Questions_UpdatedById",
                 table: "Questions",
-                column: "UpdatedById1");
+                column: "UpdatedById");
 
             migrationBuilder.CreateIndex(
                 name: "IX_VoteAnswers_AnswerId",

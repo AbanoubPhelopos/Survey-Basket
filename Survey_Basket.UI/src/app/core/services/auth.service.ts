@@ -3,12 +3,13 @@ import { Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { LoginRequest, LoginResponse, RegisterRequest, User } from '../models/auth';
+import { API_BASE_URL } from '../constants/api.constants';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'https://localhost:7232/api/auth'; // Adjust backend URL if needed
+  private apiUrl = `${API_BASE_URL}/auth`;
   private tokenKey = 'sb_token';
   private userKey = 'sb_user';
 
@@ -17,7 +18,7 @@ export class AuthService {
   constructor(private http: HttpClient, private router: Router) {}
 
   login(request: LoginRequest): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, request).pipe(
+    return this.http.post<LoginResponse>(`${this.apiUrl}`, request).pipe(
       tap(response => {
         this.setSession(response);
       })

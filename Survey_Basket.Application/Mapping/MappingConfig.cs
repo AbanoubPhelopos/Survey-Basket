@@ -15,15 +15,5 @@ public class MappingConfig : IRegister
 
         config.NewConfig<RegisterRequest, ApplicationUser>()
             .Map(dest => dest.UserName, src => src.Email);
-
-        // Poll entity has "Summary", but PollResponse DTO has "Description"
-        config.NewConfig<Poll, PollResponse>()
-            .Map(dest => dest.Description, src => src.Summary);
-
-        config.NewConfig<CreatePollRequests, Poll>()
-            .Map(dest => dest.Summary, src => src.Description);
-
-        config.NewConfig<UpdatePollRequests, Poll>()
-            .Map(dest => dest.Summary, src => src.Description);
     }
 }

@@ -2,7 +2,6 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Survey_Basket.Infrastructure.Data;
@@ -12,11 +11,9 @@ using Survey_Basket.Infrastructure.Data;
 namespace Survey_Basket.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251129173404_CreateSystemTables")]
-    partial class CreateSystemTables
+    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -235,7 +232,7 @@ namespace Survey_Basket.Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Survey_Basket.Domain.Models.Answer", b =>
+            modelBuilder.Entity("Survey_Basket.Domain.Entities.Answer", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -260,7 +257,7 @@ namespace Survey_Basket.Infrastructure.Migrations
                     b.ToTable("Answers");
                 });
 
-            modelBuilder.Entity("Survey_Basket.Domain.Models.ApplicationRole", b =>
+            modelBuilder.Entity("Survey_Basket.Domain.Entities.ApplicationRole", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -313,7 +310,7 @@ namespace Survey_Basket.Infrastructure.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Survey_Basket.Domain.Models.ApplicationUser", b =>
+            modelBuilder.Entity("Survey_Basket.Domain.Entities.ApplicationUser", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -337,6 +334,9 @@ namespace Survey_Basket.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
+
+                    b.Property<bool>("IsDisabled")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("LastName")
                         .IsRequired()
@@ -396,6 +396,7 @@ namespace Survey_Basket.Infrastructure.Migrations
                             Email = "admin@survey-basket.com",
                             EmailConfirmed = true,
                             FirstName = "System",
+                            IsDisabled = false,
                             LastName = "Admin",
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@SURVEY-BASKET.COM",
@@ -408,17 +409,13 @@ namespace Survey_Basket.Infrastructure.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Survey_Basket.Domain.Models.Poll", b =>
+            modelBuilder.Entity("Survey_Basket.Domain.Entities.Poll", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("CreatedById")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("CreatedById1")
+                    b.Property<Guid>("CreatedById")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedOn")
@@ -443,10 +440,7 @@ namespace Survey_Basket.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<string>("UpdatedById")
-                        .HasColumnType("text");
-
-                    b.Property<Guid?>("UpdatedById1")
+                    b.Property<Guid?>("UpdatedById")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedOn")
@@ -454,17 +448,17 @@ namespace Survey_Basket.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CreatedById1");
+                    b.HasIndex("CreatedById");
 
                     b.HasIndex("Title")
                         .IsUnique();
 
-                    b.HasIndex("UpdatedById1");
+                    b.HasIndex("UpdatedById");
 
                     b.ToTable("Polls");
                 });
 
-            modelBuilder.Entity("Survey_Basket.Domain.Models.Question", b =>
+            modelBuilder.Entity("Survey_Basket.Domain.Entities.Question", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -475,11 +469,7 @@ namespace Survey_Basket.Infrastructure.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
-                    b.Property<string>("CreatedById")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("CreatedById1")
+                    b.Property<Guid>("CreatedById")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedOn")
@@ -491,10 +481,7 @@ namespace Survey_Basket.Infrastructure.Migrations
                     b.Property<Guid>("PollId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("UpdatedById")
-                        .HasColumnType("text");
-
-                    b.Property<Guid?>("UpdatedById1")
+                    b.Property<Guid?>("UpdatedById")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedOn")
@@ -502,9 +489,9 @@ namespace Survey_Basket.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CreatedById1");
+                    b.HasIndex("CreatedById");
 
-                    b.HasIndex("UpdatedById1");
+                    b.HasIndex("UpdatedById");
 
                     b.HasIndex("PollId", "Content")
                         .IsUnique();
@@ -512,7 +499,7 @@ namespace Survey_Basket.Infrastructure.Migrations
                     b.ToTable("Questions");
                 });
 
-            modelBuilder.Entity("Survey_Basket.Domain.Models.Vote", b =>
+            modelBuilder.Entity("Survey_Basket.Domain.Entities.Vote", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -537,7 +524,7 @@ namespace Survey_Basket.Infrastructure.Migrations
                     b.ToTable("Votes");
                 });
 
-            modelBuilder.Entity("Survey_Basket.Domain.Models.VoteAnswers", b =>
+            modelBuilder.Entity("Survey_Basket.Domain.Entities.VoteAnswers", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -566,7 +553,7 @@ namespace Survey_Basket.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
-                    b.HasOne("Survey_Basket.Domain.Models.ApplicationRole", null)
+                    b.HasOne("Survey_Basket.Domain.Entities.ApplicationRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -575,7 +562,7 @@ namespace Survey_Basket.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>
                 {
-                    b.HasOne("Survey_Basket.Domain.Models.ApplicationUser", null)
+                    b.HasOne("Survey_Basket.Domain.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -584,7 +571,7 @@ namespace Survey_Basket.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
                 {
-                    b.HasOne("Survey_Basket.Domain.Models.ApplicationUser", null)
+                    b.HasOne("Survey_Basket.Domain.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -593,13 +580,13 @@ namespace Survey_Basket.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<System.Guid>", b =>
                 {
-                    b.HasOne("Survey_Basket.Domain.Models.ApplicationRole", null)
+                    b.HasOne("Survey_Basket.Domain.Entities.ApplicationRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Survey_Basket.Domain.Models.ApplicationUser", null)
+                    b.HasOne("Survey_Basket.Domain.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -608,16 +595,16 @@ namespace Survey_Basket.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>
                 {
-                    b.HasOne("Survey_Basket.Domain.Models.ApplicationUser", null)
+                    b.HasOne("Survey_Basket.Domain.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Survey_Basket.Domain.Models.Answer", b =>
+            modelBuilder.Entity("Survey_Basket.Domain.Entities.Answer", b =>
                 {
-                    b.HasOne("Survey_Basket.Domain.Models.Question", "Question")
+                    b.HasOne("Survey_Basket.Domain.Entities.Question", "Question")
                         .WithMany("Answers")
                         .HasForeignKey("QuestionId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -626,9 +613,9 @@ namespace Survey_Basket.Infrastructure.Migrations
                     b.Navigation("Question");
                 });
 
-            modelBuilder.Entity("Survey_Basket.Domain.Models.ApplicationUser", b =>
+            modelBuilder.Entity("Survey_Basket.Domain.Entities.ApplicationUser", b =>
                 {
-                    b.OwnsMany("Survey_Basket.Domain.Models.RefreshToken", "RefreshTokens", b1 =>
+                    b.OwnsMany("Survey_Basket.Domain.Entities.RefreshToken", "RefreshTokens", b1 =>
                         {
                             b1.Property<Guid>("UserId")
                                 .HasColumnType("uuid");
@@ -663,40 +650,40 @@ namespace Survey_Basket.Infrastructure.Migrations
                     b.Navigation("RefreshTokens");
                 });
 
-            modelBuilder.Entity("Survey_Basket.Domain.Models.Poll", b =>
+            modelBuilder.Entity("Survey_Basket.Domain.Entities.Poll", b =>
                 {
-                    b.HasOne("Survey_Basket.Domain.Models.ApplicationUser", "CreatedBy")
+                    b.HasOne("Survey_Basket.Domain.Entities.ApplicationUser", "CreatedBy")
                         .WithMany()
-                        .HasForeignKey("CreatedById1")
+                        .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Survey_Basket.Domain.Models.ApplicationUser", "UpdatedBy")
+                    b.HasOne("Survey_Basket.Domain.Entities.ApplicationUser", "UpdatedBy")
                         .WithMany()
-                        .HasForeignKey("UpdatedById1");
+                        .HasForeignKey("UpdatedById");
 
                     b.Navigation("CreatedBy");
 
                     b.Navigation("UpdatedBy");
                 });
 
-            modelBuilder.Entity("Survey_Basket.Domain.Models.Question", b =>
+            modelBuilder.Entity("Survey_Basket.Domain.Entities.Question", b =>
                 {
-                    b.HasOne("Survey_Basket.Domain.Models.ApplicationUser", "CreatedBy")
+                    b.HasOne("Survey_Basket.Domain.Entities.ApplicationUser", "CreatedBy")
                         .WithMany()
-                        .HasForeignKey("CreatedById1")
+                        .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Survey_Basket.Domain.Models.Poll", "Poll")
+                    b.HasOne("Survey_Basket.Domain.Entities.Poll", "Poll")
                         .WithMany("Questions")
                         .HasForeignKey("PollId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Survey_Basket.Domain.Models.ApplicationUser", "UpdatedBy")
+                    b.HasOne("Survey_Basket.Domain.Entities.ApplicationUser", "UpdatedBy")
                         .WithMany()
-                        .HasForeignKey("UpdatedById1");
+                        .HasForeignKey("UpdatedById");
 
                     b.Navigation("CreatedBy");
 
@@ -705,15 +692,15 @@ namespace Survey_Basket.Infrastructure.Migrations
                     b.Navigation("UpdatedBy");
                 });
 
-            modelBuilder.Entity("Survey_Basket.Domain.Models.Vote", b =>
+            modelBuilder.Entity("Survey_Basket.Domain.Entities.Vote", b =>
                 {
-                    b.HasOne("Survey_Basket.Domain.Models.Poll", "Poll")
+                    b.HasOne("Survey_Basket.Domain.Entities.Poll", "Poll")
                         .WithMany("Votes")
                         .HasForeignKey("PollId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Survey_Basket.Domain.Models.ApplicationUser", "User")
+                    b.HasOne("Survey_Basket.Domain.Entities.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -724,21 +711,21 @@ namespace Survey_Basket.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Survey_Basket.Domain.Models.VoteAnswers", b =>
+            modelBuilder.Entity("Survey_Basket.Domain.Entities.VoteAnswers", b =>
                 {
-                    b.HasOne("Survey_Basket.Domain.Models.Answer", "Answer")
+                    b.HasOne("Survey_Basket.Domain.Entities.Answer", "Answer")
                         .WithMany()
                         .HasForeignKey("AnswerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Survey_Basket.Domain.Models.Question", "Question")
+                    b.HasOne("Survey_Basket.Domain.Entities.Question", "Question")
                         .WithMany("Votes")
                         .HasForeignKey("QuestionId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Survey_Basket.Domain.Models.Vote", "Vote")
+                    b.HasOne("Survey_Basket.Domain.Entities.Vote", "Vote")
                         .WithMany("Answers")
                         .HasForeignKey("VoteId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -751,21 +738,21 @@ namespace Survey_Basket.Infrastructure.Migrations
                     b.Navigation("Vote");
                 });
 
-            modelBuilder.Entity("Survey_Basket.Domain.Models.Poll", b =>
+            modelBuilder.Entity("Survey_Basket.Domain.Entities.Poll", b =>
                 {
                     b.Navigation("Questions");
 
                     b.Navigation("Votes");
                 });
 
-            modelBuilder.Entity("Survey_Basket.Domain.Models.Question", b =>
+            modelBuilder.Entity("Survey_Basket.Domain.Entities.Question", b =>
                 {
                     b.Navigation("Answers");
 
                     b.Navigation("Votes");
                 });
 
-            modelBuilder.Entity("Survey_Basket.Domain.Models.Vote", b =>
+            modelBuilder.Entity("Survey_Basket.Domain.Entities.Vote", b =>
                 {
                     b.Navigation("Answers");
                 });
