@@ -1,5 +1,5 @@
 using Mapster;
-using Microsoft.AspNetCore.Identity.Data;
+using Survey_Basket.Application.Contracts.Authentication;
 using Survey_Basket.Application.Contracts.Polls;
 using Survey_Basket.Application.Contracts.Question;
 using Survey_Basket.Domain.Entities;
