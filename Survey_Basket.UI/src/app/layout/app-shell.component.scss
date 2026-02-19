@@ -42,6 +42,7 @@
 .shell__subtitle {
   margin: 0.1rem 0 0;
   font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.88);
 }
 
 .shell__nav {
@@ -66,6 +67,32 @@
   background: var(--bg-soft);
 }
 
+.shell__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.shell__action {
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.14);
+  color: #eef9ff;
+  border-radius: 999px;
+  padding: 0.45rem 0.75rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 140ms ease;
+}
+
+.shell__action:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.shell__action--danger {
+  border-color: rgba(220, 38, 38, 0.45);
+  color: #ffe4e6;
+}
+
 .shell__content {
   min-height: 0;
 }
@@ -77,6 +104,7 @@
 
   .shell__header {
     flex-direction: row;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     padding: 1rem 1.2rem;

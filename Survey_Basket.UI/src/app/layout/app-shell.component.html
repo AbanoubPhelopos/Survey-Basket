@@ -4,15 +4,24 @@
       <span class="shell__logo">SB</span>
       <div>
         <p class="shell__title">Survey Basket</p>
-        <p class="shell__subtitle sb-muted">Insight Workspace</p>
+        <p class="shell__subtitle">Insight Workspace</p>
       </div>
     </div>
 
     <nav class="shell__nav" aria-label="Primary navigation">
-      @for (item of navItems; track item.route) {
+      @for (item of navItems(); track item.route) {
       <a [routerLink]="item.route" routerLinkActive="is-active" class="shell__link">{{ item.label }}</a>
       }
     </nav>
+
+    <div class="shell__actions">
+      <button type="button" class="shell__action" (click)="toggleTheme()">
+        {{ currentTheme() === 'dark' ? 'Light mode' : 'Dark mode' }}
+      </button>
+      <button type="button" class="shell__action shell__action--danger" (click)="logout()">
+        Log out
+      </button>
+    </div>
   </header>
 
   <main class="shell__content">

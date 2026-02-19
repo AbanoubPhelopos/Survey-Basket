@@ -111,6 +111,76 @@
     background: var(--accent-strong);
     transform: translateY(-1px);
   }
+
+  .sb-btn-primary:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .input-fancy {
+    @apply sb-input;
+  }
+
+  .btn-primary {
+    @apply sb-btn-primary;
+  }
+
+  .auth-shell {
+    min-height: 100dvh;
+    display: grid;
+    grid-template-columns: 1fr;
+    background: var(--bg);
+  }
+
+  .auth-hero {
+    display: none;
+    padding: 2rem;
+    color: #ecfeff;
+    background: linear-gradient(155deg, #115e59 0%, #1d4ed8 55%, #312e81 100%);
+  }
+
+  .auth-panel {
+    display: grid;
+    place-items: center;
+    padding: 1.2rem;
+  }
+
+  .auth-card {
+    width: min(540px, 100%);
+    padding: 1.4rem;
+  }
+
+  .auth-form {
+    display: grid;
+    gap: 0.9rem;
+    margin-top: 1rem;
+  }
+
+  .auth-grid-2 {
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  @media (min-width: 960px) {
+    .auth-shell {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .auth-hero {
+      display: grid;
+      align-content: center;
+      gap: 1rem;
+    }
+
+    .auth-card {
+      padding: 1.8rem;
+    }
+
+    .auth-grid-2 {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
 }
 
 @layer utilities {
