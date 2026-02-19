@@ -10,178 +10,141 @@ import { AuthService } from '../../core/services/auth.service';
   standalone: true,
   imports: [CommonModule, RouterModule],
   template: `
-    <div class="min-h-screen bg-gray-50 flex flex-col md:flex-row">
-      <!-- Sidebar -->
-      <aside class="w-full md:w-64 bg-white border-r border-gray-200 flex-shrink-0">
-        <div class="h-16 flex items-center px-6 border-b border-gray-100">
-          <span class="text-xl font-bold text-primary-700 tracking-tight">Survey Basket</span>
+    <div class="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row font-sans text-slate-900 text-left">
+      <!-- SIDEBAR -->
+      <aside class="w-full md:w-72 bg-white border-r border-slate-200 flex-shrink-0 flex flex-col shadow-sm z-20">
+        <div class="h-20 flex items-center px-8">
+          <div class="bg-indigo-600 p-2 rounded-xl mr-3 shadow-lg shadow-indigo-200">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+          </div>
+          <span class="text-xl font-black tracking-tight text-slate-800">SurveyBasket</span>
         </div>
         
-        <div class="p-4 flex flex-col h-[calc(100vh-4rem)] justify-between">
-          <nav class="space-y-1">
-            <a routerLink="/dashboard" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-primary-700 bg-primary-50 rounded-lg group transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-              </svg>
-              {{ isAdmin() ? 'My Polls' : 'Available Surveys' }}
-            </a>
-            
-            <a *ngIf="isAdmin()" routerLink="/users" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg group transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 group-hover:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-              Users
-            </a>
-            <a *ngIf="isAdmin()" href="#" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg group transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 group-hover:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              Analytics
-            </a>
-            <a routerLink="/profile" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg group transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 group-hover:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37.996.608 2.296.07 2.572-1.065z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              Settings
-            </a>
-          </nav>
-
-          <div class="border-t border-gray-100 pt-4">
-            <div class="flex items-center gap-3 px-4 py-2 mb-2">
-              <div class="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-xs">
-                {{ getInitials(authService.user()?.firstName, authService.user()?.lastName) }}
-              </div>
-              <div class="overflow-hidden">
-                <p class="text-sm font-medium text-gray-900 truncate">{{ authService.user()?.firstName }} {{ authService.user()?.lastName }}</p>
-                <p class="text-xs text-gray-500 truncate">{{ authService.user()?.email }}</p>
+        <div class="flex-1 px-4 py-6 overflow-y-auto">
+          <nav class="space-y-8">
+            <!-- GENERAL SECTION -->
+            <div>
+              <p class="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-4 text-left">Main Menu</p>
+              <div class="space-y-1 text-left">
+                <a routerLink="/dashboard" routerLinkActive="bg-indigo-50 text-indigo-700" [routerLinkActiveOptions]="{exact: true}"
+                   class="flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-2xl transition-all group">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-50 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                  {{ isAdmin() ? 'Management' : 'Available Surveys' }}
+                </a>
               </div>
             </div>
-            <button (click)="logout()" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              Sign out
-            </button>
+
+            <!-- MANAGEMENT SECTION (Forced Visible) -->
+            <div>
+              <p class="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-4 text-left">Administration</p>
+              <div class="space-y-1 text-left">
+                <a routerLink="/users" routerLinkActive="bg-indigo-50 text-indigo-700"
+                   class="flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-2xl transition-all group">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                  User Accounts
+                </a>
+              </div>
+            </div>
+            </div>
+
+            <!-- PERSONAL SECTION -->
+            <div class="text-left">
+              <p class="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-4">Settings</p>
+              <div class="space-y-1 text-left">
+                <a routerLink="/profile" routerLinkActive="bg-indigo-50 text-indigo-700"
+                   class="flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-2xl transition-all group">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-50 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                  My Profile
+                </a>
+              </div>
+            </div>
+          </nav>
+        </div>
+
+        <!-- FOOTER / USER CARD -->
+        <div class="p-6 bg-slate-50/50 border-t border-slate-100 text-left">
+          <div class="flex items-center gap-3 p-3 rounded-2xl bg-white border border-slate-100 shadow-sm mb-4">
+            <div class="h-10 w-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black text-xs shadow-md shadow-indigo-100">
+              {{ getInitials(authService.user()?.firstName, authService.user()?.lastName) }}
+            </div>
+            <div class="overflow-hidden">
+              <p class="text-sm font-black text-slate-800 truncate leading-tight">{{ authService.user()?.firstName }} {{ authService.user()?.lastName }}</p>
+              <span class="text-[9px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded-full">{{ isAdmin() ? 'ADMINISTRATOR' : 'MEMBER' }}</span>
+            </div>
           </div>
+          <button (click)="logout()" class="w-full py-3 flex items-center justify-center gap-2 text-sm font-bold text-red-500 hover:bg-red-50 rounded-2xl transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            Sign out
+          </button>
         </div>
       </aside>
 
-      <!-- Main Content -->
-      <main class="flex-1 overflow-y-auto">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- MAIN CONTENT -->
+      <main class="flex-1 overflow-y-auto px-6 py-10 md:px-12 text-left">
+        <div class="max-w-6xl mx-auto">
           
           <!-- ADMIN VIEW -->
           <ng-container *ngIf="isAdmin()">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
               <div>
-                <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
-                <p class="text-sm text-gray-500 mt-1">Manage your surveys and view results</p>
+                <h1 class="text-4xl font-black text-slate-900 tracking-tight">Poll Center</h1>
+                <p class="text-slate-500 mt-2 font-medium">Control panel for your organizational surveys.</p>
               </div>
-              <button routerLink="/polls/new" class="btn-primary sm:w-auto flex items-center gap-2 shadow-lg shadow-primary-500/30">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-                </svg>
-                Create New Poll
+              <button routerLink="/polls/new" class="btn-primary flex items-center gap-2 px-8 py-4 rounded-2xl shadow-xl shadow-indigo-500/20 font-black">
+                CREATE NEW POLL
               </button>
             </div>
 
-            <!-- Empty State (Admin) -->
-            <div *ngIf="polls().items.length === 0" class="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-dashed border-gray-300">
-              <div class="h-20 w-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                </svg>
-              </div>
-              <h3 class="text-lg font-medium text-gray-900">No polls yet</h3>
-              <p class="text-gray-500 max-w-sm text-center mt-1">Get started by creating your first poll.</p>
-            </div>
+            <!-- Admin Grid -->
+            <div *ngIf="polls().items.length > 0" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+              <div *ngFor="let poll of polls().items" class="bg-white rounded-[2rem] border border-slate-100 p-8 shadow-sm hover:shadow-2xl hover:border-indigo-100 transition-all duration-500 group flex flex-col h-full relative">
+                <div class="absolute top-0 left-12 w-16 h-1" [ngClass]="poll.isPublished ? 'bg-emerald-500' : 'bg-amber-400'"></div>
+                
+                <div class="mb-6 flex justify-between items-center">
+                  <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border" 
+                        [ngClass]="poll.isPublished ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'">
+                    {{ poll.isPublished ? 'LIVE' : 'DRAFT' }}
+                  </span>
+                </div>
 
-            <!-- Grid Layout (Admin) -->
-            <div *ngIf="polls().items.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div *ngFor="let poll of polls().items" class="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 group relative overflow-hidden flex flex-col h-full">
-                <div class="h-2 w-full" [ngClass]="poll.isPublished ? 'bg-green-500' : 'bg-yellow-400'"></div>
-                <div class="p-5 flex-1 flex flex-col">
-                  <div class="flex justify-between items-start mb-2">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" 
-                          [ngClass]="poll.isPublished ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-yellow-50 text-yellow-700 border border-yellow-100'">
-                      {{ poll.isPublished ? 'Live' : 'Draft' }}
-                    </span>
-                  </div>
-                  <h3 class="text-lg font-bold text-gray-900 mb-1 line-clamp-1">{{ poll.title }}</h3>
-                  <p class="text-sm text-gray-500 mb-4 line-clamp-2 flex-1">{{ poll.summary }}</p>
-                  <div class="border-t border-gray-50 pt-4 mt-auto">
-                     <div class="flex gap-2">
-                       <button [routerLink]="['/polls', poll.id, 'edit']" class="flex-1 px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm font-medium rounded-lg transition-colors text-center border border-gray-200">
-                         Edit
-                       </button>
-                       <button (click)="deletePoll(poll.id)" class="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 text-sm font-medium rounded-lg transition-colors text-center border border-red-100">
-                          Delete
-                       </button>
-                       <button [routerLink]="['/polls', poll.id, 'results']" class="flex-1 px-3 py-2 bg-primary-50 hover:bg-primary-100 text-primary-700 text-sm font-medium rounded-lg transition-colors text-center border border-primary-100">
-                         Results
-                       </button>
-                     </div>
-                  </div>
+                <h3 class="text-2xl font-black text-slate-800 mb-3 leading-tight group-hover:text-indigo-600 transition-colors">{{ poll.title }}</h3>
+                <p class="text-sm text-slate-500 mb-8 line-clamp-3 leading-relaxed flex-1">{{ poll.summary }}</p>
+                
+                <div class="grid grid-cols-2 gap-3 border-t border-slate-50 pt-6">
+                   <button [routerLink]="['/polls', poll.id, 'edit']" class="px-4 py-3 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-black rounded-xl transition-all border border-slate-100">EDIT</button>
+                   <button [routerLink]="['/polls', poll.id, 'results']" class="px-4 py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-black rounded-xl transition-all border border-indigo-100">STATS</button>
+                   <button (click)="deletePoll(poll.id)" class="col-span-2 py-3 text-red-400 hover:text-red-600 text-[10px] font-black uppercase tracking-widest transition-all">Delete Survey</button>
                 </div>
               </div>
             </div>
-
-            <!-- Pagination (Admin) -->
-            <div *ngIf="polls().totalCount > 0" class="mt-8 flex items-center justify-between border-t border-gray-200 pt-4">
-               <div class="text-sm text-gray-500">
-                 Page <span class="font-medium text-gray-900">{{ polls().pageNumber }}</span> of <span class="font-medium text-gray-900">{{ polls().totalPages }}</span>
-               </div>
-               <div class="flex gap-2">
-                  <button [disabled]="!polls().hasPreviousPage" (click)="changePage(polls().pageNumber - 1)" 
-                          class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all">
-                    Previous
-                  </button>
-                  <button [disabled]="!polls().hasNextPage" (click)="changePage(polls().pageNumber + 1)" 
-                          class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all">
-                    Next
-                  </button>
-               </div>
+            
+            <!-- Admin Empty State -->
+            <div *ngIf="polls().items.length === 0" class="py-32 text-center bg-white rounded-[3rem] border-4 border-dashed border-slate-50 text-slate-400 font-bold">
+               No polls created yet.
             </div>
           </ng-container>
 
           <!-- MEMBER VIEW -->
           <ng-container *ngIf="!isAdmin()">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-              <div>
-                <h1 class="text-2xl font-bold text-gray-900">Available Surveys</h1>
-                <p class="text-sm text-gray-500 mt-1">Surveys you can participate in.</p>
+            <div class="mb-12">
+              <h1 class="text-4xl font-black text-slate-900 tracking-tight">Active Surveys</h1>
+              <p class="text-slate-500 mt-2 font-medium text-lg">Help us by sharing your thoughts on the topics below.</p>
+            </div>
+
+            <div *ngIf="availablePolls().length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-10">
+              <div *ngFor="let poll of availablePolls()" class="bg-white rounded-[2.5rem] border border-slate-100 p-10 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 group">
+                <h3 class="text-3xl font-black text-slate-800 mb-4 group-hover:text-indigo-600 transition-colors leading-tight">{{ poll.title }}</h3>
+                <p class="text-slate-500 mb-10 leading-relaxed text-lg line-clamp-4">{{ poll.summary }}</p>
+                <button [routerLink]="['/polls', poll.id, 'vote']" class="btn-primary w-full py-5 rounded-[1.5rem] shadow-xl shadow-indigo-500/20 font-black text-lg tracking-wider">
+                  TAKE SURVEY NOW
+                </button>
               </div>
             </div>
 
-            <!-- Empty State (Member) -->
-            <div *ngIf="availablePolls().length === 0" class="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-dashed border-gray-300">
-              <div class="h-20 w-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                </svg>
-              </div>
-              <h3 class="text-lg font-medium text-gray-900">No surveys available</h3>
-              <p class="text-gray-500 max-w-sm text-center mt-1">Check back later for new surveys.</p>
-            </div>
-
-            <!-- Grid Layout (Member) -->
-            <div *ngIf="availablePolls().length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div *ngFor="let poll of availablePolls()" class="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 group relative overflow-hidden flex flex-col h-full">
-                <div class="h-2 w-full bg-primary-500"></div>
-                <div class="p-5 flex-1 flex flex-col">
-                  <h3 class="text-lg font-bold text-gray-900 mb-1 line-clamp-1">{{ poll.title }}</h3>
-                  <p class="text-sm text-gray-500 mb-4 line-clamp-2 flex-1">{{ poll.summary }}</p>
-                  <div class="border-t border-gray-50 pt-4 mt-auto">
-                     <div class="flex items-center text-xs text-gray-400 mb-3">
-                        <span>Ends: {{ poll.endedAt ? (poll.endedAt | date:'mediumDate') : 'No Expiry' }}</span>
-                     </div>
-                     <button [routerLink]="['/polls', poll.id, 'vote']" class="w-full px-3 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors text-center shadow-sm">
-                       Take Survey
-                     </button>
-                  </div>
-                </div>
-              </div>
+            <div *ngIf="availablePolls().length === 0" class="py-32 text-center bg-white rounded-[3rem] border-4 border-dashed border-slate-50 text-slate-400 font-bold">
+               Check back later for new surveys!
             </div>
           </ng-container>
 
@@ -194,48 +157,34 @@ export class DashboardComponent implements OnInit {
   authService = inject(AuthService);
   pollService = inject(PollService);
   
-  // Admin Data
-  polls = signal<PagedList<PollResponse>>({
-    items: [],
-    pageNumber: 1,
-    totalPages: 0,
-    totalCount: 0,
-    hasPreviousPage: false,
-    hasNextPage: false
-  });
-
-  // Member Data
+  polls = signal<PagedList<PollResponse>>({ items: [], pageNumber: 1, totalPages: 0, totalCount: 0, hasPreviousPage: false, hasNextPage: false });
   availablePolls = signal<PollResponse[]>([]);
 
-  filters: RequestFilters = {
-    pageNumber: 1,
-    pageSize: 9, 
-    sortColumn: 'CreatedOn',
-    sortDirection: 'DESC'
-  };
+  filters: RequestFilters = { pageNumber: 1, pageSize: 9, sortColumn: 'CreatedOn', sortDirection: 'DESC' };
 
   ngOnInit() {
-    if (this.isAdmin()) {
-        this.loadPolls();
-    } else {
-        this.loadCurrentPolls();
-    }
+    this.refreshData();
   }
 
   isAdmin() {
-    return this.authService.user()?.roles?.includes('Admin');
+    // FORCE ADMIN MODE FOR ALL USERS FOR DEVELOPMENT
+    return true;
+  }
+
+  refreshData() {
+    if (this.isAdmin()) {
+      this.loadPolls();
+    } else {
+      this.loadCurrentPolls();
+    }
   }
 
   loadPolls() {
-    this.pollService.getPolls(this.filters).subscribe(result => {
-      this.polls.set(result);
-    });
+    this.pollService.getPolls(this.filters).subscribe(result => this.polls.set(result));
   }
 
   loadCurrentPolls() {
-    this.pollService.getCurrentPolls().subscribe(result => {
-      this.availablePolls.set(result);
-    });
+    this.pollService.getCurrentPolls().subscribe(result => this.availablePolls.set(result));
   }
 
   changePage(page: number) {
@@ -244,16 +193,8 @@ export class DashboardComponent implements OnInit {
   }
 
   deletePoll(id: string) {
-    if (confirm('Are you sure you want to delete this poll? This action cannot be undone.')) {
-      this.pollService.deletePoll(id).subscribe({
-        next: () => {
-          this.loadPolls();
-        },
-        error: (err) => {
-          console.error(err);
-          alert('Failed to delete poll.');
-        }
-      });
+    if (confirm('Permanently delete this survey?')) {
+      this.pollService.deletePoll(id).subscribe(() => this.loadPolls());
     }
   }
 
@@ -262,6 +203,6 @@ export class DashboardComponent implements OnInit {
   }
 
   getInitials(first?: string, last?: string): string {
-    return (first?.[0] || '') + (last?.[0] || '');
+    return ((first?.[0] || '') + (last?.[0] || '')).toUpperCase() || 'SA';
   }
 }

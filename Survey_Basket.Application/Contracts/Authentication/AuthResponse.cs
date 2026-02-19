@@ -1,4 +1,4 @@
-﻿namespace Survey_Basket.Application.Contracts.Authentication;
+namespace Survey_Basket.Application.Contracts.Authentication;
 
 public record AuthResponse(
     Guid UserId,
@@ -8,5 +8,7 @@ public record AuthResponse(
     string Token,
     int ExpiresIn,
     string RefreshToken,
-    DateTime RefreshTokenExpiration
+    DateTime RefreshTokenExpiration,
+    IEnumerable<string> Roles,
+    IEnumerable<string> Permissions
 );

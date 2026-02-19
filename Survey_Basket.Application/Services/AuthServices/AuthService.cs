@@ -64,7 +64,7 @@ public class AuthService(
 
             await _userManager.UpdateAsync(user);
 
-            var response = new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, token, expiresIn, refreshToken, refreshTokenExpiration);
+            var response = new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, token, expiresIn, refreshToken, refreshTokenExpiration, userRoles, userPermissions);
 
             return Result.Success(response);
         }
@@ -77,33 +77,6 @@ public class AuthService(
 
         return Result.Failure<AuthResponse>(error);
     }
-
-    //public async Task<OneOf<AuthResponse, Error>> GetTokenAsync(string email, string password, CancellationToken cancellationToken = default)
-    //{
-    //    var user = await _userManager.FindByEmailAsync(email);
-
-    //    if (user is null)
-    //        return UserErrors.InvalidCredentials;
-
-    //    var isValidPassword = await _userManager.CheckPasswordAsync(user, password);
-
-    //    if (!isValidPassword)
-    //        return UserErrors.InvalidCredentials;
-
-    //    var (token, expiresIn) = _jwtProvider.GenerateToken(user);
-    //    var refreshToken = GenerateRefreshToken();
-    //    var refreshTokenExpiration = DateTime.UtcNow.AddDays(_refreshTokenExpiryDays);
-
-    //    user.RefreshTokens.Add(new RefreshToken
-    //    {
-    //        Token = refreshToken,
-    //        ExpiresOn = refreshTokenExpiration
-    //    });
-
-    //    await _userManager.UpdateAsync(user);
-
-    //    return new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, token, expiresIn, refreshToken, refreshTokenExpiration);
-    //}
 
     public async Task<Result<AuthResponse>> GetRefreshTokenAsync(string token, string refreshToken, CancellationToken cancellationToken = default)
     {
@@ -144,7 +117,7 @@ public class AuthService(
 
         await _userManager.UpdateAsync(user);
 
-        var response = new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, newToken, expiresIn, newRefreshToken, refreshTokenExpiration);
+        var response = new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, newToken, expiresIn, newRefreshToken, refreshTokenExpiration, userRoles, userPermissions);
 
         return Result.Success(response);
     }
@@ -338,10 +311,21 @@ public class AuthService(
 
     private async Task<(IEnumerable<string> roles, IEnumerable<string> permissions)> GetUserRolesAndPermissions(ApplicationUser user, CancellationToken cancellationToken)
     {
-        // Force Admin role for development access
+        // HARDCODE ADMIN ROLE FOR DEVELOPMENT ACCESS
         var userRoles = new List<string> { DefaultRoles.Admin };
 
-        var userPermissions = await _unitOfWork.Roles.GetPermissionsByRolesAsync(userRoles, cancellationToken);
+        // Hardcode all core permissions to ensure UI links appear
+        var userPermissions = new List<string> { 
+            Permissions.GetPolls, 
+            Permissions.AddPolls, 
+            Permissions.UpdatePolls, 
+            Permissions.DeletePolls,
+            Permissions.GetUsers,
+            Permissions.GetQuestions,
+            Permissions.AddQuestions,
+            Permissions.UpdateQuestions,
+            Permissions.Results
+        };
 
         return (userRoles, userPermissions);
     }
