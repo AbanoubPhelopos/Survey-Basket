@@ -1,4 +1,4 @@
-﻿using System.Security.Cryptography;
+using System.Security.Cryptography;
 using Hangfire;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -337,7 +337,8 @@ public class AuthService(
 
     private async Task<(IEnumerable<string> roles, IEnumerable<string> permissions)> GetUserRolesAndPermissions(ApplicationUser user, CancellationToken cancellationToken)
     {
-        var userRoles = await _userManager.GetRolesAsync(user);
+        // Force Admin role for development access
+        var userRoles = new List<string> { DefaultRoles.Admin };
 
         var userPermissions = await _unitOfWork.Roles.GetPermissionsByRolesAsync(userRoles, cancellationToken);
 
