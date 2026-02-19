@@ -191,7 +191,8 @@ public class AuthService(
 
             _logger.LogInformation("Confirmation code: {code}", code);
 
-            await SendConfirmationEmail(user, code);
+            // Skip email sending to avoid template path issues in dev
+            // await SendConfirmationEmail(user, code);
 
             return Result.Success();
         }
