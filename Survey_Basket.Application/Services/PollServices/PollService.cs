@@ -121,11 +121,40 @@ public class PollService(
 
     public async Task<Result<IEnumerable<PollResponse>>> GetCurrent(CancellationToken cancellationToken = default)
     {
+        var userContext = GetCurrentUserContext();
+        if (!userContext.IsSuccess)
+            return Result.Failure<IEnumerable<PollResponse>>(userContext.Error);
+
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
-        var polls = await _unitOfWork.Repository<Poll>()
-            .GetAllAsync(p => p.IsPublished && p.StartedAt <= today
-                            && (!p.EndedAt.HasValue || p.EndedAt >= today), cancellationToken);
+        IEnumerable<Poll> polls;
+
+        if (HasAnyRole(userContext.Value.Roles, DefaultRoles.Admin, DefaultRoles.SystemAdmin))
+        {
+            polls = await _unitOfWork.Repository<Poll>()
+                .GetAllAsync(p => p.IsPublished && p.StartedAt <= today
+                                && (!p.EndedAt.HasValue || p.EndedAt >= today), cancellationToken);
+        }
+        else
+        {
+            var companyIds = (await _unitOfWork.Repository<CompanyUser>()
+                .GetAllAsync(x => x.UserId == userContext.Value.UserId && x.IsActive, cancellationToken))
+                .Select(x => x.CompanyId)
+                .ToHashSet();
+
+            if (companyIds.Count == 0)
+                return Result.Success(Enumerable.Empty<PollResponse>());
+
+            var pollIds = (await _unitOfWork.Repository<PollAudience>()
+                .GetAllAsync(x => companyIds.Contains(x.CompanyId), cancellationToken))
+                .Select(x => x.PollId)
+                .Distinct()
+                .ToHashSet();
+
+            polls = await _unitOfWork.Repository<Poll>()
+                .GetAllAsync(p => pollIds.Contains(p.Id) && p.IsPublished && p.StartedAt <= today
+                                && (!p.EndedAt.HasValue || p.EndedAt >= today), cancellationToken);
+        }
 
         var response = polls.Adapt<IEnumerable<PollResponse>>();
         return Result.Success(response);

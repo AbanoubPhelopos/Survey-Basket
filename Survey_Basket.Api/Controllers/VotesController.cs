@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Survey_Basket.Application.Abstractions.Const;
 using Survey_Basket.Application.Contracts.Votes;
 using Survey_Basket.Application.Extensions;
+using Survey_Basket.Application.Services.AuthServices.Filter;
 using Survey_Basket.Application.Services.QuestionServices;
 using Survey_Basket.Application.Services.VoteServices;
 
@@ -10,13 +11,14 @@ namespace Survey_Basket.Api.Controllers;
 
 [Route("api/polls/{pollId:guid}/[controller]")]
 [ApiController]
-[Authorize(Roles = DefaultRoles.Member)]
+[Authorize]
 public class VotesController(IQuestionService questionService, IVoteService voteService) : ControllerBase
 {
     private readonly IQuestionService _questionService = questionService;
     private readonly IVoteService _voteService = voteService;
 
     [HttpGet("")]
+    [HasPermission(Permissions.GetPolls)]
     public IActionResult Start([FromRoute] Guid pollId, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
@@ -27,6 +29,7 @@ public class VotesController(IQuestionService questionService, IVoteService vote
     }
 
     [HttpPost("")]
+    [HasPermission(Permissions.SubmitCompanySurvey)]
     public async Task<IActionResult> Submit([FromRoute] Guid pollId, [FromBody] VoteRequest request, CancellationToken cancellationToken)
     {
         var result = await _voteService.AddAsync(pollId, User.GetUserId(), request, cancellationToken);

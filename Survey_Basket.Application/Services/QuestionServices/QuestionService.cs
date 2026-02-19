@@ -168,6 +168,10 @@ public class QuestionService(
 
     public async Task<Result<IEnumerable<QuestionResponse>>> GetAvailableQuestionsAsync(Guid pollId, Guid userId, CancellationToken cancellationToken)
     {
+        var currentUser = GetCurrentUserContext();
+        if (!currentUser.IsSuccess)
+            return Result.Failure<IEnumerable<QuestionResponse>>(currentUser.Error);
+
         var hasVote = await _unitOfWork.Repository<Vote>().AnyAsync(x => x.PollId == pollId && x.UserId == userId, cancellationToken);
 
         if (hasVote)
@@ -180,6 +184,20 @@ public class QuestionService(
 
         if (!isPollExist)
             return Result.Failure<IEnumerable<QuestionResponse>>(PollErrors.PollNotFound);
+
+        if (!HasAnyRole(currentUser.Value.Roles, DefaultRoles.Admin, DefaultRoles.SystemAdmin))
+        {
+            var companyIds = (await _unitOfWork.Repository<CompanyUser>()
+                .GetAllAsync(x => x.UserId == userId && x.IsActive, cancellationToken))
+                .Select(x => x.CompanyId)
+                .ToHashSet();
+
+            var isTargeted = await _unitOfWork.Repository<PollAudience>()
+                .AnyAsync(x => x.PollId == pollId && companyIds.Contains(x.CompanyId), cancellationToken);
+
+            if (!isTargeted)
+                return Result.Failure<IEnumerable<QuestionResponse>>(VoteErrors.VoteAccessDenied);
+        }
 
         var cacheKey = $"{CacheKeyPrefix}{pollId}";
 

@@ -7,6 +7,7 @@ public class RoleClaimConfiguration : IEntityTypeConfiguration<IdentityRoleClaim
     public void Configure(EntityTypeBuilder<IdentityRoleClaim<Guid>> builder)
     {
         var adminRoleId = Guid.Parse(DefaultRoles.AdminRoleId);
+        var memberRoleId = Guid.Parse(DefaultRoles.MemberRoleId);
         var systemAdminRoleId = Guid.Parse(DefaultRoles.SystemAdminRoleId);
         var partnerCompanyRoleId = Guid.Parse(DefaultRoles.PartnerCompanyRoleId);
         var companyUserRoleId = Guid.Parse(DefaultRoles.CompanyUserRoleId);
@@ -48,7 +49,9 @@ public class RoleClaimConfiguration : IEntityTypeConfiguration<IdentityRoleClaim
             new IdentityRoleClaim<Guid> { Id = 32, RoleId = partnerCompanyRoleId, ClaimType = Permissions.Type, ClaimValue = Permissions.UpdatePolls },
             new IdentityRoleClaim<Guid> { Id = 33, RoleId = partnerCompanyRoleId, ClaimType = Permissions.Type, ClaimValue = Permissions.AddQuestions },
             new IdentityRoleClaim<Guid> { Id = 34, RoleId = partnerCompanyRoleId, ClaimType = Permissions.Type, ClaimValue = Permissions.UpdateQuestions },
-            new IdentityRoleClaim<Guid> { Id = 35, RoleId = companyUserRoleId, ClaimType = Permissions.Type, ClaimValue = Permissions.GetPolls }
+            new IdentityRoleClaim<Guid> { Id = 35, RoleId = companyUserRoleId, ClaimType = Permissions.Type, ClaimValue = Permissions.GetPolls },
+            new IdentityRoleClaim<Guid> { Id = 36, RoleId = memberRoleId, ClaimType = Permissions.Type, ClaimValue = Permissions.GetPolls },
+            new IdentityRoleClaim<Guid> { Id = 37, RoleId = memberRoleId, ClaimType = Permissions.Type, ClaimValue = Permissions.SubmitCompanySurvey }
         );
     }
 }
