@@ -10,4 +10,6 @@ public static class QuestionErrors
     public static readonly Error QuestionCreationFailed = new("Question.CreationFailed", "Question creation failed.", StatusCodes.Status500InternalServerError);
     public static readonly Error QuestionUpdateFailed = new("Question.UpdateFailed", "Question update failed.", StatusCodes.Status500InternalServerError);
     public static readonly Error QuestionDeletionFailed = new("Question.DeletionFailed", "Question deletion failed.", StatusCodes.Status500InternalServerError);
+    public static readonly Error QuestionAccessDenied = new("Question.AccessDenied", "You are not allowed to manage questions for this poll.", StatusCodes.Status403Forbidden);
+    public static readonly Error InvalidQuestionOptions = new("Question.InvalidOptions", "Question options are invalid for selected question type.", StatusCodes.Status400BadRequest);
 }

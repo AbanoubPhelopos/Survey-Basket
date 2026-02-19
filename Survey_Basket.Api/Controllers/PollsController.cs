@@ -12,6 +12,7 @@ namespace Survey_Basket.Api.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
 public class PollsController(IPollService pollService) : ControllerBase
 {
     private readonly IPollService _pollService = pollService;
@@ -46,7 +47,8 @@ public class PollsController(IPollService pollService) : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreatePoll([FromBody] CreatePollRequests request)
+    [HasPermission(Permissions.AddPolls)]
+    public async Task<IActionResult> CreatePoll([FromBody] CreatePollRequests request, CancellationToken cancellationToken)
     {
         if (request is null)
         {
@@ -57,28 +59,40 @@ public class PollsController(IPollService pollService) : ControllerBase
                 });
         }
 
-        var result = await _pollService.CreatePollAsync(request);
+        var result = await _pollService.CreatePollAsync(request, cancellationToken);
         return result.IsSuccess
             ? Ok()
             : result.ToProblemDetails();
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeletePoll([FromRoute] Guid id)
+    [HasPermission(Permissions.DeletePolls)]
+    public async Task<IActionResult> DeletePoll([FromRoute] Guid id, CancellationToken cancellationToken)
     {
-        var result = await _pollService.DeletePoll(id);
+        var result = await _pollService.DeletePoll(id, cancellationToken);
         return result.IsSuccess
             ? NoContent()
             : result.ToProblemDetails();
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdatePoll([FromRoute] Guid id, [FromBody] UpdatePollRequests updatedPoll)
+    [HasPermission(Permissions.UpdatePolls)]
+    public async Task<IActionResult> UpdatePoll([FromRoute] Guid id, [FromBody] UpdatePollRequests updatedPoll, CancellationToken cancellationToken)
     {
-        var result = await _pollService.UpdatePoll(id, updatedPoll);
+        var result = await _pollService.UpdatePoll(id, updatedPoll, cancellationToken);
 
         return result.IsSuccess ?
             NoContent() : result.ToProblemDetails();
+    }
+
+    [HttpPut("{id:guid}/audience")]
+    [HasPermission(Permissions.AssignSurveyAudience)]
+    public async Task<IActionResult> AssignAudience([FromRoute] Guid id, [FromBody] AssignPollAudienceRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _pollService.AssignAudienceAsync(id, request, cancellationToken);
+        return result.IsSuccess
+            ? NoContent()
+            : result.ToProblemDetails();
     }
 
     [HttpPut("{id}/togglePublish")]

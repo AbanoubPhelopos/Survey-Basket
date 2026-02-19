@@ -4,12 +4,18 @@ public sealed record CreatePollRequests(
     string Title,
     string Summary,
     DateOnly StartedAt,
-    DateOnly? EndedAt
+    DateOnly? EndedAt,
+    IEnumerable<Guid>? TargetCompanyIds = null
 );
 
 public sealed record UpdatePollRequests(
     string Title,
     string Summary,
     DateOnly StartedAt,
-    DateOnly? EndedAt
+    DateOnly? EndedAt,
+    IEnumerable<Guid>? TargetCompanyIds = null
+);
+
+public sealed record AssignPollAudienceRequest(
+    IEnumerable<Guid> CompanyIds
 );

@@ -42,7 +42,13 @@ public class RoleClaimConfiguration : IEntityTypeConfiguration<IdentityRoleClaim
 
             new IdentityRoleClaim<Guid> { Id = 27, RoleId = partnerCompanyRoleId, ClaimType = Permissions.Type, ClaimValue = Permissions.ManageOwnSurveys },
             new IdentityRoleClaim<Guid> { Id = 28, RoleId = partnerCompanyRoleId, ClaimType = Permissions.Type, ClaimValue = Permissions.ViewPartnerSurveyAnalytics },
-            new IdentityRoleClaim<Guid> { Id = 29, RoleId = companyUserRoleId, ClaimType = Permissions.Type, ClaimValue = Permissions.SubmitCompanySurvey }
+            new IdentityRoleClaim<Guid> { Id = 29, RoleId = companyUserRoleId, ClaimType = Permissions.Type, ClaimValue = Permissions.SubmitCompanySurvey },
+            new IdentityRoleClaim<Guid> { Id = 30, RoleId = partnerCompanyRoleId, ClaimType = Permissions.Type, ClaimValue = Permissions.GetPolls },
+            new IdentityRoleClaim<Guid> { Id = 31, RoleId = partnerCompanyRoleId, ClaimType = Permissions.Type, ClaimValue = Permissions.AddPolls },
+            new IdentityRoleClaim<Guid> { Id = 32, RoleId = partnerCompanyRoleId, ClaimType = Permissions.Type, ClaimValue = Permissions.UpdatePolls },
+            new IdentityRoleClaim<Guid> { Id = 33, RoleId = partnerCompanyRoleId, ClaimType = Permissions.Type, ClaimValue = Permissions.AddQuestions },
+            new IdentityRoleClaim<Guid> { Id = 34, RoleId = partnerCompanyRoleId, ClaimType = Permissions.Type, ClaimValue = Permissions.UpdateQuestions },
+            new IdentityRoleClaim<Guid> { Id = 35, RoleId = companyUserRoleId, ClaimType = Permissions.Type, ClaimValue = Permissions.GetPolls }
         );
     }
 }

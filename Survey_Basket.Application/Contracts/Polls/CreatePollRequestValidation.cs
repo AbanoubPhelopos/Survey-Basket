@@ -22,5 +22,9 @@ public class CreatePollRequestValidator : AbstractValidator<CreatePollRequests>
             .Must((args, endedAt) => endedAt > args.StartedAt)
             .When(x => x.EndedAt.HasValue)
             .WithMessage("{PropertyName} must be greater than StartedAt");
+
+        RuleFor(x => x.TargetCompanyIds)
+            .Must(x => x is null || x.Distinct().Count() == x.Count())
+            .WithMessage("TargetCompanyIds must not contain duplicate values.");
     }
 }

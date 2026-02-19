@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Survey_Basket.Application.Abstractions.Const;
 using Survey_Basket.Application.Contracts.Question;
+using Survey_Basket.Application.Services.AuthServices.Filter;
 using Survey_Basket.Application.Services.QuestionServices;
 
 namespace Survey_Basket.Api.Controllers;
@@ -34,6 +35,7 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
 
 
     [HttpPost]
+    [HasPermission(Permissions.AddQuestions)]
     public async Task<IActionResult> Add([FromRoute] Guid pollId, [FromBody] QuestionRequest request, CancellationToken cancellationToken)
     {
         if (request is null)
@@ -51,6 +53,7 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
     }
 
     [HttpPut("{Id:guid}")]
+    [HasPermission(Permissions.UpdateQuestions)]
     public async Task<IActionResult> Update([FromRoute] Guid pollId, [FromRoute] Guid Id, [FromBody] QuestionRequest request, CancellationToken cancellationToken)
     {
         if (request is null)
@@ -69,6 +72,7 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
     }
 
     [HttpPut("{Id:guid}/toggle-status")]
+    [HasPermission(Permissions.UpdateQuestions)]
     public async Task<IActionResult> ToggleStatus([FromRoute] Guid pollId, [FromRoute] Guid Id, CancellationToken cancellationToken)
     {
         var result = await _questionService.ToggleStatusAsync(pollId, Id, cancellationToken);
