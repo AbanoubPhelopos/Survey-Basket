@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Survey_Basket.Infrastructure.Data;
@@ -11,9 +12,11 @@ using Survey_Basket.Infrastructure.Data;
 namespace Survey_Basket.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260219172858_AddCompanyAudienceFoundation")]
+    partial class AddCompanyAudienceFoundation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -143,111 +146,6 @@ namespace Survey_Basket.Infrastructure.Migrations
                             ClaimType = "permissions",
                             ClaimValue = "results:read",
                             RoleId = new Guid("0199fd4b-3c1f-7eab-84c4-47f5aad20c86")
-                        },
-                        new
-                        {
-                            Id = 15,
-                            ClaimType = "permissions",
-                            ClaimValue = "surveys:audience:assign",
-                            RoleId = new Guid("0199fd4b-3c1f-7eab-84c4-47f5aad20c86")
-                        },
-                        new
-                        {
-                            Id = 16,
-                            ClaimType = "permissions",
-                            ClaimValue = "companies:manage",
-                            RoleId = new Guid("0199fd4b-3c1f-7eab-84c4-47f5aad20c86")
-                        },
-                        new
-                        {
-                            Id = 17,
-                            ClaimType = "permissions",
-                            ClaimValue = "companies:users:manage",
-                            RoleId = new Guid("0199fd4b-3c1f-7eab-84c4-47f5aad20c86")
-                        },
-                        new
-                        {
-                            Id = 18,
-                            ClaimType = "permissions",
-                            ClaimValue = "surveys:analytics:partner",
-                            RoleId = new Guid("0199fd4b-3c1f-7eab-84c4-47f5aad20c86")
-                        },
-                        new
-                        {
-                            Id = 19,
-                            ClaimType = "permissions",
-                            ClaimValue = "polls:read",
-                            RoleId = new Guid("0399fd4b-3c1f-7eab-84c4-47f5aad20c88")
-                        },
-                        new
-                        {
-                            Id = 20,
-                            ClaimType = "permissions",
-                            ClaimValue = "polls:add",
-                            RoleId = new Guid("0399fd4b-3c1f-7eab-84c4-47f5aad20c88")
-                        },
-                        new
-                        {
-                            Id = 21,
-                            ClaimType = "permissions",
-                            ClaimValue = "polls:update",
-                            RoleId = new Guid("0399fd4b-3c1f-7eab-84c4-47f5aad20c88")
-                        },
-                        new
-                        {
-                            Id = 22,
-                            ClaimType = "permissions",
-                            ClaimValue = "polls:delete",
-                            RoleId = new Guid("0399fd4b-3c1f-7eab-84c4-47f5aad20c88")
-                        },
-                        new
-                        {
-                            Id = 23,
-                            ClaimType = "permissions",
-                            ClaimValue = "surveys:audience:assign",
-                            RoleId = new Guid("0399fd4b-3c1f-7eab-84c4-47f5aad20c88")
-                        },
-                        new
-                        {
-                            Id = 24,
-                            ClaimType = "permissions",
-                            ClaimValue = "companies:manage",
-                            RoleId = new Guid("0399fd4b-3c1f-7eab-84c4-47f5aad20c88")
-                        },
-                        new
-                        {
-                            Id = 25,
-                            ClaimType = "permissions",
-                            ClaimValue = "companies:users:manage",
-                            RoleId = new Guid("0399fd4b-3c1f-7eab-84c4-47f5aad20c88")
-                        },
-                        new
-                        {
-                            Id = 26,
-                            ClaimType = "permissions",
-                            ClaimValue = "results:read",
-                            RoleId = new Guid("0399fd4b-3c1f-7eab-84c4-47f5aad20c88")
-                        },
-                        new
-                        {
-                            Id = 27,
-                            ClaimType = "permissions",
-                            ClaimValue = "surveys:own:manage",
-                            RoleId = new Guid("0499fd4b-3c1f-7eab-84c4-47f5aad20c89")
-                        },
-                        new
-                        {
-                            Id = 28,
-                            ClaimType = "permissions",
-                            ClaimValue = "surveys:analytics:partner",
-                            RoleId = new Guid("0499fd4b-3c1f-7eab-84c4-47f5aad20c89")
-                        },
-                        new
-                        {
-                            Id = 29,
-                            ClaimType = "permissions",
-                            ClaimValue = "surveys:company:submit",
-                            RoleId = new Guid("0599fd4b-3c1f-7eab-84c4-47f5aad20c8a")
                         });
                 });
 

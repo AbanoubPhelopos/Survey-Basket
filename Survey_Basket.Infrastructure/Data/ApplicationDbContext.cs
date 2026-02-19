@@ -13,7 +13,11 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
 
     public DbSet<Answer> Answers { get; set; } = null!;
+    public DbSet<Company> Companies { get; set; } = null!;
+    public DbSet<CompanyUser> CompanyUsers { get; set; } = null!;
     public DbSet<Poll> Polls { get; set; } = null!;
+    public DbSet<PollAudience> PollAudiences { get; set; } = null!;
+    public DbSet<PollOwner> PollOwners { get; set; } = null!;
     public DbSet<Question> Questions { get; set; } = null!;
     public DbSet<Vote> Votes { get; set; } = null!;
     public DbSet<VoteAnswers> VoteAnswers { get; set; } = null!;

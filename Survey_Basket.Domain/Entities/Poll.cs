@@ -9,6 +9,12 @@ public class Poll : AuditableEntity
     public DateOnly StartedAt { get; set; }
     public DateOnly? EndedAt { get; set; }
 
+    public Guid? OwnerCompanyId { get; set; }
+
     public ICollection<Question> Questions { get; set; } = [];
     public ICollection<Vote> Votes { get; set; } = [];
+    public ICollection<PollAudience> Audiences { get; set; } = [];
+    public ICollection<PollOwner> Owners { get; set; } = [];
+
+    public Company? OwnerCompany { get; set; }
 }

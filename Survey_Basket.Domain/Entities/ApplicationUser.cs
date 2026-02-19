@@ -9,5 +9,7 @@ public class ApplicationUser : IdentityUser<Guid>
     public bool IsDisabled { get; set; }
 
     public List<RefreshToken> RefreshTokens { get; set; } = [];
+    public ICollection<CompanyUser> CompanyUsers { get; set; } = [];
+    public ICollection<PollOwner> OwnedPolls { get; set; } = [];
 
 }

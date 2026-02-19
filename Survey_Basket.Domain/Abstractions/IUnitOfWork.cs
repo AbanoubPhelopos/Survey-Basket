@@ -11,4 +11,6 @@ public interface IUnitOfWork
     IVoteRepository Votes { get; }
     IUserRepository Users { get; }
     IRoleRepository Roles { get; }
+    ICompanyRepository Companies { get; }
+    IPollAudienceRepository PollAudiences { get; }
 }

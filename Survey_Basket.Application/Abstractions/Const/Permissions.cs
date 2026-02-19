@@ -23,6 +23,13 @@ public static class Permissions
 
     public const string Results = "results:read";
 
+    public const string AssignSurveyAudience = "surveys:audience:assign";
+    public const string ManageOwnSurveys = "surveys:own:manage";
+    public const string SubmitCompanySurvey = "surveys:company:submit";
+    public const string ManageCompanies = "companies:manage";
+    public const string ManageCompanyUsers = "companies:users:manage";
+    public const string ViewPartnerSurveyAnalytics = "surveys:analytics:partner";
+
     public static IList<string?> GetAllPermissions() =>
         typeof(Permissions).GetFields().Select(x => x.GetValue(x) as string).ToList();
 }

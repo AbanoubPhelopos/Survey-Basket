@@ -9,5 +9,10 @@ public class PollConfigurations : IEntityTypeConfiguration<Poll>
 
         builder.Property(p => p.Title).HasMaxLength(200);
         builder.Property(p => p.Summary).HasMaxLength(500);
+
+        builder.HasOne(x => x.OwnerCompany)
+            .WithMany(x => x.OwnedPolls)
+            .HasForeignKey(x => x.OwnerCompanyId)
+            .IsRequired(false);
     }
 }

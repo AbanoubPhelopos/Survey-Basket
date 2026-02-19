@@ -20,11 +20,15 @@ public class UnitOfWork : IUnitOfWork
     public IVoteRepository Votes => _votes ??= new VoteRepository(_context);
     public IUserRepository Users => _users ??= new UserRepository(_context);
     public IRoleRepository Roles => _roles ??= new RoleRepository(_context);
+    public ICompanyRepository Companies => _companies ??= new CompanyRepository(_context);
+    public IPollAudienceRepository PollAudiences => _pollAudiences ??= new PollAudienceRepository(_context);
 
     private IPollRepository? _polls;
     private IVoteRepository? _votes;
     private IUserRepository? _users;
     private IRoleRepository? _roles;
+    private ICompanyRepository? _companies;
+    private IPollAudienceRepository? _pollAudiences;
 
     public IBaseRepository<TEntity> Repository<TEntity>() where TEntity : class
     {
