@@ -1,0 +1,21 @@
+<div class="shell">
+  <header class="shell__header sb-surface sb-hero-gradient">
+    <div class="shell__brand">
+      <span class="shell__logo">SB</span>
+      <div>
+        <p class="shell__title">Survey Basket</p>
+        <p class="shell__subtitle sb-muted">Insight Workspace</p>
+      </div>
+    </div>
+
+    <nav class="shell__nav" aria-label="Primary navigation">
+      @for (item of navItems; track item.route) {
+      <a [routerLink]="item.route" routerLinkActive="is-active" class="shell__link">{{ item.label }}</a>
+      }
+    </nav>
+  </header>
+
+  <main class="shell__content">
+    <router-outlet />
+  </main>
+</div>
