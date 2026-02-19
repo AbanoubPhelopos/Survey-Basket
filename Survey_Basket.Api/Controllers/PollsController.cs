@@ -27,7 +27,7 @@ public class PollsController(IPollService pollService) : ControllerBase
     }
 
     [HttpGet("current")]
-    [Authorize(Roles = DefaultRoles.Member)]
+    [Authorize]
     public async Task<IActionResult> GetCurrentPolls(CancellationToken cancellationToken)
     {
         var result = await _pollService.GetCurrent(cancellationToken);
