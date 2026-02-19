@@ -1,0 +1,46 @@
+<section class="company-users-page">
+  <header class="sb-surface sb-hero-gradient company-users-header">
+    <h1>Company User Records</h1>
+    <p class="sb-muted">Create non-authenticated records scoped to your company only.</p>
+  </header>
+
+  <div class="company-users-grid">
+    <form class="sb-surface company-users-form" [formGroup]="form" (ngSubmit)="createRecord()">
+      <label>
+        <span>Display Name</span>
+        <input class="sb-input" formControlName="displayName" placeholder="Warehouse Supervisor" />
+      </label>
+
+      <label>
+        <span>Business Identifier</span>
+        <input class="sb-input" formControlName="businessIdentifier" placeholder="EMP-1023" />
+      </label>
+
+      <button class="sb-btn-primary" type="submit" [disabled]="loading()">
+        {{ loading() ? 'Creating...' : 'Create Record' }}
+      </button>
+
+      @if (errorMessage()) {
+      <p class="company-users-error sb-error">{{ errorMessage() }}</p>
+      }
+    </form>
+
+    <section class="sb-surface company-users-list">
+      <h2>Created Records</h2>
+
+      @if (records().length === 0) {
+      <p class="sb-empty">No company user records created in this session yet.</p>
+      }
+
+      @for (record of records(); track record.companyUserRecordId) {
+      <article class="company-record">
+        <div>
+          <h3>{{ record.displayName }}</h3>
+          <p class="sb-muted">{{ record.businessIdentifier }}</p>
+        </div>
+        <span class="company-record__badge">Non-authenticated</span>
+      </article>
+      }
+    </section>
+  </div>
+</section>

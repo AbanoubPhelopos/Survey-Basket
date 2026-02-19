@@ -2,7 +2,13 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
-import { LoginRequest, LoginResponse, RegisterRequest, User } from '../models/auth';
+import {
+  ActivateCompanyAccountRequest,
+  LoginRequest,
+  LoginResponse,
+  RegisterRequest,
+  User
+} from '../models/auth';
 import { API_BASE_URL } from '../constants/api.constants';
 
 @Injectable({
@@ -29,6 +35,14 @@ export class AuthService {
     return this.http.post<void>(`${this.apiUrl}/register`, request);
   }
 
+  activateCompanyAccount(companyId: string, request: ActivateCompanyAccountRequest): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/activate-company`, {
+      companyAccountUserId: companyId,
+      activationToken: request.activationToken,
+      newPassword: request.newPassword
+    });
+  }
+
   logout(): void {
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.userKey);
@@ -49,6 +63,36 @@ export class AuthService {
     return !!this.getToken();
   }
 
+  hasRole(role: string): boolean {
+    const roles = this.user()?.roles ?? [];
+    return roles.some(r => r.toLowerCase() === role.toLowerCase());
+  }
+
+  hasAnyRole(roles: string[]): boolean {
+    return roles.some(role => this.hasRole(role));
+  }
+
+  hasPermission(permission: string): boolean {
+    const permissions = this.user()?.permissions ?? [];
+    return permissions.includes(permission);
+  }
+
+  hasAnyPermission(permissions: string[]): boolean {
+    return permissions.some(permission => this.hasPermission(permission));
+  }
+
+  isAdminContext(): boolean {
+    return this.hasAnyRole(['Admin', 'SystemAdmin']) || this.user()?.accountType === 'AdminAccount';
+  }
+
+  isCompanyAccountContext(): boolean {
+    return this.hasRole('PartnerCompany') || this.user()?.accountType === 'CompanyAccount';
+  }
+
+  requiresActivation(): boolean {
+    return !!this.user()?.requiresActivation;
+  }
+
   private setSession(authResult: LoginResponse): void {
     localStorage.setItem(this.tokenKey, authResult.token);
     
@@ -58,7 +102,9 @@ export class AuthService {
       firstName: authResult.firstName, 
       lastName: authResult.lastName, 
       permissions: authResult.permissions || [],
-      roles: authResult.roles || []
+      roles: authResult.roles || [],
+      accountType: authResult.accountType,
+      requiresActivation: authResult.requiresActivation
     };
     
     localStorage.setItem(this.userKey, JSON.stringify(user));

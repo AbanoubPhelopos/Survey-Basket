@@ -263,6 +263,22 @@ public class QuestionService(
         if (!HasAnyRole(roles, DefaultRoles.PartnerCompany))
             return Result.Failure(QuestionErrors.QuestionAccessDenied);
 
+        var poll = await _unitOfWork.Repository<Poll>().GetByIdAsync(pollId, cancellationToken);
+        if (poll is null)
+            return Result.Failure(PollErrors.PollNotFound);
+
+        // Backward-compatible ownership checks for polls created before PollOwner records existed.
+        if (poll.CreatedById == userId)
+            return Result.Success();
+
+        var companyIds = (await _unitOfWork.Repository<CompanyUser>()
+            .GetAllAsync(x => x.UserId == userId && x.IsActive, cancellationToken))
+            .Select(x => x.CompanyId)
+            .ToHashSet();
+
+        if (poll.OwnerCompanyId.HasValue && companyIds.Contains(poll.OwnerCompanyId.Value))
+            return Result.Success();
+
         var ownsPoll = await _unitOfWork.Repository<PollOwner>()
             .AnyAsync(x => x.PollId == pollId && x.UserId == userId, cancellationToken);
 

@@ -1,0 +1,26 @@
+<section class="activate-page">
+  <div class="activate-card sb-surface">
+    <h1>Activate Company Account</h1>
+    <p class="sb-muted">Set the first password for your company account using the activation token shared by admin.</p>
+
+    <form [formGroup]="form" (ngSubmit)="activate()" class="activate-form">
+      <label>
+        <span>Activation Token</span>
+        <textarea class="sb-input" rows="4" formControlName="activationToken"></textarea>
+      </label>
+
+      <label>
+        <span>New Password</span>
+        <input type="password" class="sb-input" formControlName="newPassword" />
+      </label>
+
+      <button class="sb-btn-primary" type="submit" [disabled]="loading()">
+        {{ loading() ? 'Activating...' : 'Activate Account' }}
+      </button>
+    </form>
+
+    @if (errorMessage()) {
+    <p class="activate-error">{{ errorMessage() }}</p>
+    }
+  </div>
+</section>

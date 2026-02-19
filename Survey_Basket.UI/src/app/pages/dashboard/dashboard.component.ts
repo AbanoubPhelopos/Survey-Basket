@@ -36,17 +36,26 @@ import { AuthService } from '../../core/services/auth.service';
               </div>
             </div>
 
-            <!-- MANAGEMENT SECTION (Forced Visible) -->
-            <div>
+            <!-- MANAGEMENT SECTION -->
+            <div *ngIf="isAdmin()">
               <p class="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-4 text-left">Administration</p>
               <div class="space-y-1 text-left">
+                <a routerLink="/polls/new" routerLinkActive="bg-indigo-50 text-indigo-700"
+                   class="flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-2xl transition-all group">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                  Create Poll
+                </a>
                 <a routerLink="/users" routerLinkActive="bg-indigo-50 text-indigo-700"
                    class="flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-2xl transition-all group">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
                   User Accounts
                 </a>
+                <a routerLink="/admin/companies" routerLinkActive="bg-indigo-50 text-indigo-700"
+                   class="flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-2xl transition-all group">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M5 7v11a2 2 0 002 2h10a2 2 0 002-2V7M9 11h6" /></svg>
+                  Company Accounts
+                </a>
               </div>
-            </div>
             </div>
 
             <!-- PERSONAL SECTION -->
@@ -167,8 +176,7 @@ export class DashboardComponent implements OnInit {
   }
 
   isAdmin() {
-    // FORCE ADMIN MODE FOR ALL USERS FOR DEVELOPMENT
-    return true;
+    return this.authService.hasRole('Admin');
   }
 
   refreshData() {

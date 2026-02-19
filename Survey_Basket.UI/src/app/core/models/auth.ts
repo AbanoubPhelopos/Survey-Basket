@@ -3,11 +3,27 @@ export interface LoginRequest {
   password: string;
 }
 
+export type AppRole = 'Admin' | 'SystemAdmin' | 'PartnerCompany' | 'CompanyUser' | 'Member';
+
+export interface CapabilityContext {
+  roles: AppRole[];
+  permissions: string[];
+  accountType?: 'AdminAccount' | 'CompanyAccount';
+  requiresActivation?: boolean;
+}
+
 export interface RegisterRequest {
   email: string;
   password: string;
   firstName: string;
   lastName: string;
+  companyId?: string;
+  isCompanyAccount?: boolean;
+}
+
+export interface ActivateCompanyAccountRequest {
+  activationToken: string;
+  newPassword: string;
 }
 
 export interface LoginResponse {
@@ -21,6 +37,8 @@ export interface LoginResponse {
   lastName: string;
   email: string;
   userId: string;
+  accountType?: 'AdminAccount' | 'CompanyAccount';
+  requiresActivation?: boolean;
 }
 
 export interface User {
@@ -30,4 +48,6 @@ export interface User {
   lastName: string;
   permissions: string[];
   roles: string[];
+  accountType?: 'AdminAccount' | 'CompanyAccount';
+  requiresActivation?: boolean;
 }

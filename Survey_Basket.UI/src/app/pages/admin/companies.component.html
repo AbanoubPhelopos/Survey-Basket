@@ -1,0 +1,55 @@
+<section class="companies-page">
+  <header class="companies-page__header sb-surface sb-hero-gradient">
+    <div>
+      <p class="companies-page__eyebrow">Admin Control</p>
+      <h1>Create Company Account</h1>
+      <p class="sb-muted">Provision a company account in pending-password state. Company users are created later by that company account.</p>
+    </div>
+  </header>
+
+  <div class="companies-page__content">
+    <form class="sb-surface companies-form" [formGroup]="form" (ngSubmit)="createCompanyAccount()">
+      <label>
+        <span>Company Name</span>
+        <input class="sb-input" formControlName="companyName" placeholder="Acme Logistics" />
+      </label>
+
+      <label>
+        <span>Contact Email</span>
+        <input class="sb-input" formControlName="contactEmail" placeholder="ops@acme.com" />
+      </label>
+
+      <div class="companies-form__row">
+        <label>
+          <span>Contact First Name</span>
+          <input class="sb-input" formControlName="firstName" placeholder="Nora" />
+        </label>
+        <label>
+          <span>Contact Last Name</span>
+          <input class="sb-input" formControlName="lastName" placeholder="Kareem" />
+        </label>
+      </div>
+
+      <button class="sb-btn-primary" type="submit" [disabled]="loading()">
+        {{ loading() ? 'Creating...' : 'Create Company Account' }}
+      </button>
+
+      @if (errorMessage()) {
+      <p class="companies-form__error sb-error">{{ errorMessage() }}</p>
+      }
+
+      <p class="sb-muted">After creation, share the activation token securely with the company account owner.</p>
+    </form>
+
+    @if (created()) {
+    <aside class="sb-surface companies-result">
+      <h2>Company Account Created</h2>
+      <p><strong>Company ID:</strong> {{ created()?.companyId }}</p>
+      <p><strong>Company Account User ID:</strong> {{ created()?.companyAccountUserId }}</p>
+      <p><strong>State:</strong> {{ created()?.activationState }}</p>
+      <p><strong>Activation Token:</strong></p>
+      <code>{{ created()?.activationToken }}</code>
+    </aside>
+    }
+  </div>
+</section>

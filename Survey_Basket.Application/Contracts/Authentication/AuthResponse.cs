@@ -10,5 +10,7 @@ public record AuthResponse(
     string RefreshToken,
     DateTime RefreshTokenExpiration,
     IEnumerable<string> Roles,
-    IEnumerable<string> Permissions
+    IEnumerable<string> Permissions,
+    string? AccountType = null,
+    bool RequiresActivation = false
 );

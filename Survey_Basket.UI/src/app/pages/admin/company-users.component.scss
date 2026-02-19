@@ -1,0 +1,68 @@
+.company-users-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.company-users-header,
+.company-users-form,
+.company-users-list {
+  padding: 1rem;
+}
+
+.company-users-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.company-users-form {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.company-users-form label {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.company-users-error {
+  margin: 0;
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.company-users-list h2 {
+  margin-top: 0;
+}
+
+.company-record {
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  padding: 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+
+.company-record h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.company-record p {
+  margin: 0.15rem 0 0;
+}
+
+.company-record__badge {
+  font-size: 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  padding: 0.25rem 0.6rem;
+}
+
+@media (min-width: 960px) {
+  .company-users-grid {
+    grid-template-columns: 1fr 1.2fr;
+    align-items: start;
+  }
+}
