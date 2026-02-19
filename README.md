@@ -10,11 +10,21 @@ Survey Basket is a robust and scalable Web API built with .NET 9, designed to fa
 - **Question Management**: Add and manage questions for each poll.
 - **Voting System**: Secure and validated voting mechanism.
 - **Results & Analytics**: View detailed results of polls.
+- **Company Provisioning Flow**: Admin can create company accounts in pending-password state.
+- **Company Activation Flow**: Company accounts complete first-time activation by setting their own password with a one-time token.
+- **Company User Records**: Company accounts can create company-scoped non-authenticated user records.
 - **Background Jobs**: Automated tasks (e.g., daily notifications) using Hangfire.
 - **Validation**: Comprehensive request validation using FluentValidation.
 - **Caching**: Response caching using built-in mechanisms and HybridCache.
 - **Logging**: Structured logging with Serilog.
 - **Documentation**: Interactive API documentation via Swagger UI.
+
+## Recent Fixes
+
+- Added compatibility checks for legacy polls/questions so authorized partner/company users can manage older data even when newer ownership link records are missing.
+- Added activation endpoint and contract for company accounts (`activate-company`) with secure password setup flow.
+- Blocked sign-in for company-user records to enforce non-authenticated record behavior.
+- Added admin company-account provisioning endpoint and company-scoped user-record creation endpoint.
 
 ## Technologies Used
 - **Framework**: .NET 9, ASP.NET Core Web API
@@ -88,6 +98,13 @@ Implementation of external concerns.
 ### API Documentation
 Once the application is running, you can access the Swagger UI to explore and test the endpoints:
 - URL: `https://localhost:7194/swagger`
+
+### Key Endpoints Added in Recent Update
+
+- `POST /api/users/company-accounts` - admin-only company account provisioning.
+- `POST /me/company-accounts/{companyAccountUserId}/activation-token` - admin-generated activation token.
+- `POST /api/auth/activate-company` - first-time company account activation and password setup.
+- `POST /api/users/company-user-records` - company account creates own company user records (non-authenticated).
 
 ### Background Jobs Dashboard
 Monitor background jobs via the Hangfire Dashboard:
