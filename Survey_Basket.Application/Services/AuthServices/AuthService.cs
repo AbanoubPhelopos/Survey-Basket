@@ -51,6 +51,8 @@ public class AuthService(
         if (result.Succeeded)
         {
             var (userRoles, userPermissions) = await GetUserRolesAndPermissions(user, cancellationToken);
+            var accountType = userRoles.Contains(DefaultRoles.PartnerCompany) ? "CompanyAccount" : "AdminAccount";
+            var requiresActivation = userRoles.Contains(DefaultRoles.PartnerCompany) && user.IsDisabled;
 
             var (token, expiresIn) = _jwtProvider.GenerateToken(user, userRoles, userPermissions);
             var refreshToken = GenerateRefreshToken();
@@ -64,7 +66,7 @@ public class AuthService(
 
             await _userManager.UpdateAsync(user);
 
-            var response = new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, token, expiresIn, refreshToken, refreshTokenExpiration, userRoles, userPermissions);
+            var response = new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, token, expiresIn, refreshToken, refreshTokenExpiration, userRoles, userPermissions, accountType, requiresActivation);
 
             return Result.Success(response);
         }
@@ -104,6 +106,8 @@ public class AuthService(
         userRefreshToken.RevokedAt = DateTime.UtcNow;
 
         var (userRoles, userPermissions) = await GetUserRolesAndPermissions(user, cancellationToken);
+        var accountType = userRoles.Contains(DefaultRoles.PartnerCompany) ? "CompanyAccount" : "AdminAccount";
+        var requiresActivation = userRoles.Contains(DefaultRoles.PartnerCompany) && user.IsDisabled;
 
         var (newToken, expiresIn) = _jwtProvider.GenerateToken(user, userRoles, userPermissions);
         var newRefreshToken = GenerateRefreshToken();
@@ -117,7 +121,7 @@ public class AuthService(
 
         await _userManager.UpdateAsync(user);
 
-        var response = new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, newToken, expiresIn, newRefreshToken, refreshTokenExpiration, userRoles, userPermissions);
+        var response = new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, newToken, expiresIn, newRefreshToken, refreshTokenExpiration, userRoles, userPermissions, accountType, requiresActivation);
 
         return Result.Success(response);
     }
@@ -159,13 +163,13 @@ public class AuthService(
 
         if (result.Succeeded)
         {
-            var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-            code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+            var addToRoleResult = await _userManager.AddToRoleAsync(user, DefaultRoles.Member);
 
-            _logger.LogInformation("Confirmation code: {code}", code);
-
-            // Skip email sending to avoid template path issues in dev
-            // await SendConfirmationEmail(user, code);
+            if (!addToRoleResult.Succeeded)
+            {
+                var roleError = addToRoleResult.Errors.First();
+                return Result.Failure(new Error(roleError.Code, roleError.Description, StatusCodes.Status400BadRequest));
+            }
 
             return Result.Success();
         }
@@ -311,21 +315,20 @@ public class AuthService(
 
     private async Task<(IEnumerable<string> roles, IEnumerable<string> permissions)> GetUserRolesAndPermissions(ApplicationUser user, CancellationToken cancellationToken)
     {
-        // HARDCODE ADMIN ROLE FOR DEVELOPMENT ACCESS
-        var userRoles = new List<string> { DefaultRoles.Admin };
+        var userRoles = (await _userManager.GetRolesAsync(user)).ToList();
 
-        // Hardcode all core permissions to ensure UI links appear
-        var userPermissions = new List<string> { 
-            Permissions.GetPolls, 
-            Permissions.AddPolls, 
-            Permissions.UpdatePolls, 
-            Permissions.DeletePolls,
-            Permissions.GetUsers,
-            Permissions.GetQuestions,
-            Permissions.AddQuestions,
-            Permissions.UpdateQuestions,
-            Permissions.Results
-        };
+        if (userRoles.Count == 0)
+        {
+            var addMemberRoleResult = await _userManager.AddToRoleAsync(user, DefaultRoles.Member);
+            if (addMemberRoleResult.Succeeded)
+            {
+                userRoles.Add(DefaultRoles.Member);
+            }
+        }
+
+        var userPermissions = userRoles.Count > 0
+            ? await _unitOfWork.Roles.GetPermissionsByRolesAsync(userRoles, cancellationToken)
+            : [];
 
         return (userRoles, userPermissions);
     }

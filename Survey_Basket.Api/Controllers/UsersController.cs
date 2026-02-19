@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Survey_Basket.Application.Abstractions.Const;
+using Survey_Basket.Application.Contracts.User;
+using Survey_Basket.Application.Extensions;
 using Survey_Basket.Application.Services.AuthServices.Filter;
 using Survey_Basket.Application.Services.User;
 
@@ -15,5 +17,14 @@ public class UsersController(IUserServices userServices) : ControllerBase
     [HasPermission(Permissions.GetUsers)]
     public async Task<IActionResult> GetUsers(CancellationToken cancellationToken) =>
          Ok(await _userServices.GetUsersAsync(cancellationToken));
-    
+
+    [HttpPost("company-accounts")]
+    [HasPermission(Permissions.ManageCompanies)]
+    public async Task<IActionResult> CreateCompanyAccount([FromBody] CreateCompanyAccountRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _userServices.CreateCompanyAccountAsync(User.GetUserId(), request, cancellationToken);
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : result.ToProblemDetails();
+    }
 }

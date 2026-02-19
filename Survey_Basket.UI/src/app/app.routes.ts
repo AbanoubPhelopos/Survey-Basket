@@ -7,6 +7,7 @@ import { EditPollComponent } from './pages/polls/edit-poll.component';
 import { VoteComponent } from './pages/polls/vote.component';
 import { ResultsComponent } from './pages/polls/results.component';
 import { UsersComponent } from './pages/admin/users.component';
+import { CompaniesComponent } from './pages/admin/companies.component';
 import { ProfileComponent } from './pages/profile/profile.component';
 import { authGuard } from './core/guards/auth.guard';
 
@@ -22,27 +23,38 @@ export const routes: Routes = [
   { 
     path: 'polls/new', 
     component: CreatePollComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard],
+    data: { roles: ['Admin'] }
   },
   { 
     path: 'polls/:id/edit', 
     component: EditPollComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard],
+    data: { roles: ['Admin'] }
   },
   { 
     path: 'polls/:id/vote', 
     component: VoteComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard],
+    data: { roles: ['Member'] }
   },
   { 
     path: 'polls/:id/results', 
     component: ResultsComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard],
+    data: { roles: ['Admin'] }
+  },
+  { 
+    path: 'admin/companies',
+    component: CompaniesComponent,
+    canActivate: [authGuard],
+    data: { roles: ['Admin', 'SystemAdmin'] }
   },
   { 
     path: 'users', 
     component: UsersComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard],
+    data: { roles: ['Admin'] }
   },
   { 
     path: 'profile', 
