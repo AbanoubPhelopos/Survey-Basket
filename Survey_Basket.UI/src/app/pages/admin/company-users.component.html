@@ -21,7 +21,7 @@
       </button>
 
       @if (errorMessage()) {
-      <p class="company-users-error">{{ errorMessage() }}</p>
+      <p class="company-users-error sb-error">{{ errorMessage() }}</p>
       }
     </form>
 
@@ -29,7 +29,7 @@
       <h2>Created Records</h2>
 
       @if (records().length === 0) {
-      <p class="sb-muted">No company user records created in this session yet.</p>
+      <p class="sb-empty">No company user records created in this session yet.</p>
       }
 
       @for (record of records(); track record.companyUserRecordId) {

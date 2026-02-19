@@ -35,8 +35,10 @@
       </button>
 
       @if (errorMessage()) {
-      <p class="companies-form__error">{{ errorMessage() }}</p>
+      <p class="companies-form__error sb-error">{{ errorMessage() }}</p>
       }
+
+      <p class="sb-muted">After creation, share the activation token securely with the company account owner.</p>
     </form>
 
     @if (created()) {
