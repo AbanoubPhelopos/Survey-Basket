@@ -39,5 +39,14 @@ namespace Survey_Basket.Api.Controllers
                 ? Ok(result.Value)
                 : result.ToProblemDetails();
         }
+
+        [HttpGet("analytics")]
+        public async Task<ActionResult> Analytics([FromRoute] Guid pollId, CancellationToken cancellationToken)
+        {
+            var result = await _resultService.GetPollAnalyticsAsync(pollId, cancellationToken);
+            return result.IsSuccess
+                ? Ok(result.Value)
+                : result.ToProblemDetails();
+        }
     }
 }

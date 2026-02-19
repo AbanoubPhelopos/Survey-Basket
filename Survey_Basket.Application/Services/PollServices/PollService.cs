@@ -105,12 +105,26 @@ public class PollService(
 
     public async Task<Result<PagedList<PollResponse>>> Get(RequestFilters filters, CancellationToken cancellationToken = default)
     {
+        var userContext = GetCurrentUserContext();
+        if (!userContext.IsSuccess)
+            return Result.Failure<PagedList<PollResponse>>(userContext.Error);
+
+        HashSet<Guid>? visiblePollIds = null;
+        if (HasAnyRole(userContext.Value.Roles, DefaultRoles.PartnerCompany))
+        {
+            visiblePollIds = (await _unitOfWork.Repository<PollOwner>()
+                .GetAllAsync(x => x.UserId == userContext.Value.UserId, cancellationToken))
+                .Select(x => x.PollId)
+                .ToHashSet();
+        }
+
         var (polls, totalCount) = await _unitOfWork.Repository<Poll>().GetPagedAsync(
             filters.PageNumber,
             filters.PageSize,
             filters.SortColumn,
             filters.SortDirection,
-            p => string.IsNullOrEmpty(filters.SearchTerm) || p.Title.Contains(filters.SearchTerm),
+            p => (visiblePollIds == null || visiblePollIds.Contains(p.Id))
+                 && (string.IsNullOrEmpty(filters.SearchTerm) || p.Title.Contains(filters.SearchTerm)),
             cancellationToken);
 
         var pollResponses = polls.Adapt<IEnumerable<PollResponse>>();
