@@ -36,7 +36,11 @@ export class AuthService {
   }
 
   activateCompanyAccount(companyId: string, request: ActivateCompanyAccountRequest): Observable<void> {
-    return this.http.post<void>(`${API_BASE_URL}/companies/${companyId}/activate`, request);
+    return this.http.post<void>(`${this.apiUrl}/activate-company`, {
+      companyAccountUserId: companyId,
+      activationToken: request.activationToken,
+      newPassword: request.newPassword
+    });
   }
 
   logout(): void {

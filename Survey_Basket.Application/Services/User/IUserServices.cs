@@ -11,4 +11,5 @@ public interface IUserServices
     Task<IEnumerable<UserResponse>> GetUsersAsync(CancellationToken cancellationToken = default);
     Task<Result<CreateCompanyAccountResponse>> CreateCompanyAccountAsync(Guid adminUserId, CreateCompanyAccountRequest request, CancellationToken cancellationToken = default);
     Task<Result<string>> GenerateCompanyActivationTokenAsync(Guid adminUserId, Guid companyAccountUserId, CancellationToken cancellationToken = default);
+    Task<Result<CreateCompanyUserRecordResponse>> CreateCompanyUserRecordAsync(Guid companyAccountUserId, CreateCompanyUserRecordRequest request, CancellationToken cancellationToken = default);
 }

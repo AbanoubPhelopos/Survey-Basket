@@ -310,6 +310,18 @@ public class PollService(
         if (!HasAnyRole(roles, DefaultRoles.PartnerCompany))
             return Result.Failure(PollErrors.PollAccessDenied);
 
+        // Backward-compatible ownership checks for polls created before PollOwner was introduced.
+        if (poll.CreatedById == userId)
+            return Result.Success();
+
+        var companyIds = (await _unitOfWork.Repository<CompanyUser>()
+            .GetAllAsync(x => x.UserId == userId && x.IsActive, cancellationToken))
+            .Select(x => x.CompanyId)
+            .ToHashSet();
+
+        if (poll.OwnerCompanyId.HasValue && companyIds.Contains(poll.OwnerCompanyId.Value))
+            return Result.Success();
+
         var ownsPoll = await _unitOfWork.Repository<PollOwner>()
             .AnyAsync(x => x.PollId == poll.Id && x.UserId == userId, cancellationToken);
 

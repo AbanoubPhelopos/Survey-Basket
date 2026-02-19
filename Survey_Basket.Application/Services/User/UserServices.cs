@@ -169,6 +169,73 @@ public class UserServices(UserManager<ApplicationUser> userManager, IUnitOfWork 
         return Result.Success(token);
     }
 
+    public async Task<Result<CreateCompanyUserRecordResponse>> CreateCompanyUserRecordAsync(Guid companyAccountUserId, CreateCompanyUserRecordRequest request, CancellationToken cancellationToken = default)
+    {
+        var actor = await _userManager.FindByIdAsync(companyAccountUserId.ToString());
+        if (actor is null)
+            return Result.Failure<CreateCompanyUserRecordResponse>(UserErrors.UserNotFound);
+
+        var isCompanyAccount = await _userManager.IsInRoleAsync(actor, DefaultRoles.PartnerCompany);
+        if (!isCompanyAccount)
+            return Result.Failure<CreateCompanyUserRecordResponse>(new Error("User.Forbidden", "Only company accounts can create company user records.", StatusCodes.Status403Forbidden));
+
+        var actorCompany = await _unitOfWork.Repository<CompanyUser>()
+            .GetAsync(x => x.UserId == companyAccountUserId && x.IsPrimary && x.IsActive, cancellationToken: cancellationToken);
+
+        if (actorCompany is null)
+            return Result.Failure<CreateCompanyUserRecordResponse>(new Error("Company.NotLinked", "Company account is not linked to a company.", StatusCodes.Status400BadRequest));
+
+        var normalizedIdentifier = request.BusinessIdentifier.Trim().ToUpperInvariant();
+        var recordUserName = BuildCompanyUserName(actorCompany.CompanyId, normalizedIdentifier);
+        var duplicate = await _userManager.Users.AnyAsync(x => x.UserName == recordUserName, cancellationToken);
+        if (duplicate)
+            return Result.Failure<CreateCompanyUserRecordResponse>(new Error("CompanyUser.IdentifierExists", "Business identifier already exists for this company.", StatusCodes.Status409Conflict));
+
+        var recordUser = new ApplicationUser
+        {
+            FirstName = request.DisplayName.Trim(),
+            LastName = "Record",
+            Email = $"{recordUserName}@records.local",
+            UserName = recordUserName,
+            EmailConfirmed = true,
+            IsDisabled = true
+        };
+
+        var tempPassword = $"Tmp!{Guid.NewGuid():N}aA1";
+        var createResult = await _userManager.CreateAsync(recordUser, tempPassword);
+        if (!createResult.Succeeded)
+        {
+            var error = createResult.Errors.First();
+            return Result.Failure<CreateCompanyUserRecordResponse>(new Error(error.Code, error.Description, StatusCodes.Status400BadRequest));
+        }
+
+        var roleResult = await _userManager.AddToRoleAsync(recordUser, DefaultRoles.CompanyUser);
+        if (!roleResult.Succeeded)
+        {
+            var roleError = roleResult.Errors.First();
+            return Result.Failure<CreateCompanyUserRecordResponse>(new Error(roleError.Code, roleError.Description, StatusCodes.Status400BadRequest));
+        }
+
+        await _unitOfWork.Repository<CompanyUser>().AddAsync(new CompanyUser
+        {
+            CompanyId = actorCompany.CompanyId,
+            UserId = recordUser.Id,
+            IsPrimary = false,
+            IsActive = true,
+            CreatedById = companyAccountUserId
+        }, cancellationToken);
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return Result.Success(new CreateCompanyUserRecordResponse(
+            recordUser.Id,
+            actorCompany.CompanyId,
+            request.DisplayName.Trim(),
+            normalizedIdentifier,
+            false
+        ));
+    }
+
     private async Task<string> GenerateEncodedResetTokenAsync(ApplicationUser user)
     {
         var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
@@ -180,5 +247,12 @@ public class UserServices(UserManager<ApplicationUser> userManager, IUnitOfWork 
         var letters = new string(companyName.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
         var prefix = letters.Length >= 6 ? letters[..6] : letters.PadRight(6, 'X');
         return $"{prefix}-{Guid.NewGuid():N}"[..20];
+    }
+
+    private static string BuildCompanyUserName(Guid companyId, string businessIdentifier)
+    {
+        var cleaned = new string(businessIdentifier.Where(char.IsLetterOrDigit).ToArray()).ToLowerInvariant();
+        var prefix = cleaned.Length > 16 ? cleaned[..16] : cleaned;
+        return $"cu-{companyId:N}-{prefix}";
     }
 }

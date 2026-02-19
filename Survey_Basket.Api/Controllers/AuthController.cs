@@ -84,4 +84,13 @@ public class AuthController(IAuthService authService) : ControllerBase
             ? Ok()
             : result.ToProblemDetails();
     }
+
+    [HttpPost("activate-company")]
+    public async Task<IActionResult> ActivateCompanyAccount([FromBody] ActivateCompanyAccountRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _authService.ActivateCompanyAccountAsync(request, cancellationToken);
+        return result.IsSuccess
+            ? Ok()
+            : result.ToProblemDetails();
+    }
 }

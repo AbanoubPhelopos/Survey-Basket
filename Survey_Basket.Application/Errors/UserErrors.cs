@@ -21,6 +21,7 @@ public static class UserErrors
     public static readonly Error InvalidCode = new("User.InvalidCode", "The provided code is invalid or has expired.", StatusCodes.Status401Unauthorized);
     public static readonly Error EmailAlreadyConfirmed = new("User.EmailAlreadyConfirmed", "Email is already confirmed.", StatusCodes.Status400BadRequest);
     public static readonly Error EmailNotConfirmed = new("User.EmailNotConfirmed", "Email is not confirmed.", StatusCodes.Status400BadRequest);
+    public static readonly Error CompanyUserLoginNotAllowed = new("User.CompanyUserLoginNotAllowed", "Company user records cannot sign in.", StatusCodes.Status403Forbidden);
 
 
 }

@@ -11,7 +11,11 @@ export const authGuard: CanActivateFn = (route, state) => {
 
   if (authService.isAuthenticated()) {
     if (authService.requiresActivation() && !state.url.startsWith('/activate-company')) {
-      return router.createUrlTree(['/activate-company']);
+      const companyAccountUserId = authService.user()?.id;
+      if (!companyAccountUserId) {
+        return router.createUrlTree(['/login']);
+      }
+      return router.createUrlTree(['/activate-company', companyAccountUserId]);
     }
 
     if (requiredRoles.length > 0 && !authService.hasAnyRole(requiredRoles)) {
