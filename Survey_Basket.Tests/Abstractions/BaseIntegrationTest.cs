@@ -14,8 +14,11 @@ public abstract class BaseIntegrationTest : IClassFixture<IntegrationTestWebAppF
 
     protected BaseIntegrationTest(IntegrationTestWebAppFactory factory)
     {
-        _scope = factory.Services.CreateScope();
+        const string testUserId = "00000000-0000-0000-0000-000000000001";
+
         HttpClient = factory.CreateClient();
+
+        _scope = factory.Services.CreateScope();
         DbContext = _scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
         // Set up fake HttpContext so ApplicationDbContext.SaveChangesAsync 
@@ -25,8 +28,9 @@ public abstract class BaseIntegrationTest : IClassFixture<IntegrationTestWebAppF
         {
             User = new ClaimsPrincipal(new ClaimsIdentity(new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
+                new Claim(ClaimTypes.NameIdentifier, testUserId),
                 new Claim(ClaimTypes.Name, "TestUser"),
+                new Claim("roles", "[\"Admin\",\"Member\"]"),
             }, "Test"))
         };
 

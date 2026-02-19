@@ -8,6 +8,8 @@ namespace Survey_Basket.Tests.Abstractions;
 
 public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
+    private static readonly string TestUserId = "00000000-0000-0000-0000-000000000001";
+
     public TestAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options,
         ILoggerFactory logger, UrlEncoder encoder)
         : base(options, logger, encoder)
@@ -19,7 +21,8 @@ public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions
         var claims = new List<Claim>
         {
             new(ClaimTypes.Name, "TestUser"),
-            new(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
+            new(ClaimTypes.NameIdentifier, TestUserId),
+            new("roles", "[\"Admin\",\"Member\"]"),
             // Add all permissions so integration tests can access all endpoints
             new("permissions", "polls:read"),
             new("permissions", "polls:add"),

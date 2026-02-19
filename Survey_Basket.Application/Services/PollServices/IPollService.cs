@@ -13,5 +13,5 @@ public interface IPollService
     Task<Result> DeletePoll(Guid id, CancellationToken cancellationToken = default);
     Task<Result> UpdatePoll(Guid id, UpdatePollRequests updatedPoll, CancellationToken cancellationToken = default);
     Task<Result> AssignAudienceAsync(Guid pollId, AssignPollAudienceRequest request, CancellationToken cancellationToken = default);
-    Task<Result> TogglePublishStatusAsync(int id, CancellationToken cancellationToken = default);
+    Task<Result> TogglePublishStatusAsync(Guid id, CancellationToken cancellationToken = default);
 }

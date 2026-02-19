@@ -38,7 +38,8 @@ public class PollService(
             poll.TargetCompanyIds,
             userContext.Value.UserId,
             userContext.Value.Roles,
-            cancellationToken);
+            cancellationToken,
+            allowEmptyForAdmin: true);
 
         if (!targetCompanyIdsResult.IsSuccess)
             return Result.Failure(targetCompanyIdsResult.Error);
@@ -246,7 +247,7 @@ public class PollService(
         return Result.Success();
     }
 
-    public async Task<Result> TogglePublishStatusAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<Result> TogglePublishStatusAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var poll = await _unitOfWork.Repository<Poll>().GetByIdAsync(id, cancellationToken);
 

@@ -1,5 +1,7 @@
 using System.Linq.Expressions;
+using System.Security.Claims;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
 using Moq;
 using Survey_Basket.Application.Contracts.Common;
 using Survey_Basket.Application.Contracts.Polls;
@@ -17,6 +19,8 @@ public class PollServiceTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IBaseRepository<Poll>> _pollRepoMock;
+    private readonly Mock<IBaseRepository<PollOwner>> _pollOwnerRepoMock;
+    private readonly Mock<IBaseRepository<PollAudience>> _pollAudienceRepoMock;
     private readonly Mock<INotificationService> _notificationServiceMock;
     private readonly PollService _sut;
 
@@ -24,11 +28,35 @@ public class PollServiceTests
     {
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _pollRepoMock = new Mock<IBaseRepository<Poll>>();
+        _pollOwnerRepoMock = new Mock<IBaseRepository<PollOwner>>();
+        _pollAudienceRepoMock = new Mock<IBaseRepository<PollAudience>>();
         _notificationServiceMock = new Mock<INotificationService>();
 
         _unitOfWorkMock.Setup(u => u.Repository<Poll>()).Returns(_pollRepoMock.Object);
+        _unitOfWorkMock.Setup(u => u.Repository<PollOwner>()).Returns(_pollOwnerRepoMock.Object);
+        _unitOfWorkMock.Setup(u => u.Repository<PollAudience>()).Returns(_pollAudienceRepoMock.Object);
 
-        _sut = new PollService(_unitOfWorkMock.Object, _notificationServiceMock.Object);
+        _pollOwnerRepoMock
+            .Setup(r => r.AddAsync(It.IsAny<PollOwner>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((PollOwner entity, CancellationToken _) => entity);
+
+        _pollAudienceRepoMock
+            .Setup(r => r.AddRangeAsync(It.IsAny<IEnumerable<PollAudience>>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var httpContext = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(new ClaimsIdentity(
+                [
+                    new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
+                    new Claim("roles", "[\"Admin\"]")
+                ],
+                "Test"))
+        };
+
+        var httpContextAccessor = new HttpContextAccessor { HttpContext = httpContext };
+
+        _sut = new PollService(_unitOfWorkMock.Object, _notificationServiceMock.Object, httpContextAccessor);
     }
 
     #region Get(Guid id)
@@ -148,7 +176,7 @@ public class PollServiceTests
 
         _unitOfWorkMock.Verify(
             u => u.SaveChangesAsync(It.IsAny<CancellationToken>()),
-            Times.Once);
+            Times.Exactly(2));
     }
 
     [Fact]
@@ -305,7 +333,6 @@ public class PollServiceTests
     public async Task TogglePublishStatusAsync_ShouldToggleStatus_WhenPollExists()
     {
         // Arrange
-        var pollId = 1;
         var poll = new Poll
         {
             Id = Guid.NewGuid(),
@@ -323,7 +350,7 @@ public class PollServiceTests
             .ReturnsAsync(1);
 
         // Act
-        var result = await _sut.TogglePublishStatusAsync(pollId);
+        var result = await _sut.TogglePublishStatusAsync(poll.Id);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -342,7 +369,7 @@ public class PollServiceTests
             .ReturnsAsync((Poll?)null);
 
         // Act
-        var result = await _sut.TogglePublishStatusAsync(999);
+        var result = await _sut.TogglePublishStatusAsync(Guid.NewGuid());
 
         // Assert
         result.IsSuccess.Should().BeFalse();

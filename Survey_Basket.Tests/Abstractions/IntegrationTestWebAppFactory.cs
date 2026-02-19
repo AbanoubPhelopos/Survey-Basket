@@ -15,6 +15,8 @@ namespace Survey_Basket.Tests.Abstractions;
 
 public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
+    private const string TestUserId = "00000000-0000-0000-0000-000000000001";
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
@@ -59,8 +61,9 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>, IAsy
                 var context = new DefaultHttpContext();
                 var claims = new List<Claim>
                 {
-                    new(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
+                    new(ClaimTypes.NameIdentifier, TestUserId),
                     new(ClaimTypes.Name, "TestUser"),
+                    new("roles", "[\"Admin\",\"Member\"]"),
                 };
                 context.User = new ClaimsPrincipal(new ClaimsIdentity(claims, "Test"));
                 return new HttpContextAccessor { HttpContext = context };

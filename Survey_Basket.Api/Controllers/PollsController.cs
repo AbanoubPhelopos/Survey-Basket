@@ -95,8 +95,8 @@ public class PollsController(IPollService pollService) : ControllerBase
             : result.ToProblemDetails();
     }
 
-    [HttpPut("{id}/togglePublish")]
-    public async Task<IActionResult> TogglePublish([FromRoute] int id, CancellationToken cancellationToken)
+    [HttpPut("{id:guid}/togglePublish")]
+    public async Task<IActionResult> TogglePublish([FromRoute] Guid id, CancellationToken cancellationToken)
     {
         var result = await _pollService.TogglePublishStatusAsync(id, cancellationToken);
 

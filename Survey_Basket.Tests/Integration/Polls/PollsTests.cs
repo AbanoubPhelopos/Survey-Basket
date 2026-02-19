@@ -19,7 +19,7 @@ public class PollsTests : BaseIntegrationTest
     public async Task GetPolls_ShouldReturnPaginatedList_WhenPollsExist()
     {
         // Arrange
-        var userId = Guid.NewGuid().ToString();
+        var userId = Guid.Parse("00000000-0000-0000-0000-000000000001");
         var polls = new List<Poll>
         {
             new() { Title = "Poll 1", Summary = "Summary 1", IsPublished = true, CreatedById = userId },
@@ -28,6 +28,16 @@ public class PollsTests : BaseIntegrationTest
         };
 
         await DbContext.Set<Poll>().AddRangeAsync(polls);
+        await DbContext.SaveChangesAsync();
+
+        var owners = polls.Select(p => new PollOwner
+        {
+            PollId = p.Id,
+            UserId = userId,
+            CreatedById = userId
+        });
+
+        await DbContext.Set<PollOwner>().AddRangeAsync(owners);
         await DbContext.SaveChangesAsync();
 
         // Act
