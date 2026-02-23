@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AccountService } from '../../core/services/account.service';
 import { AuthService } from '../../core/services/auth.service';
+import { UiFeedbackService } from '../../core/services/ui-feedback.service';
 
 @Component({
   selector: 'app-profile',
@@ -10,14 +11,6 @@ import { AuthService } from '../../core/services/auth.service';
   imports: [CommonModule, ReactiveFormsModule],
   template: `
     <div class="page-wrapper pt-4 max-w-4xl mx-auto w-full">
-      <header class="page-header flex items-center justify-between gap-4">
-        <div>
-          <p class="text-xs tracking-wider text-[var(--accent)] font-bold mb-1 uppercase">User Settings</p>
-          <h1 class="page-header__title">Account Profile</h1>
-          <p class="page-header__desc">Manage your personal information and password security.</p>
-        </div>
-      </header>
-
       <div class="grid gap-6 auto-rows-max lg:grid-cols-12">
         <!-- Profile Form -->
         <div class="sb-surface rounded-xl border border-[var(--border)] overflow-hidden lg:col-span-12">
@@ -96,6 +89,7 @@ export class ProfileComponent implements OnInit {
   private fb = inject(FormBuilder);
   private accountService = inject(AccountService);
   private authService = inject(AuthService);
+  private uiFeedback = inject(UiFeedbackService);
 
   constructor() {
     this.profileForm = this.fb.group({
@@ -129,11 +123,11 @@ export class ProfileComponent implements OnInit {
       this.accountService.updateProfile(this.profileForm.value).subscribe({
         next: () => {
           this.isUpdatingProfile = false;
-          alert('Profile updated successfully.');
+          this.uiFeedback.success('Profile updated', 'Your account details were updated successfully.');
         },
         error: () => {
           this.isUpdatingProfile = false;
-          alert('Failed to update profile.');
+          this.uiFeedback.error('Update failed', 'Unable to update profile right now.');
         }
       });
     }
@@ -146,11 +140,11 @@ export class ProfileComponent implements OnInit {
         next: () => {
           this.isChangingPassword = false;
           this.passwordForm.reset();
-          alert('Password changed successfully.');
+          this.uiFeedback.success('Password changed', 'Your password has been updated successfully.');
         },
         error: () => {
           this.isChangingPassword = false;
-          alert('Failed to change password.');
+          this.uiFeedback.error('Password update failed', 'Unable to change password. Check current password and retry.');
         }
       });
     }

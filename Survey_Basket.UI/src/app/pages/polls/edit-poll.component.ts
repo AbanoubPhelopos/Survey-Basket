@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { PollService } from '../../core/services/poll.service';
 import { QuestionService } from '../../core/services/question.service';
 import { Question, QuestionRequest, QuestionType } from '../../core/models/question';
+import { UiFeedbackService } from '../../core/services/ui-feedback.service';
 
 @Component({
   selector: 'app-edit-poll',
@@ -12,19 +13,12 @@ import { Question, QuestionRequest, QuestionType } from '../../core/models/quest
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
   template: `
     <div class="page-wrapper pt-4">
-      <header class="page-header flex items-center justify-between gap-4">
-        <div>
-          <p class="text-xs tracking-wider text-[var(--text-soft)] font-bold mb-1 uppercase">Poll Management</p>
-          <h1 class="page-header__title">Edit Poll</h1>
-          <p class="page-header__desc">Update poll settings, questions, and publish status.</p>
-        </div>
-        <div class="flex items-center gap-3">
-           <a routerLink="/dashboard" class="px-3 py-1.5 text-xs font-semibold rounded-md border border-[var(--border)] hover:bg-[var(--sidebar-hover)] transition-colors"> Cancel </a>
-           <button (click)="savePoll()" [disabled]="pollForm.invalid || isSaving" class="sb-btn-primary py-1.5 text-xs">
-             {{ isSaving ? 'Saving...' : 'Save Changes' }}
-           </button>
-        </div>
-      </header>
+      <div class="flex items-center justify-end gap-3">
+        <a routerLink="/dashboard" class="px-3 py-1.5 text-xs font-semibold rounded-md border border-[var(--border)] hover:bg-[var(--sidebar-hover)] transition-colors"> Cancel </a>
+        <button (click)="savePoll()" [disabled]="pollForm.invalid || isSaving" class="sb-btn-primary py-1.5 text-xs">
+          {{ isSaving ? 'Saving...' : 'Save Changes' }}
+        </button>
+      </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
         
@@ -229,6 +223,7 @@ export class EditPollComponent implements OnInit {
   private router = inject(Router);
   private pollService = inject(PollService);
   private questionService = inject(QuestionService);
+  private uiFeedback = inject(UiFeedbackService);
   private fb = inject(FormBuilder);
 
   constructor() {
@@ -288,21 +283,11 @@ export class EditPollComponent implements OnInit {
       this.pollService.updatePoll(this.pollId, this.pollForm.value).subscribe({
         next: () => {
           this.isSaving = false;
-          // If published status changed, toggle it
-          // Actually updatePoll doesn't toggle publish usually, separate endpoint?
-          // My PollService.updatePoll calls PUT /polls/{id}.
-          // Let's check backend UpdatePollRequest.
-          // UpdatePollRequests: Title, Summary, StartedAt, EndedAt.
-          // It does NOT have IsPublished.
-
-          // So if IsPublished changed, I need to call togglePublish.
-          // This is tricky because toggle flips it, doesn't set it.
-          // I'll skip auto-toggling for now to be safe, or check original state.
-          alert('Poll updated successfully!');
+          this.uiFeedback.success('Survey updated', 'Your changes were saved successfully.');
         },
         error: () => {
           this.isSaving = false;
-          alert('Failed to update poll.');
+          this.uiFeedback.error('Update failed', 'Unable to save survey changes.');
         }
       });
     }
@@ -339,6 +324,7 @@ export class EditPollComponent implements OnInit {
           this.addAnswerField();
 
           this.loadQuestions(); // Reload list
+          this.uiFeedback.success('Question added', 'The question was added to the survey.');
         },
         error: (err) => {
           console.error(err);

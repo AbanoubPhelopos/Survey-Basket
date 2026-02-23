@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { UiFeedbackService } from '../../core/services/ui-feedback.service';
 
 @Component({
   selector: 'app-login',
@@ -57,6 +58,7 @@ export class LoginComponent {
   isLoading = false;
   private authService = inject(AuthService);
   private router = inject(Router);
+  private uiFeedback = inject(UiFeedbackService);
 
   constructor(private fb: FormBuilder) {
     this.loginForm = this.fb.group({
@@ -70,13 +72,12 @@ export class LoginComponent {
       this.isLoading = true;
       this.authService.login(this.loginForm.value).subscribe({
         next: () => {
+          this.uiFeedback.success('Welcome back', 'Signed in successfully.');
           this.router.navigate(['/dashboard']);
         },
-        error: (err) => {
-          console.error(err);
+        error: () => {
           this.isLoading = false;
-          // Ideally show a toast notification here
-          alert('Login failed. Please check your credentials.');
+          this.uiFeedback.error('Login failed', 'Please check your email and password.');
         }
       });
     }

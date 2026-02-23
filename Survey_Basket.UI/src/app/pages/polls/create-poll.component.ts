@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { PollService } from '../../core/services/poll.service';
+import { UiFeedbackService } from '../../core/services/ui-feedback.service';
 
 @Component({
   selector: 'app-create-poll',
@@ -10,13 +11,9 @@ import { PollService } from '../../core/services/poll.service';
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
   template: `
     <div class="page-wrapper pt-4 max-w-3xl mx-auto w-full">
-      <header class="page-header flex items-center justify-between gap-4">
-        <div>
-          <h1 class="page-header__title">Create New Poll</h1>
-          <p class="page-header__desc">Set poll details, schedule, and publish status.</p>
-        </div>
+      <div class="flex items-center justify-end gap-4">
         <a routerLink="/dashboard" class="px-3 py-1.5 text-xs font-semibold rounded-md border border-[var(--border)] hover:bg-[var(--sidebar-hover)] transition-colors">Cancel</a>
-      </header>
+      </div>
 
       <form [formGroup]="pollForm" (ngSubmit)="onSubmit()" class="sb-surface p-6 rounded-xl space-y-5">
         <label class="block">
@@ -55,6 +52,7 @@ export class CreatePollComponent {
   isLoading = false;
   private pollService = inject(PollService);
   private router = inject(Router);
+  private uiFeedback = inject(UiFeedbackService);
 
   constructor(private fb: FormBuilder) {
     const today = new Date().toISOString().split('T')[0];
@@ -73,12 +71,12 @@ export class CreatePollComponent {
       this.isLoading = true;
       this.pollService.createPoll(this.pollForm.value).subscribe({
         next: () => {
+          this.uiFeedback.success('Survey created', 'Your new survey is ready for editing and publishing.');
           this.router.navigate(['/dashboard']);
         },
-        error: (err) => {
-          console.error(err);
+        error: () => {
           this.isLoading = false;
-          alert('Failed to create poll.');
+          this.uiFeedback.error('Create failed', 'Unable to create survey right now. Please retry.');
         }
       });
     }

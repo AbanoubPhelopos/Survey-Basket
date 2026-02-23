@@ -1,9 +1,10 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { PollService } from '../../core/services/poll.service';
 import { RequestFilters, PollResponse, PagedList } from '../../core/models/poll';
 import { AuthService } from '../../core/services/auth.service';
+import { UiFeedbackService } from '../../core/services/ui-feedback.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -12,10 +13,18 @@ import { AuthService } from '../../core/services/auth.service';
 
   template: `
     <div class="page-wrapper pt-4">
+      <div class="sb-surface p-4 rounded-xl grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        @for (shortcut of quickActions(); track shortcut.route) {
+          <a [routerLink]="shortcut.route" class="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg-soft)] px-3 py-2 text-[0.78rem] font-bold text-[var(--text)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
+            <span>{{ shortcut.icon }}</span>
+            <span class="truncate">{{ shortcut.label }}</span>
+          </a>
+        }
+      </div>
 
       <ng-container *ngIf="isAdmin()">
-        <div class="flex items-center justify-between mt-2 mb-4">
-          <h2 class="text-lg font-bold"> Manage Polls </h2>
+        <div class="flex items-center justify-between mt-2 mb-1">
+          <p class="text-sm font-bold text-[var(--text)]">Manage Polls</p>
           <a routerLink="/polls/new" class="sb-btn-primary text-xs py-2 px-4 shadow-sm"> 
             <span class="flex items-center gap-1.5">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" /></svg>
@@ -24,10 +33,8 @@ import { AuthService } from '../../core/services/auth.service';
           </a>
         </div>
 
-        <!--Admin Layout Grid-->
         <div *ngIf="polls().items.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           <div *ngFor="let poll of polls().items" class="sb-surface p-5 flex flex-col h-full hover:border-[var(--accent)] transition-all hover:shadow-md group relative overflow-hidden rounded-xl border border-[var(--border)]">
-            <!--decorative top bar-->
             <div class="absolute top-0 left-0 right-0 h-1" [ngClass]="poll.isPublished ? 'bg-emerald-500' : 'bg-amber-400'"> </div>
 
             <div class="flex justify-between items-start mb-3 mt-1">
@@ -48,7 +55,14 @@ import { AuthService } from '../../core/services/auth.service';
           </div>
         </div>
 
-        <!--Admin Empty State-->
+        <div *ngIf="polls().items.length > 0" class="sb-pagination">
+          <p class="sb-pagination__info">Page {{ polls().pageNumber }} of {{ polls().totalPages || 1 }}</p>
+          <div class="sb-pagination__controls">
+            <button type="button" class="sb-pagination__button" (click)="changePage(polls().pageNumber - 1)" [disabled]="!polls().hasPreviousPage">Prev</button>
+            <button type="button" class="sb-pagination__button" (click)="changePage(polls().pageNumber + 1)" [disabled]="!polls().hasNextPage">Next</button>
+          </div>
+        </div>
+
         <div *ngIf="polls().items.length === 0" class="sb-surface rounded-xl border border-[var(--border)] p-12 text-center">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 mx-auto text-gray-300 mb-4">
               <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
@@ -57,11 +71,8 @@ import { AuthService } from '../../core/services/auth.service';
         </div>
       </ng-container>
 
-      <!--MEMBER VIEW-->
       <ng-container *ngIf="!isAdmin()">
-        <div class="mt-2 mb-4 border-b border-[var(--border)] pb-2">
-          <h2 class="text-lg font-bold"> Active Surveys </h2>
-        </div>
+        <p class="mt-2 text-sm font-bold text-[var(--text)]">Active Surveys</p>
 
         <div *ngIf="availablePolls().length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           <div *ngFor="let poll of availablePolls()" class="sb-surface p-6 flex flex-col group hover:border-[var(--accent)] transition-all hover:shadow-md rounded-xl border border-[var(--border)]">
@@ -86,11 +97,26 @@ import { AuthService } from '../../core/services/auth.service';
 export class DashboardComponent implements OnInit {
   authService = inject(AuthService);
   pollService = inject(PollService);
+  uiFeedback = inject(UiFeedbackService);
 
   polls = signal<PagedList<PollResponse>>({ items: [], pageNumber: 1, totalPages: 0, totalCount: 0, hasPreviousPage: false, hasNextPage: false });
   availablePolls = signal<PollResponse[]>([]);
 
   filters: RequestFilters = { pageNumber: 1, pageSize: 9, sortColumn: 'CreatedOn', sortDirection: 'DESC' };
+
+  quickActions = computed(() => {
+    const all = [
+      { route: '/dashboard', label: 'Dashboard', icon: 'DB' },
+      { route: '/polls/new', label: 'Polls', icon: 'PL', roles: ['Admin', 'SystemAdmin', 'PartnerCompany'] },
+      { route: '/users', label: 'Users', icon: 'US', roles: ['Admin', 'SystemAdmin'] },
+      { route: '/admin/companies', label: 'Companies', icon: 'CO', roles: ['Admin', 'SystemAdmin'] },
+      { route: '/company/users', label: 'Company Users', icon: 'CU', roles: ['PartnerCompany'] },
+      { route: '/admin/roles', label: 'Roles', icon: 'RL', roles: ['Admin', 'SystemAdmin'] },
+      { route: '/profile', label: 'Profile', icon: 'PR' }
+    ];
+
+    return all.filter((item) => !item.roles || this.authService.hasAnyRole(item.roles));
+  });
 
   ngOnInit() {
     this.refreshData();
@@ -117,14 +143,35 @@ export class DashboardComponent implements OnInit {
   }
 
   changePage(page: number) {
+    if (page < 1 || page > (this.polls().totalPages || 1)) {
+      return;
+    }
+
     this.filters.pageNumber = page;
     this.loadPolls();
   }
 
-  deletePoll(id: string) {
-    if (confirm('Permanently delete this survey?')) {
-      this.pollService.deletePoll(id).subscribe(() => this.loadPolls());
+  async deletePoll(id: string) {
+    const accepted = await this.uiFeedback.confirm({
+      title: 'Delete survey?',
+      message: 'This action permanently removes the survey and cannot be undone.',
+      confirmText: 'Delete',
+      danger: true
+    });
+
+    if (!accepted) {
+      return;
     }
+
+    this.pollService.deletePoll(id).subscribe({
+      next: () => {
+        this.uiFeedback.success('Survey deleted', 'The selected survey was removed successfully.');
+        this.loadPolls();
+      },
+      error: () => {
+        this.uiFeedback.error('Delete failed', 'The survey could not be deleted. Please try again.');
+      }
+    });
   }
 
   getInitials(first?: string, last?: string): string {

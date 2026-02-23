@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { UserService } from '../../core/services/user.service';
 import { UserResponse } from '../../core/models/user';
@@ -9,16 +9,10 @@ import { UserResponse } from '../../core/models/user';
   imports: [CommonModule],
   template: `
     <section class="page-wrapper pt-4">
-      <header class="page-header">
-        <p class="text-xs tracking-wider text-[var(--accent)] font-bold mb-1 uppercase">Admin Control</p>
-        <h1 class="page-header__title">Manage Users</h1>
-        <p class="page-header__desc">View and monitor authorized system users and their roles.</p>
-      </header>
-
-      <div class="sb-surface rounded-xl border border-[var(--border)] overflow-hidden">
+      <div class="sb-table-wrap">
         <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm text-[var(--text)]">
-            <thead class="bg-[var(--bg-soft)] text-[0.75rem] font-bold uppercase text-[var(--text-soft)] border-b border-[var(--border)]">
+          <table class="sb-table">
+            <thead>
               <tr>
                 <th scope="col" class="px-6 py-3 tracking-wider">User</th>
                 <th scope="col" class="px-6 py-3 tracking-wider">Email Address</th>
@@ -27,8 +21,8 @@ import { UserResponse } from '../../core/models/user';
                 <th scope="col" class="px-6 py-3 tracking-wider text-right">Actions</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-[var(--border)]">
-              <tr *ngFor="let user of users()" class="hover:bg-[var(--sidebar-hover)] transition-colors group">
+            <tbody>
+              <tr *ngFor="let user of pagedUsers()" class="group">
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="flex items-center gap-3">
                     <div class="h-9 w-9 rounded-full bg-[var(--sidebar-avatar-bg)] border border-[var(--border)] flex items-center justify-center text-[var(--text-soft)] text-xs font-bold shadow-sm group-hover:bg-[var(--accent)] group-hover:text-white transition-colors">
@@ -59,7 +53,7 @@ import { UserResponse } from '../../core/models/user';
                   </button>
                 </td>
               </tr>
-              <tr *ngIf="users().length === 0">
+              <tr *ngIf="pagedUsers().length === 0">
                 <td colspan="5" class="px-6 py-12">
                    <div class="sb-empty text-sm">No users found.</div>
                 </td>
@@ -67,15 +61,35 @@ import { UserResponse } from '../../core/models/user';
             </tbody>
           </table>
         </div>
+
+        @if (totalPages() > 1) {
+          <div class="sb-pagination">
+            <p class="sb-pagination__info">Page {{ page() }} of {{ totalPages() }}</p>
+            <div class="sb-pagination__controls">
+              <button class="sb-pagination__button" [disabled]="page() === 1" (click)="page.set(page() - 1)">Prev</button>
+              <button class="sb-pagination__button" [disabled]="page() >= totalPages()" (click)="page.set(page() + 1)">Next</button>
+            </div>
+          </div>
+        }
       </div>
     </section>
   `
 })
 export class UsersComponent implements OnInit {
   users = signal<UserResponse[]>([]);
+  page = signal(1);
+  readonly pageSize = 8;
+  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.users().length / this.pageSize)));
+  readonly pagedUsers = computed(() => {
+    const start = (this.page() - 1) * this.pageSize;
+    return this.users().slice(start, start + this.pageSize);
+  });
   private userService = inject(UserService);
 
   ngOnInit() {
-    this.userService.getUsers().subscribe(res => this.users.set(res));
+    this.userService.getUsers().subscribe((res) => {
+      this.users.set(res);
+      this.page.set(1);
+    });
   }
 }

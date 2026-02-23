@@ -3,6 +3,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AccountService } from '../../core/services/account.service';
 import { CreateCompanyAccountRequest, CreateCompanyAccountResponse } from '../../core/models/company-account';
+import { UiFeedbackService } from '../../core/services/ui-feedback.service';
 
 @Component({
   selector: 'app-companies',
@@ -14,6 +15,7 @@ import { CreateCompanyAccountRequest, CreateCompanyAccountResponse } from '../..
 export class CompaniesComponent {
   private readonly fb = inject(FormBuilder);
   private readonly accountService = inject(AccountService);
+  private readonly uiFeedback = inject(UiFeedbackService);
 
   readonly loading = signal(false);
   readonly generatingToken = signal(false);
@@ -44,6 +46,7 @@ export class CompaniesComponent {
         this.created.set(response);
         this.form.reset();
         this.successMessage.set('Company account created. Share the activation link and token securely.');
+        this.uiFeedback.success('Company created', 'Company account created with a new activation token.');
         this.loading.set(false);
       },
       error: (error) => {
@@ -52,6 +55,7 @@ export class CompaniesComponent {
         } else {
           this.errorMessage.set(error?.error?.detail || 'Company account creation failed. Please retry.');
         }
+        this.uiFeedback.error('Company creation failed', this.errorMessage() || 'Unable to create company account.');
         this.loading.set(false);
       }
     });
@@ -116,10 +120,12 @@ export class CompaniesComponent {
           activationToken: result.activationToken
         });
         this.successMessage.set('A new activation token was generated.');
+        this.uiFeedback.success('Token regenerated', 'A new activation token has been issued.');
         this.generatingToken.set(false);
       },
       error: (error) => {
         this.errorMessage.set(error?.error?.detail || 'Failed to regenerate activation token.');
+        this.uiFeedback.error('Token generation failed', this.errorMessage() || 'Failed to regenerate token.');
         this.generatingToken.set(false);
       }
     });
@@ -129,10 +135,15 @@ export class CompaniesComponent {
     if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(value)
         .then(() => this.successMessage.set(successMessage))
-        .catch(() => this.errorMessage.set('Clipboard copy failed. Please copy manually.'));
+        .then(() => this.uiFeedback.success('Copied', successMessage))
+        .catch(() => {
+          this.errorMessage.set('Clipboard copy failed. Please copy manually.');
+          this.uiFeedback.error('Copy failed', 'Clipboard copy failed. Please copy manually.');
+        });
       return;
     }
 
     this.errorMessage.set('Clipboard API is unavailable. Please copy manually.');
+    this.uiFeedback.error('Clipboard unavailable', 'Clipboard API is unavailable. Please copy manually.');
   }
 }

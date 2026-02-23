@@ -1,28 +1,6 @@
-<div class="shell" [class.is-mobile-open]="isMobileMenuOpen()">
-  <!-- Mobile Header -->
-  <header class="shell__mobile-header">
+<div class="shell">
+  <aside class="shell__sidebar">
     <div class="shell__brand">
-      <span class="shell__logo">SB</span>
-      <p class="shell__title">Survey Basket</p>
-    </div>
-    <button type="button" class="shell__mobile-toggle" (click)="toggleMobileMenu()" aria-label="Toggle menu">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="3" y1="12" x2="21" y2="12"></line>
-        <line x1="3" y1="6" x2="21" y2="6"></line>
-        <line x1="3" y1="18" x2="21" y2="18"></line>
-      </svg>
-    </button>
-  </header>
-
-  <!-- Mobile Overlay -->
-  @if (isMobileMenuOpen()) {
-  <div class="shell__overlay" (click)="closeMobileMenu()" aria-hidden="true"></div>
-  }
-
-  <!-- Sidebar -->
-  <aside class="shell__sidebar" [class.is-open]="isMobileMenuOpen()">
-    <div class="shell__brand shell__brand--desktop">
       <span class="shell__logo">SB</span>
       <div>
         <p class="shell__title">Survey Basket</p>
@@ -30,24 +8,34 @@
       </div>
     </div>
 
-    <div class="shell__mobile-close">
-      <div class="shell__brand">
-        <span class="shell__logo">SB</span>
-        <p class="shell__title">Menu</p>
-      </div>
-      <button type="button" class="shell__mobile-toggle" (click)="closeMobileMenu()" aria-label="Close menu">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-    </div>
-
     <nav class="shell__nav" aria-label="Primary navigation">
       @for (item of navItems(); track item.route) {
-      <a [routerLink]="item.route" routerLinkActive="is-active" class="shell__link" (click)="closeMobileMenu()">
-        <span class="shell__dot" aria-hidden="true"></span>
+      <a [routerLink]="item.route" routerLinkActive="is-active" class="shell__link">
+        <span class="shell__icon" aria-hidden="true">
+          @switch (item.icon) {
+            @case ('dashboard') {
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+            }
+            @case ('polls') {
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2h6"/><path d="M12 5v14"/><path d="M4 8h5"/><path d="M15 8h5"/><path d="M4 16h5"/><path d="M15 16h5"/></svg>
+            }
+            @case ('users') {
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            }
+            @case ('companies') {
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h.01"/><path d="M9 13h.01"/><path d="M15 9h.01"/><path d="M15 13h.01"/></svg>
+            }
+            @case ('companyUsers') {
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M17 11V7"/><path d="M15 9h4"/><path d="M3 21v-2a6 6 0 0 1 6-6h1"/><path d="M15 21h6"/><path d="M18 18v6"/></svg>
+            }
+            @case ('roles') {
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1l3 5 6 1-4 4 1 6-6-3-6 3 1-6-4-4 6-1z"/></svg>
+            }
+            @default {
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            }
+          }
+        </span>
         {{ item.label }}
       </a>
       }

@@ -3,6 +3,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { UserService } from '../../core/services/user.service';
 import { CreateCompanyUserRecordRequest, CreateCompanyUserRecordResponse } from '../../core/models/company-user-record';
+import { UiFeedbackService } from '../../core/services/ui-feedback.service';
 
 @Component({
   selector: 'app-company-users',
@@ -14,6 +15,7 @@ import { CreateCompanyUserRecordRequest, CreateCompanyUserRecordResponse } from 
 export class CompanyUsersComponent {
   private readonly fb = inject(FormBuilder);
   private readonly userService = inject(UserService);
+  private readonly uiFeedback = inject(UiFeedbackService);
 
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
@@ -37,6 +39,7 @@ export class CompanyUsersComponent {
       next: (response) => {
         this.records.update((prev) => [response, ...prev]);
         this.form.reset();
+        this.uiFeedback.success('Record created', 'Company user record was created successfully.');
         this.loading.set(false);
       },
       error: (error) => {
@@ -46,6 +49,7 @@ export class CompanyUsersComponent {
         } else {
           this.errorMessage.set(error?.error?.detail || 'Failed to create company user record.');
         }
+        this.uiFeedback.error('Create failed', this.errorMessage() || 'Failed to create company user record.');
       }
     });
   }

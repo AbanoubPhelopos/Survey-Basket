@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { UiFeedbackService } from '../../core/services/ui-feedback.service';
 
 @Component({
   selector: 'app-register',
@@ -62,6 +63,7 @@ export class RegisterComponent {
   isLoading = false;
   private authService = inject(AuthService);
   private router = inject(Router);
+  private uiFeedback = inject(UiFeedbackService);
 
   constructor(private fb: FormBuilder) {
     this.registerForm = this.fb.group({
@@ -78,13 +80,12 @@ export class RegisterComponent {
       this.authService.register(this.registerForm.value).subscribe({
         next: () => {
           this.isLoading = false;
-          // Optionally show success message
+          this.uiFeedback.success('Account created', 'Your account was created. You can now sign in.');
           this.router.navigate(['/login']);
         },
-        error: (err) => {
-          console.error(err);
+        error: () => {
           this.isLoading = false;
-          alert('Registration failed. Please try again.');
+          this.uiFeedback.error('Registration failed', 'Unable to create account. Please try again.');
         }
       });
     }

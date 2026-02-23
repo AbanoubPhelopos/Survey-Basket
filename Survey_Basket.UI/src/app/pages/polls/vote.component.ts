@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormArray } from '@angular/forms';
 import { VoteService } from '../../core/services/vote.service';
 import { QuestionResponse, VoteAnswerRequest } from '../../core/models/vote';
+import { UiFeedbackService } from '../../core/services/ui-feedback.service';
 
 @Component({
   selector: 'app-vote',
@@ -11,14 +12,9 @@ import { QuestionResponse, VoteAnswerRequest } from '../../core/models/vote';
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
   template: `
     <div class="page-wrapper pt-4 max-w-3xl mx-auto w-full">
-      <header class="page-header flex items-center justify-between gap-4">
-        <div>
-          <p class="text-xs tracking-wider text-[var(--text-soft)] font-bold mb-1 uppercase">Participant View</p>
-          <h1 class="page-header__title">Take Survey</h1>
-          <p class="page-header__desc">Please answer all questions below.</p>
-        </div>
+      <div class="flex justify-end">
         <a routerLink="/dashboard" class="px-3 py-1.5 text-xs font-semibold rounded-md border border-[var(--border)] hover:bg-[var(--sidebar-hover)] transition-colors"> Cancel </a>
-      </header>
+      </div>
 
       <!-- Loading State -->
       <div *ngIf="isLoading()" class="flex justify-center py-12">
@@ -99,6 +95,7 @@ export class VoteComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private voteService = inject(VoteService);
+  private uiFeedback = inject(UiFeedbackService);
   private fb = inject(FormBuilder);
 
   constructor() {
@@ -159,7 +156,7 @@ export class VoteComponent implements OnInit {
 
       this.voteService.submitVote(this.pollId, request).subscribe({
         next: () => {
-          alert('Thank you for voting!');
+          this.uiFeedback.success('Vote submitted', 'Thank you for sharing your answers.');
           this.router.navigate(['/dashboard']);
         },
         error: (err) => {
@@ -170,7 +167,7 @@ export class VoteComponent implements OnInit {
       });
     } else {
       this.voteForm.markAllAsTouched();
-      alert('Please answer all questions.');
+      this.uiFeedback.warning('Incomplete answers', 'Please answer every required question.');
     }
   }
 }

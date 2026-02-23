@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RoleService } from '../../core/services/role.service';
 import { RoleResponse } from '../../core/models/role';
 
@@ -9,12 +9,6 @@ import { RoleResponse } from '../../core/models/role';
   imports: [CommonModule],
   template: `
     <section class="page-wrapper pt-4">
-      <header class="page-header">
-        <p class="text-xs tracking-wider text-[var(--accent)] font-bold mb-1 uppercase">Admin Control</p>
-        <h1 class="page-header__title">Roles Management</h1>
-        <p class="page-header__desc">View available roles and permission sets in the system.</p>
-      </header>
-
       <div class="sb-surface rounded-xl border border-[var(--border)] overflow-hidden">
         @if (loading()) {
         <div class="py-12 flex justify-center">
@@ -28,9 +22,9 @@ import { RoleResponse } from '../../core/models/role';
         </div>
         }
 
-        @if (!loading() && roles().length > 0) {
+        @if (!loading() && pagedRoles().length > 0) {
         <ul class="divide-y divide-[var(--border)]">
-          @for (role of roles(); track role.id) {
+          @for (role of pagedRoles(); track role.id) {
           <li class="p-6 flex items-center justify-between hover:bg-[var(--sidebar-hover)] transition-colors group">
             <div class="flex-1">
               <h2 class="text-[1.05rem] font-bold text-[var(--text)] group-hover:text-[var(--accent)] transition-colors mb-1">{{ role.name }}</h2>
@@ -49,6 +43,16 @@ import { RoleResponse } from '../../core/models/role';
           }
         </ul>
         }
+
+        @if (!loading() && totalPages() > 1) {
+        <div class="sb-pagination">
+          <p class="sb-pagination__info">Page {{ page() }} of {{ totalPages() }}</p>
+          <div class="sb-pagination__controls">
+            <button class="sb-pagination__button" [disabled]="page() === 1" (click)="page.set(page() - 1)">Prev</button>
+            <button class="sb-pagination__button" [disabled]="page() >= totalPages()" (click)="page.set(page() + 1)">Next</button>
+          </div>
+        </div>
+        }
       </div>
     </section>
   `
@@ -57,11 +61,19 @@ export class RolesComponent implements OnInit {
   private readonly roleService = inject(RoleService);
   readonly roles = signal<RoleResponse[]>([]);
   readonly loading = signal(true);
+  readonly page = signal(1);
+  readonly pageSize = 8;
+  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.roles().length / this.pageSize)));
+  readonly pagedRoles = computed(() => {
+    const start = (this.page() - 1) * this.pageSize;
+    return this.roles().slice(start, start + this.pageSize);
+  });
 
   ngOnInit(): void {
     this.roleService.getRoles(true).subscribe({
       next: (res) => {
         this.roles.set(res);
+        this.page.set(1);
         this.loading.set(false);
       },
       error: () => this.loading.set(false)

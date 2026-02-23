@@ -1,10 +1,4 @@
 <section class="page-wrapper pt-4">
-  <header class="page-header">
-    <p class="text-xs tracking-wider text-[var(--accent)] font-bold mb-1 uppercase">Admin Control</p>
-    <h1 class="page-header__title">Company User Records</h1>
-    <p class="page-header__desc">Create non-authenticated records scoped to your company only.</p>
-  </header>
-
   <div class="grid gap-6 auto-rows-max lg:grid-cols-12">
     <form class="sb-surface p-6 rounded-xl space-y-5 lg:col-span-5 h-fit" [formGroup]="form"
       (ngSubmit)="createRecord()">

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ResultService } from '../../core/services/result.service';
@@ -10,14 +10,9 @@ import { PollVotesResponse, VotesPerDayResponse, VotesPerQuestionResponse } from
   imports: [CommonModule, RouterModule],
   template: `
     <div class="page-wrapper pt-4 max-w-5xl mx-auto w-full">
-      <header class="page-header flex items-center justify-between gap-4">
-        <div>
-          <p class="text-xs tracking-wider text-[var(--accent)] font-bold mb-1 uppercase">Survey Analytics</p>
-          <h1 class="page-header__title">Survey Results</h1>
-          <p class="page-header__desc">Analytics, response data, and voting trends.</p>
-        </div>
+      <div class="flex justify-end">
         <a routerLink="/dashboard" class="px-3 py-1.5 text-xs font-semibold rounded-md border border-[var(--border)] hover:bg-[var(--sidebar-hover)] transition-colors">Back to Dashboard</a>
-      </header>
+      </div>
 
       <div *ngIf="errorMessage()" class="sb-error mb-4">{{ errorMessage() }}</div>
       <div *ngIf="loading()" class="py-12 flex justify-center">
@@ -77,18 +72,18 @@ import { PollVotesResponse, VotesPerDayResponse, VotesPerQuestionResponse } from
           <div *ngIf="votesPerQuestion().length === 0" class="sb-empty py-12 text-sm">No analytics data available yet.</div>
         </div>
 
-        <div *ngIf="activeTab === 'responses'" class="sb-surface overflow-hidden rounded-xl border border-[var(--border)]">
+        <div *ngIf="activeTab === 'responses'" class="sb-table-wrap">
           <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm text-[var(--text)]">
-              <thead class="bg-[var(--bg-soft)] text-xs font-bold uppercase text-[var(--text-soft)] border-b border-[var(--border)]">
+            <table class="sb-table">
+              <thead>
                 <tr>
                   <th scope="col" class="px-6 py-3 tracking-wider">Voter</th>
                   <th scope="col" class="px-6 py-3 tracking-wider">Date</th>
                   <th scope="col" class="px-6 py-3 tracking-wider">Answers</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-[var(--border)]">
-                <tr *ngFor="let vote of pollVotes()?.votes" class="hover:bg-[var(--sidebar-hover)] transition-colors">
+              <tbody>
+                <tr *ngFor="let vote of pagedVotes()">
                   <td class="px-6 py-4 whitespace-nowrap font-semibold">{{ vote.voterName }}</td>
                   <td class="px-6 py-4 whitespace-nowrap font-mono text-[0.8rem] text-[var(--text-soft)]">{{ vote.voteDate | date:'short' }}</td>
                   <td class="px-6 py-4">
@@ -100,7 +95,7 @@ import { PollVotesResponse, VotesPerDayResponse, VotesPerQuestionResponse } from
                     </div>
                   </td>
                 </tr>
-                <tr *ngIf="!pollVotes()?.votes?.length">
+                <tr *ngIf="!pagedVotes().length">
                   <td colspan="3" class="px-6 py-12">
                     <div class="sb-empty text-sm">No responses yet.</div>
                   </td>
@@ -108,6 +103,16 @@ import { PollVotesResponse, VotesPerDayResponse, VotesPerQuestionResponse } from
               </tbody>
             </table>
           </div>
+
+          @if (responseTotalPages() > 1) {
+            <div class="sb-pagination">
+              <p class="sb-pagination__info">Page {{ responsePage() }} of {{ responseTotalPages() }}</p>
+              <div class="sb-pagination__controls">
+                <button type="button" class="sb-pagination__button" [disabled]="responsePage() === 1" (click)="responsePage.set(responsePage() - 1)">Prev</button>
+                <button type="button" class="sb-pagination__button" [disabled]="responsePage() >= responseTotalPages()" (click)="responsePage.set(responsePage() + 1)">Next</button>
+              </div>
+            </div>
+          }
         </div>
 
         <div *ngIf="activeTab === 'trends'" class="sb-surface rounded-xl p-6 border border-[var(--border)]">
@@ -139,6 +144,17 @@ export class ResultsComponent implements OnInit {
   votesPerQuestion = signal<VotesPerQuestionResponse[]>([]);
   loading = signal<boolean>(true);
   errorMessage = signal<string | null>(null);
+  responsePage = signal(1);
+  readonly responsePageSize = 8;
+  readonly responseTotalPages = computed(() => {
+    const total = this.pollVotes()?.votes?.length ?? 0;
+    return Math.max(1, Math.ceil(total / this.responsePageSize));
+  });
+  readonly pagedVotes = computed(() => {
+    const votes = this.pollVotes()?.votes ?? [];
+    const start = (this.responsePage() - 1) * this.responsePageSize;
+    return votes.slice(start, start + this.responsePageSize);
+  });
 
   private route = inject(ActivatedRoute);
   private resultService = inject(ResultService);
@@ -155,7 +171,10 @@ export class ResultsComponent implements OnInit {
     this.errorMessage.set(null);
 
     this.resultService.getPollVotes(this.pollId).subscribe({
-      next: (res) => this.pollVotes.set(res),
+      next: (res) => {
+        this.pollVotes.set(res);
+        this.responsePage.set(1);
+      },
       error: () => this.errorMessage.set('Unable to load response list for this poll.')
     });
 

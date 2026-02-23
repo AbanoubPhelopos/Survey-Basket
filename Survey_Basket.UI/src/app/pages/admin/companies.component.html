@@ -1,11 +1,4 @@
 <section class="page-wrapper pt-4">
-  <header class="page-header">
-    <p class="text-xs tracking-wider text-[var(--accent)] font-bold mb-1 uppercase">Admin Control</p>
-    <h1 class="page-header__title">Create Company Account</h1>
-    <p class="page-header__desc">Provision a company account in pending-password state. Company users are created later
-      by that company account.</p>
-  </header>
-
   <div class="grid gap-6 auto-rows-max lg:grid-cols-12">
     <form class="sb-surface p-6 rounded-xl space-y-5 lg:col-span-7" [formGroup]="form"
       (ngSubmit)="createCompanyAccount()">

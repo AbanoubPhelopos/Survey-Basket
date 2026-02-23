@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../core/services/auth.service';
 import { APP_NAV_ITEMS } from '../core/models/navigation';
@@ -18,7 +18,6 @@ export class AppShellComponent {
 
   protected readonly currentTheme = this.themeService.mode;
   protected readonly user = this.authService.user;
-  protected isMobileMenuOpen = signal(false);
 
   protected readonly navItems = computed(() =>
     APP_NAV_ITEMS.filter((item) => {
@@ -38,14 +37,6 @@ export class AppShellComponent {
 
   protected logout(): void {
     this.authService.logout();
-  }
-
-  protected toggleMobileMenu(): void {
-    this.isMobileMenuOpen.update((v) => !v);
-  }
-
-  protected closeMobileMenu(): void {
-    this.isMobileMenuOpen.set(false);
   }
 
   protected getInitials(firstName?: string, lastName?: string): string {

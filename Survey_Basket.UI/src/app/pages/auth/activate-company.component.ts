@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { ActivateCompanyAccountRequest } from '../../core/models/auth';
+import { UiFeedbackService } from '../../core/services/ui-feedback.service';
 
 @Component({
   selector: 'app-activate-company',
@@ -17,6 +18,7 @@ export class ActivateCompanyComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
+  private readonly uiFeedback = inject(UiFeedbackService);
 
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
@@ -44,11 +46,13 @@ export class ActivateCompanyComponent {
     this.authService.activateCompanyAccount(companyAccountUserId, this.form.getRawValue() as ActivateCompanyAccountRequest).subscribe({
       next: () => {
         this.loading.set(false);
+        this.uiFeedback.success('Account activated', 'Company account is activated. Please sign in.');
         this.router.navigate(['/login']);
       },
       error: (error) => {
         this.loading.set(false);
         this.errorMessage.set(error?.error?.detail || 'Activation failed. Please verify token and try again.');
+        this.uiFeedback.error('Activation failed', this.errorMessage() || 'Please verify token and try again.');
       }
     });
   }
