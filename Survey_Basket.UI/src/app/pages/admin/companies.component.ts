@@ -5,6 +5,7 @@ import { AccountService } from '../../core/services/account.service';
 import {
   AdminCompanyUserListItemResponse,
   CompanyAccountListItemResponse,
+  CompanyMagicLoginLinkResponse,
   CreateCompanyAccountRequest,
   CreateCompanyAccountResponse
 } from '../../core/models/company-account';
@@ -32,6 +33,8 @@ export class CompaniesComponent implements OnInit {
   readonly created = signal<CreateCompanyAccountResponse | null>(null);
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
+  readonly magicLogin = signal<CompanyMagicLoginLinkResponse | null>(null);
+  readonly showMagicQrModal = signal(false);
 
   readonly accountFilters: RequestFilters = { pageNumber: 1, pageSize: 8, sortColumn: 'CreatedOn', sortDirection: 'DESC' };
   readonly userFilters: RequestFilters = { pageNumber: 1, pageSize: 8, sortColumn: 'CompanyName', sortDirection: 'ASC' };
@@ -99,6 +102,9 @@ export class CompaniesComponent implements OnInit {
       error: (error) => {
         if (error?.status === 403) {
           this.errorMessage.set('You are not authorized to create company accounts.');
+        } else if (error?.error?.errors) {
+          const first = Object.values(error.error.errors as Record<string, string[]>).flat()[0];
+          this.errorMessage.set(first || 'Validation failed. Please check input data.');
         } else {
           this.errorMessage.set(error?.error?.detail || 'Company account creation failed. Please retry.');
         }
@@ -173,6 +179,33 @@ export class CompaniesComponent implements OnInit {
         this.uiFeedback.error('Update failed', 'Unable to update company account lock state.');
       }
     });
+  }
+
+  generateMagicLoginLink(account: CompanyAccountListItemResponse): void {
+    this.userService.generateCompanyMagicLoginLink(account.companyAccountUserId).subscribe({
+      next: (result) => {
+        this.magicLogin.set(result);
+        this.showMagicQrModal.set(true);
+        this.uiFeedback.success('Magic link generated', `One-time login link generated for ${account.companyName}.`);
+      },
+      error: () => {
+        this.uiFeedback.error('Failed', 'Unable to generate company magic login link.');
+      }
+    });
+  }
+
+  closeMagicQrModal(): void {
+    this.showMagicQrModal.set(false);
+  }
+
+  qrImageUrl(payload: string): string {
+    return `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(payload)}`;
+  }
+
+  copyMagicLoginLink(): void {
+    const link = this.magicLogin()?.loginUrl;
+    if (!link) return;
+    this.copyText(link, 'Magic login link copied.');
   }
 
   getActivationPath(companyAccountUserId: string): string {

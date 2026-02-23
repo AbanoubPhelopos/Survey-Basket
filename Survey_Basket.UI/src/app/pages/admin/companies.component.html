@@ -58,6 +58,23 @@
     </section>
   }
 
+  @if (showMagicQrModal() && magicLogin()) {
+    <div class="sb-confirm__backdrop" (click)="closeMagicQrModal()"></div>
+    <section class="sb-confirm max-w-xl">
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-bold">Company Login QR</h2>
+        <button type="button" class="sb-btn-secondary text-xs" (click)="closeMagicQrModal()">Close</button>
+      </div>
+      <p class="text-sm sb-muted mt-1">One-time secure link for first-time company login.</p>
+      <div class="mt-4 flex flex-col items-center gap-3">
+        <img [src]="qrImageUrl(magicLogin()!.qrPayload)" alt="Company login QR" class="border border-[var(--border)] rounded-lg bg-white p-2" />
+        <code class="block w-full bg-[var(--bg-soft)] border border-[var(--border)] p-2 rounded text-xs break-all">{{ magicLogin()!.loginUrl }}</code>
+        <p class="text-xs sb-muted">Expires: {{ magicLogin()!.expiresOn | date:'short' }}</p>
+        <button type="button" class="sb-btn-secondary" (click)="copyMagicLoginLink()">Copy Link</button>
+      </div>
+    </section>
+  }
+
   @if (created()) {
     <aside class="sb-surface p-6 rounded-xl flex flex-col gap-4 h-fit border-l-4 border-l-[var(--accent)]">
         <h2 class="font-bold text-lg mb-2">Account Created Successfully</h2>
@@ -143,11 +160,14 @@
                 <span class="inline-flex items-center px-2.5 py-1 rounded text-[0.65rem] font-bold uppercase tracking-wider border" [ngClass]="company.isLocked ? 'bg-red-50 text-red-700 border-red-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'">{{ company.isLocked ? 'Locked' : 'Active' }}</span>
               </td>
               <td>
-                @if (company.isLocked) {
-                  <button type="button" class="sb-btn-secondary text-xs px-2 py-1" (click)="setCompanyAccountLockState(company, false)">Unlock</button>
-                } @else {
-                  <button type="button" class="sb-btn-secondary text-xs px-2 py-1" (click)="setCompanyAccountLockState(company, true)">Lock</button>
-                }
+                <div class="flex gap-2">
+                  <button type="button" class="sb-btn-secondary text-xs px-2 py-1" (click)="generateMagicLoginLink(company)">Get Login QR</button>
+                  @if (company.isLocked) {
+                    <button type="button" class="sb-btn-secondary text-xs px-2 py-1" (click)="setCompanyAccountLockState(company, false)">Unlock</button>
+                  } @else {
+                    <button type="button" class="sb-btn-secondary text-xs px-2 py-1" (click)="setCompanyAccountLockState(company, true)">Lock</button>
+                  }
+                </div>
               </td>
             </tr>
           }

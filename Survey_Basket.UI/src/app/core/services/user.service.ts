@@ -6,7 +6,7 @@ import { UserResponse, UsersStatsResponse } from '../models/user';
 import { CompanyUserInviteResponse, CompanyUserRecordsStatsResponse, CreateCompanyUserInviteRequest, CreateCompanyUserRecordRequest, CreateCompanyUserRecordResponse } from '../models/company-user-record';
 import { ServiceListResult, ServiceResult } from '../models/service-result';
 import { RequestFilters } from '../models/poll';
-import { AdminCompanyUserListItemResponse, AdminCompanyUsersStatsResponse, CompanyAccountListItemResponse, CompanyAccountsStatsResponse } from '../models/company-account';
+import { AdminCompanyUserListItemResponse, AdminCompanyUsersStatsResponse, CompanyAccountListItemResponse, CompanyAccountsStatsResponse, CompanyMagicLoginLinkResponse } from '../models/company-account';
 
 @Injectable({
   providedIn: 'root'
@@ -89,6 +89,10 @@ export class UserService {
   setCompanyAccountLockState(companyAccountUserId: string, locked: boolean): Observable<void> {
     const params = new HttpParams().set('locked', String(locked));
     return this.http.put<void>(`${this.apiUrl}/company-accounts/${companyAccountUserId}/lock-state`, null, { params });
+  }
+
+  generateCompanyMagicLoginLink(companyAccountUserId: string): Observable<CompanyMagicLoginLinkResponse> {
+    return this.http.post<CompanyMagicLoginLinkResponse>(`${this.apiUrl}/company-accounts/${companyAccountUserId}/magic-login-link`, {});
   }
 
   getAdminCompanyUsers(filters: RequestFilters, companyId?: string, status = 'all'): Observable<ServiceListResult<AdminCompanyUserListItemResponse, AdminCompanyUsersStatsResponse>> {

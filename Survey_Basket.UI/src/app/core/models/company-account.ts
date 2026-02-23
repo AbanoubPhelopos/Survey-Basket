@@ -54,3 +54,10 @@ export interface AdminCompanyUsersStatsResponse {
   activeUsers: number;
   companiesCount: number;
 }
+
+export interface CompanyMagicLoginLinkResponse {
+  companyAccountUserId: string;
+  loginUrl: string;
+  qrPayload: string;
+  expiresOn: string;
+}

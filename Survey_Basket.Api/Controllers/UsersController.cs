@@ -84,6 +84,16 @@ public class UsersController(IUserServices userServices, ILogger<UsersController
             : result.ToProblemDetails();
     }
 
+    [HttpPost("company-accounts/{companyAccountUserId:guid}/magic-login-link")]
+    [HasPermission(Permissions.ManageCompanies)]
+    public async Task<IActionResult> GenerateCompanyMagicLoginLink([FromRoute] Guid companyAccountUserId, CancellationToken cancellationToken)
+    {
+        var result = await _userServices.GenerateCompanyMagicLoginLinkAsync(User.GetUserId(), companyAccountUserId, cancellationToken);
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : result.ToProblemDetails();
+    }
+
     [HttpPost("company-user-records")]
     public async Task<IActionResult> CreateCompanyUserRecord([FromBody] CreateCompanyUserRecordRequest request, CancellationToken cancellationToken)
     {

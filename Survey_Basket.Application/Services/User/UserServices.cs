@@ -15,10 +15,11 @@ using Survey_Basket.Domain.Entities;
 
 namespace Survey_Basket.Application.Services.User;
 
-public class UserServices(UserManager<ApplicationUser> userManager, IUnitOfWork unitOfWork) : IUserServices
+public class UserServices(UserManager<ApplicationUser> userManager, IUnitOfWork unitOfWork, IHttpContextAccessor httpContextAccessor) : IUserServices
 {
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly UserManager<ApplicationUser> _userManager = userManager;
+    private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
 
 
     public async Task<Result<UserProfileResponse>> GetUserProfile(Guid userId)
@@ -250,6 +251,10 @@ public class UserServices(UserManager<ApplicationUser> userManager, IUnitOfWork 
             LogoUrl = string.IsNullOrWhiteSpace(request.LogoUrl) ? null : request.LogoUrl.Trim(),
             CreatedById = adminUserId
         };
+
+        var companyCodeExists = await _unitOfWork.Repository<Company>().AnyAsync(x => x.Code == company.Code, cancellationToken);
+        if (companyCodeExists)
+            company.Code = BuildCompanyCode($"{request.CompanyName}-{Guid.NewGuid():N}" );
 
         await _unitOfWork.Repository<Company>().AddAsync(company, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -655,6 +660,50 @@ public class UserServices(UserManager<ApplicationUser> userManager, IUnitOfWork 
             ));
 
         return Result.Success(response);
+    }
+
+    public async Task<Result<CompanyMagicLoginLinkResponse>> GenerateCompanyMagicLoginLinkAsync(Guid adminUserId, Guid companyAccountUserId, CancellationToken cancellationToken = default)
+    {
+        var admin = await _userManager.FindByIdAsync(adminUserId.ToString());
+        if (admin is null)
+            return Result.Failure<CompanyMagicLoginLinkResponse>(UserErrors.UserNotFound);
+
+        if (!await IsAdminAsync(admin))
+            return Result.Failure<CompanyMagicLoginLinkResponse>(new Error("User.Forbidden", "Only admins can generate magic login links.", StatusCodes.Status403Forbidden));
+
+        var companyAccount = await _userManager.FindByIdAsync(companyAccountUserId.ToString());
+        if (companyAccount is null)
+            return Result.Failure<CompanyMagicLoginLinkResponse>(UserErrors.UserNotFound);
+
+        var isCompanyAccount = await _userManager.IsInRoleAsync(companyAccount, DefaultRoles.PartnerCompany);
+        if (!isCompanyAccount)
+            return Result.Failure<CompanyMagicLoginLinkResponse>(new Error("User.InvalidRole", "Target user is not a company account.", StatusCodes.Status400BadRequest));
+
+        var rawToken = WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(48));
+        var tokenHash = ComputeSha256(rawToken);
+        var expiresOn = DateTime.UtcNow.AddMinutes(15);
+
+        await _unitOfWork.Repository<CompanyMagicLinkToken>().AddAsync(new CompanyMagicLinkToken
+        {
+            UserId = companyAccountUserId,
+            TokenHash = tokenHash,
+            ExpiresOn = expiresOn,
+            CreatedById = adminUserId
+        }, cancellationToken);
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        var origin = _httpContextAccessor.HttpContext?.Request.Headers.Origin.ToString();
+        var link = string.IsNullOrWhiteSpace(origin)
+            ? $"/company-magic-login?token={rawToken}"
+            : $"{origin}/company-magic-login?token={rawToken}";
+
+        return Result.Success(new CompanyMagicLoginLinkResponse(
+            companyAccountUserId,
+            link,
+            link,
+            expiresOn
+        ));
     }
 
     private async Task<string> GenerateEncodedResetTokenAsync(ApplicationUser user)

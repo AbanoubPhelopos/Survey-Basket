@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -42,13 +42,6 @@ import { UiFeedbackService } from '../../core/services/ui-feedback.service';
             </div>
           </form>
 
-          <div class="mt-5 pt-4 border-t border-[var(--border)] space-y-2">
-            <p class="text-xs font-semibold text-[var(--text-soft)]">Company first-time access</p>
-            <div class="flex gap-2">
-              <input class="sb-input" placeholder="company email" [value]="magicEmail()" (input)="onMagicEmail($event)" />
-              <button type="button" class="sb-btn-secondary text-xs px-3" (click)="requestMagicLink()">Send Link</button>
-            </div>
-          </div>
         </div>
         
         <p class="text-center text-xs text-[var(--text-soft)] mt-6">
@@ -64,7 +57,6 @@ export class LoginComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
   private uiFeedback = inject(UiFeedbackService);
-  magicEmail = signal('');
 
   constructor(private fb: FormBuilder) {
     this.loginForm = this.fb.group({
@@ -89,21 +81,4 @@ export class LoginComponent {
     }
   }
 
-  onMagicEmail(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.magicEmail.set(input.value);
-  }
-
-  requestMagicLink(): void {
-    const email = this.magicEmail().trim();
-    if (!email) {
-      this.uiFeedback.warning('Email required', 'Enter company account email first.');
-      return;
-    }
-
-    this.authService.requestCompanyMagicLink(email).subscribe({
-      next: () => this.uiFeedback.info('If account exists', 'A one-time login link has been sent.'),
-      error: () => this.uiFeedback.error('Request failed', 'Unable to request magic link right now.')
-    });
-  }
 }

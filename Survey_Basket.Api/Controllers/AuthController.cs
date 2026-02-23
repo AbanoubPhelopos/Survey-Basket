@@ -3,6 +3,7 @@ using Survey_Basket.Application.Abstractions;
 using Survey_Basket.Application.Abstractions.Const;
 using Survey_Basket.Application.Contracts.Authentication;
 using Survey_Basket.Application.Contracts.User;
+using Survey_Basket.Application.Services.AuthServices.Filter;
 using Survey_Basket.Application.Services.AuthServices;
 
 namespace Survey_Basket.Api.Controllers;
@@ -92,6 +93,8 @@ public class AuthController(IAuthService authService) : ControllerBase
     }
 
     [HttpPost("company/magic-link/request")]
+    [HasPermission(Permissions.ManageCompanies)]
+    [Microsoft.AspNetCore.Authorization.Authorize]
     public async Task<IActionResult> RequestCompanyMagicLink([FromBody] CompanyMagicLinkRequest request, CancellationToken cancellationToken)
     {
         var result = await _authService.RequestCompanyMagicLinkAsync(request, cancellationToken);
