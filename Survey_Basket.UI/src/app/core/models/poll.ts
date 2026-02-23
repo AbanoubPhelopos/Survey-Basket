@@ -40,11 +40,10 @@ export interface RequestFilters {
   searchTerm?: string;
 }
 
-export interface PagedList<T> {
-  items: T[];
-  pageNumber: number;
-  totalPages: number;
-  totalCount: number;
-  hasPreviousPage: boolean;
-  hasNextPage: boolean;
+export interface PollStatsResponse {
+  totalPolls: number;
+  activePolls: number;
+  draftPolls: number;
+  votesCount: number;
+  answersCount: number;
 }

@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { API_BASE_URL } from '../constants/api.constants';
 import { Question, QuestionOption, QuestionRequest } from '../models/question';
+import { ServiceResult } from '../models/service-result';
 
 @Injectable({
   providedIn: 'root'
@@ -13,7 +14,13 @@ export class QuestionService {
   constructor(private http: HttpClient) {}
 
   getQuestions(pollId: string): Observable<Question[]> {
-    return this.http.get<Question[]>(`${this.apiUrl}/${pollId}/questions`).pipe(
+    return this.http.get<ServiceResult<Question[]>>(`${this.apiUrl}/${pollId}/questions`).pipe(
+      map((result) => {
+        if (!result.succeeded || !result.data) {
+          throw new Error(result.error?.description ?? 'Failed to load questions');
+        }
+        return result.data;
+      }),
       map((questions) =>
         questions.map((q) => ({
           ...q,

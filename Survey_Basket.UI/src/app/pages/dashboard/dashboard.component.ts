@@ -1,73 +1,157 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { PollService } from '../../core/services/poll.service';
-import { RequestFilters, PollResponse, PagedList } from '../../core/models/poll';
 import { AuthService } from '../../core/services/auth.service';
+import { PollResponse, RequestFilters } from '../../core/models/poll';
+import { PollService } from '../../core/services/poll.service';
 import { UiFeedbackService } from '../../core/services/ui-feedback.service';
+import { PagedList } from '../../core/models/service-result';
+
+type PollColumnKey = 'title' | 'status' | 'startDate' | 'endDate' | 'votes' | 'answers';
+
+interface PollColumn {
+  key: PollColumnKey;
+  label: string;
+  icon: string;
+}
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
   imports: [CommonModule, RouterModule],
-
   template: `
     <div class="page-wrapper pt-4">
-      <div class="sb-surface p-4 rounded-xl grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        @for (shortcut of quickActions(); track shortcut.route) {
-          <a [routerLink]="shortcut.route" class="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg-soft)] px-3 py-2 text-[0.78rem] font-bold text-[var(--text)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
-            <span>{{ shortcut.icon }}</span>
-            <span class="truncate">{{ shortcut.label }}</span>
-          </a>
-        }
-      </div>
-
       <ng-container *ngIf="isAdmin()">
-        <div class="flex items-center justify-between mt-2 mb-1">
-          <p class="text-sm font-bold text-[var(--text)]">Manage Polls</p>
-          <a routerLink="/polls/new" class="sb-btn-primary text-xs py-2 px-4 shadow-sm"> 
-            <span class="flex items-center gap-1.5">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" /></svg>
-              Create New
-            </span>
-          </a>
+        <div class="sb-stats-grid">
+          <article class="sb-stat">
+            <p class="sb-stat__label">Total Polls</p>
+            <p class="sb-stat__value">{{ pollStats().totalPolls }}</p>
+          </article>
+          <article class="sb-stat">
+            <p class="sb-stat__label">Active Polls</p>
+            <p class="sb-stat__value">{{ activePollCount() }}</p>
+          </article>
+          <article class="sb-stat">
+            <p class="sb-stat__label">Draft Polls</p>
+            <p class="sb-stat__value">{{ draftPollCount() }}</p>
+          </article>
+          <article class="sb-stat">
+            <p class="sb-stat__label">Total Votes</p>
+            <p class="sb-stat__value">{{ pollStats().votesCount }}</p>
+          </article>
+          <article class="sb-stat">
+            <p class="sb-stat__label">Answers Captured</p>
+            <p class="sb-stat__value">{{ answersCount() }}</p>
+          </article>
         </div>
 
-        <div *ngIf="polls().items.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          <div *ngFor="let poll of polls().items" class="sb-surface p-5 flex flex-col h-full hover:border-[var(--accent)] transition-all hover:shadow-md group relative overflow-hidden rounded-xl border border-[var(--border)]">
-            <div class="absolute top-0 left-0 right-0 h-1" [ngClass]="poll.isPublished ? 'bg-emerald-500' : 'bg-amber-400'"> </div>
+        <div class="sb-toolbar">
+          <div class="sb-toolbar__group">
+            <input
+              class="sb-input sb-search"
+              [value]="searchTerm()"
+              (input)="onSearchInput($event)"
+              (keydown.enter)="applySearch()"
+              placeholder="Search polls by title or summary" />
 
-            <div class="flex justify-between items-start mb-3 mt-1">
-              <span class="px-2 py-0.5 rounded text-[0.65rem] font-bold uppercase tracking-wider border shadow-sm"
-                [ngClass]="poll.isPublished ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200'">
-                {{ poll.isPublished ? 'LIVE' : 'DRAFT' }}
-              </span>
-            </div>
+            <select class="sb-select" [value]="statusFilter()" (change)="onStatusChange($event)">
+              <option value="all">All statuses</option>
+              <option value="active">Active only</option>
+              <option value="draft">Draft only</option>
+            </select>
 
-            <h3 class="font-bold text-[1.05rem] mb-2 leading-snug group-hover:text-[var(--accent)] transition-colors text-[var(--text)]"> {{ poll.title }}</h3>
-            <p class="text-[0.85rem] text-[var(--text-soft)] mb-6 line-clamp-3 leading-relaxed flex-1"> {{ poll.summary }}</p>
+            <button type="button" class="sb-btn-secondary text-xs px-3 py-2" (click)="applySearch()">Search</button>
+          </div>
 
-            <div class="grid grid-cols-2 gap-2 mt-auto border-t border-[var(--border)] pt-4">
-              <a [routerLink]="['/polls', poll.id, 'edit']" class="px-3 py-1.5 bg-[var(--bg-soft)] hover:bg-[var(--sidebar-hover)] text-[0.75rem] font-bold rounded-md transition-all border border-[var(--border)] text-center text-[var(--text)] shadow-sm"> Edit </a>
-              <a [routerLink]="['/polls', poll.id, 'results']" class="px-3 py-1.5 bg-[var(--accent)]/10 text-[var(--accent)] text-[0.75rem] font-bold rounded-md transition-all border border-[var(--accent)]/20 text-center hover:bg-[var(--accent)] hover:text-white shadow-sm"> Stats </a>
-              <button (click)="deletePoll(poll.id)" class="col-span-2 py-2 mt-1 text-red-600 hover:text-red-700 hover:bg-red-50 text-[0.7rem] font-bold uppercase tracking-wider transition-all rounded-md"> Delete Survey </button>
+          <div class="sb-toolbar__group">
+            <a routerLink="/polls/new" class="sb-btn-primary text-xs py-2 px-3">+ New Poll</a>
+            <div class="sb-columns">
+              <button type="button" class="sb-btn-secondary text-xs px-3 py-2" (click)="toggleColumnsMenu()">Columns</button>
+              @if (showColumnsMenu()) {
+                <div class="sb-columns__panel">
+                  @for (col of allColumns; track col.key) {
+                    <label class="sb-columns__option">
+                      <input type="checkbox" [checked]="isColumnVisible(col.key)" (change)="toggleColumn(col.key)" />
+                      <span class="sb-icon-badge">{{ col.icon }}</span>
+                      <span>{{ col.label }}</span>
+                    </label>
+                  }
+                </div>
+              }
             </div>
           </div>
         </div>
 
-        <div *ngIf="polls().items.length > 0" class="sb-pagination">
-          <p class="sb-pagination__info">Page {{ polls().pageNumber }} of {{ polls().totalPages || 1 }}</p>
-          <div class="sb-pagination__controls">
-            <button type="button" class="sb-pagination__button" (click)="changePage(polls().pageNumber - 1)" [disabled]="!polls().hasPreviousPage">Prev</button>
-            <button type="button" class="sb-pagination__button" (click)="changePage(polls().pageNumber + 1)" [disabled]="!polls().hasNextPage">Next</button>
+        <div class="sb-table-wrap">
+          <div class="overflow-x-auto">
+            <table class="sb-table">
+              <thead>
+                <tr>
+                  @if (isColumnVisible('title')) { <th>Title</th> }
+                  @if (isColumnVisible('status')) { <th>Status</th> }
+                  @if (isColumnVisible('startDate')) { <th>Start</th> }
+                  @if (isColumnVisible('endDate')) { <th>End</th> }
+                  @if (isColumnVisible('votes')) { <th>Votes</th> }
+                  @if (isColumnVisible('answers')) { <th>Answers</th> }
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (poll of filteredPolls(); track poll.id) {
+                  <tr>
+                    @if (isColumnVisible('title')) {
+                      <td>
+                        <p class="m-0 font-semibold">{{ poll.title }}</p>
+                        <p class="m-0 mt-1 text-xs text-[var(--text-soft)] line-clamp-2">{{ poll.summary }}</p>
+                      </td>
+                    }
+                    @if (isColumnVisible('status')) {
+                      <td>
+                        <span class="inline-flex items-center px-2 py-1 rounded text-[0.65rem] font-bold uppercase tracking-wider border"
+                          [ngClass]="poll.isPublished ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'">
+                          {{ poll.isPublished ? 'Active' : 'Draft' }}
+                        </span>
+                      </td>
+                    }
+                    @if (isColumnVisible('startDate')) {
+                      <td class="text-xs font-mono text-[var(--text-soft)]">{{ poll.startedAt | date:'mediumDate' }}</td>
+                    }
+                    @if (isColumnVisible('endDate')) {
+                      <td class="text-xs font-mono text-[var(--text-soft)]">{{ poll.endedAt ? (poll.endedAt | date:'mediumDate') : '--' }}</td>
+                    }
+                    @if (isColumnVisible('votes')) {
+                      <td class="font-semibold">--</td>
+                    }
+                    @if (isColumnVisible('answers')) {
+                      <td class="font-semibold">--</td>
+                    }
+                    <td>
+                      <div class="flex items-center gap-2">
+                        <a [routerLink]="['/polls', poll.id, 'edit']" class="sb-btn-secondary text-xs px-2.5 py-1.5">Manage</a>
+                        <a [routerLink]="['/polls', poll.id, 'results']" class="sb-btn-secondary text-xs px-2.5 py-1.5">Results</a>
+                        <button type="button" (click)="deletePoll(poll.id)" class="sb-btn-secondary text-xs px-2.5 py-1.5 text-red-700">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+                @if (!filteredPolls().length) {
+                  <tr>
+                    <td [attr.colspan]="visibleColumns().length + 1">
+                      <div class="sb-empty text-sm my-3">No polls match your filters.</div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
           </div>
-        </div>
 
-        <div *ngIf="polls().items.length === 0" class="sb-surface rounded-xl border border-[var(--border)] p-12 text-center">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 mx-auto text-gray-300 mb-4">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-            </svg>
-          <p class="text-gray-500 text-sm font-medium">No polls created yet.</p>
+          <div class="sb-pagination">
+            <p class="sb-pagination__info">Page {{ polls().pageNumber }} of {{ polls().totalPages || 1 }}</p>
+            <div class="sb-pagination__controls">
+              <button type="button" class="sb-pagination__button" (click)="changePage(polls().pageNumber - 1)" [disabled]="!polls().hasPreviousPage">Prev</button>
+              <button type="button" class="sb-pagination__button" (click)="changePage(polls().pageNumber + 1)" [disabled]="!polls().hasNextPage">Next</button>
+            </div>
+          </div>
         </div>
       </ng-container>
 
@@ -76,18 +160,13 @@ import { UiFeedbackService } from '../../core/services/ui-feedback.service';
 
         <div *ngIf="availablePolls().length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           <div *ngFor="let poll of availablePolls()" class="sb-surface p-6 flex flex-col group hover:border-[var(--accent)] transition-all hover:shadow-md rounded-xl border border-[var(--border)]">
-            <h3 class="font-bold text-lg mb-2 group-hover:text-[var(--accent)] transition-colors leading-snug text-[var(--text)]"> {{ poll.title }}</h3>
-            <p class="text-[0.85rem] text-[var(--text-soft)] mb-6 leading-relaxed flex-1 line-clamp-3"> {{ poll.summary }}</p>
-            <a [routerLink]="['/polls', poll.id, 'vote']" class="sb-btn-primary w-full py-2.5 text-center block text-sm shadow-sm mt-auto">
-              Take Survey
-            </a>
+            <h3 class="font-bold text-lg mb-2 group-hover:text-[var(--accent)] transition-colors leading-snug text-[var(--text)]">{{ poll.title }}</h3>
+            <p class="text-[0.85rem] text-[var(--text-soft)] mb-6 leading-relaxed flex-1 line-clamp-3">{{ poll.summary }}</p>
+            <a [routerLink]="['/polls', poll.id, 'vote']" class="sb-btn-primary w-full py-2.5 text-center block text-sm shadow-sm mt-auto">Take Survey</a>
           </div>
         </div>
 
         <div *ngIf="availablePolls().length === 0" class="sb-surface rounded-xl border border-[var(--border)] p-12 text-center">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 mx-auto text-gray-300 mb-4">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M10.125 2.25h-4.5c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125v-9M10.125 2.25h.375a9 9 0 019 9v.375M10.125 2.25A3.375 3.375 0 0113.5 5.625v1.5c0 .621.504 1.125 1.125 1.125h1.5a3.375 3.375 0 013.375 3.375M9 15l2.25 2.25L15 12" />
-            </svg>
           <p class="text-gray-500 text-sm font-medium">Check back later for new surveys!</p>
         </div>
       </ng-container>
@@ -95,16 +174,38 @@ import { UiFeedbackService } from '../../core/services/ui-feedback.service';
   `
 })
 export class DashboardComponent implements OnInit {
-  authService = inject(AuthService);
-  pollService = inject(PollService);
-  uiFeedback = inject(UiFeedbackService);
+  protected readonly allColumns: PollColumn[] = [
+    { key: 'title', label: 'Title', icon: 'T' },
+    { key: 'status', label: 'Status', icon: 'S' },
+    { key: 'startDate', label: 'Start Date', icon: 'SD' },
+    { key: 'endDate', label: 'End Date', icon: 'ED' },
+    { key: 'votes', label: 'Votes', icon: 'V' },
+    { key: 'answers', label: 'Answers', icon: 'A' }
+  ];
 
-  polls = signal<PagedList<PollResponse>>({ items: [], pageNumber: 1, totalPages: 0, totalCount: 0, hasPreviousPage: false, hasNextPage: false });
-  availablePolls = signal<PollResponse[]>([]);
+  protected readonly authService = inject(AuthService);
+  protected readonly pollService = inject(PollService);
+  protected readonly uiFeedback = inject(UiFeedbackService);
 
-  filters: RequestFilters = { pageNumber: 1, pageSize: 9, sortColumn: 'CreatedOn', sortDirection: 'DESC' };
+  protected readonly polls = signal<PagedList<PollResponse>>({
+    items: [],
+    pageNumber: 1,
+    totalPages: 0,
+    totalCount: 0,
+    hasPreviousPage: false,
+    hasNextPage: false
+  });
 
-  quickActions = computed(() => {
+  protected readonly availablePolls = signal<PollResponse[]>([]);
+  protected readonly searchTerm = signal('');
+  protected readonly statusFilter = signal<'all' | 'active' | 'draft'>('all');
+  protected readonly showColumnsMenu = signal(false);
+  protected readonly visibleColumns = signal<PollColumnKey[]>(['title', 'status', 'startDate', 'endDate']);
+  protected readonly pollStats = signal({ totalPolls: 0, activePolls: 0, draftPolls: 0, votesCount: 0, answersCount: 0 });
+
+  protected filters: RequestFilters = { pageNumber: 1, pageSize: 8, sortColumn: 'CreatedOn', sortDirection: 'DESC' };
+
+  protected readonly quickActions = computed(() => {
     const all = [
       { route: '/dashboard', label: 'Dashboard', icon: 'DB' },
       { route: '/polls/new', label: 'Polls', icon: 'PL', roles: ['Admin', 'SystemAdmin', 'PartnerCompany'] },
@@ -118,40 +219,77 @@ export class DashboardComponent implements OnInit {
     return all.filter((item) => !item.roles || this.authService.hasAnyRole(item.roles));
   });
 
-  ngOnInit() {
+  protected readonly filteredPolls = computed(() => {
+    return this.polls().items;
+  });
+
+  protected readonly activePollCount = computed(() => this.pollStats().activePolls);
+  protected readonly draftPollCount = computed(() => this.pollStats().draftPolls);
+  protected readonly answersCount = computed(() => this.pollStats().answersCount);
+
+  ngOnInit(): void {
     this.refreshData();
   }
 
-  isAdmin() {
-    return this.authService.hasRole('Admin');
+  protected isAdmin(): boolean {
+    return this.authService.hasAnyRole(['Admin', 'SystemAdmin', 'PartnerCompany']);
   }
 
-  refreshData() {
+  protected refreshData(): void {
     if (this.isAdmin()) {
       this.loadPolls();
-    } else {
-      this.loadCurrentPolls();
+      return;
     }
+    this.loadCurrentPolls();
   }
 
-  loadPolls() {
-    this.pollService.getPolls(this.filters).subscribe(result => this.polls.set(result));
+  protected onSearchInput(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.searchTerm.set(target.value);
   }
 
-  loadCurrentPolls() {
-    this.pollService.getCurrentPolls().subscribe(result => this.availablePolls.set(result));
+  protected onStatusChange(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    this.statusFilter.set((target.value as 'all' | 'active' | 'draft') ?? 'all');
+    this.filters.pageNumber = 1;
+    this.loadPolls();
   }
 
-  changePage(page: number) {
+  protected applySearch(): void {
+    this.filters.pageNumber = 1;
+    this.filters.searchTerm = this.searchTerm().trim() || undefined;
+    this.loadPolls();
+  }
+
+  protected toggleColumnsMenu(): void {
+    this.showColumnsMenu.update((value) => !value);
+  }
+
+  protected isColumnVisible(key: PollColumnKey): boolean {
+    return this.visibleColumns().includes(key);
+  }
+
+  protected toggleColumn(key: PollColumnKey): void {
+    const current = this.visibleColumns();
+    if (current.includes(key)) {
+      if (current.length === 1) {
+        return;
+      }
+      this.visibleColumns.set(current.filter((x) => x !== key));
+      return;
+    }
+    this.visibleColumns.set([...current, key]);
+  }
+
+  protected changePage(page: number): void {
     if (page < 1 || page > (this.polls().totalPages || 1)) {
       return;
     }
-
     this.filters.pageNumber = page;
     this.loadPolls();
   }
 
-  async deletePoll(id: string) {
+  protected async deletePoll(id: string): Promise<void> {
     const accepted = await this.uiFeedback.confirm({
       title: 'Delete survey?',
       message: 'This action permanently removes the survey and cannot be undone.',
@@ -174,7 +312,15 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  getInitials(first?: string, last?: string): string {
-    return ((first?.[0] || '') + (last?.[0] || '')).toUpperCase() || 'SA';
+  private loadPolls(): void {
+    this.pollService.getPolls(this.filters, this.statusFilter()).subscribe((result) => {
+      this.polls.set(result.items);
+      this.pollStats.set(result.stats);
+    });
   }
+
+  private loadCurrentPolls(): void {
+    this.pollService.getCurrentPolls().subscribe((result) => this.availablePolls.set(result));
+  }
+
 }

@@ -10,3 +10,9 @@ export interface CreateCompanyUserRecordResponse {
   businessIdentifier: string;
   authenticated: false;
 }
+
+export interface CompanyUserRecordsStatsResponse {
+  totalRecords: number;
+  shortIdentifiers: number;
+  longIdentifiers: number;
+}

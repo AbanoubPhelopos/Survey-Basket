@@ -21,24 +21,93 @@
       }
     </form>
 
-    <section class="sb-surface p-6 rounded-xl lg:col-span-7">
-      <h2 class="font-bold text-lg mb-4 pb-2 border-b border-[var(--border)]">Created Records</h2>
-
-      @if (records().length === 0) {
-      <p class="sb-empty text-sm py-8">No company user records created in this session yet.</p>
-      }
-
-      <div class="space-y-3 mt-4">
-        @for (record of records(); track record.companyUserRecordId) {
-        <article
-          class="flex items-center justify-between p-4 border border-[var(--border)] rounded-lg hover:bg-[var(--bg-soft)] transition-colors bg-[var(--bg-elevated)]">
-          <div>
-            <h3 class="font-bold text-base text-[var(--text)] mb-0.5">{{ record.displayName }}</h3>
-            <p class="text-sm font-mono text-[var(--text-soft)]">{{ record.businessIdentifier }}</p>
-          </div>
-          <span
-            class="px-2 py-1 rounded text-[0.65rem] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">Non-auth</span>
+    <section class="space-y-3 lg:col-span-7">
+      <div class="sb-stats-grid">
+        <article class="sb-stat">
+          <p class="sb-stat__label">Total Records</p>
+          <p class="sb-stat__value">{{ recordsCount() }}</p>
         </article>
+        <article class="sb-stat">
+          <p class="sb-stat__label">Short IDs</p>
+          <p class="sb-stat__value">{{ shortIdentifierCount() }}</p>
+        </article>
+        <article class="sb-stat">
+          <p class="sb-stat__label">Long IDs</p>
+          <p class="sb-stat__value">{{ longIdentifierCount() }}</p>
+        </article>
+      </div>
+
+      <div class="sb-toolbar">
+        <div class="sb-toolbar__group">
+          <input class="sb-input sb-search" [value]="searchTerm()" (input)="onSearchInput($event)" placeholder="Search by display name or identifier" />
+          <select class="sb-select" [value]="idFilter()" (change)="onFilterChange($event)">
+            <option value="all">All IDs</option>
+            <option value="short">Short IDs</option>
+            <option value="long">Long IDs</option>
+          </select>
+        </div>
+
+        <div class="sb-columns">
+          <button type="button" class="sb-btn-secondary text-xs px-3 py-2" (click)="showColumnsMenu.set(!showColumnsMenu())">Columns</button>
+          @if (showColumnsMenu()) {
+            <div class="sb-columns__panel">
+              <label class="sb-columns__option">
+                <input type="checkbox" [checked]="isColumnVisible('name')" (change)="toggleColumn('name')" />
+                <span class="sb-icon-badge">N</span>
+                <span>Name</span>
+              </label>
+              <label class="sb-columns__option">
+                <input type="checkbox" [checked]="isColumnVisible('identifier')" (change)="toggleColumn('identifier')" />
+                <span class="sb-icon-badge">BI</span>
+                <span>Business ID</span>
+              </label>
+              <label class="sb-columns__option">
+                <input type="checkbox" [checked]="isColumnVisible('recordId')" (change)="toggleColumn('recordId')" />
+                <span class="sb-icon-badge">ID</span>
+                <span>Record ID</span>
+              </label>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="sb-table-wrap">
+        <div class="overflow-x-auto">
+          <table class="sb-table">
+            <thead>
+              <tr>
+                @if (isColumnVisible('name')) { <th>Name</th> }
+                @if (isColumnVisible('identifier')) { <th>Business Identifier</th> }
+                @if (isColumnVisible('recordId')) { <th>Record ID</th> }
+              </tr>
+            </thead>
+            <tbody>
+              @for (record of pagedRecords(); track record.companyUserRecordId) {
+                <tr>
+                  @if (isColumnVisible('name')) { <td class="font-semibold">{{ record.displayName }}</td> }
+                  @if (isColumnVisible('identifier')) { <td class="font-mono text-[0.8rem]">{{ record.businessIdentifier }}</td> }
+                  @if (isColumnVisible('recordId')) { <td class="font-mono text-[0.72rem] text-[var(--text-soft)]">{{ record.companyUserRecordId }}</td> }
+                </tr>
+              }
+              @if (!pagedRecords().length) {
+                <tr>
+                  <td [attr.colspan]="visibleColumns().length">
+                    <div class="sb-empty text-sm my-3">No records match the selected filters.</div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (recordsPage().totalPages > 1) {
+          <div class="sb-pagination">
+            <p class="sb-pagination__info">Page {{ recordsPage().pageNumber }} of {{ recordsPage().totalPages }}</p>
+            <div class="sb-pagination__controls">
+              <button class="sb-pagination__button" [disabled]="!recordsPage().hasPreviousPage" (click)="changePage(recordsPage().pageNumber - 1)">Prev</button>
+              <button class="sb-pagination__button" [disabled]="!recordsPage().hasNextPage" (click)="changePage(recordsPage().pageNumber + 1)">Next</button>
+            </div>
+          </div>
         }
       </div>
     </section>

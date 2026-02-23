@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using System.Text;
 using Survey_Basket.Application.Abstractions;
 using Survey_Basket.Application.Abstractions.Const;
+using Survey_Basket.Application.Contracts.Common;
 using Survey_Basket.Application.Contracts.User;
 using Survey_Basket.Application.Errors;
 using Survey_Basket.Domain.Abstractions;
@@ -70,6 +71,151 @@ public class UserServices(UserManager<ApplicationUser> userManager, IUnitOfWork 
             u.IsDisabled,
             u.Roles
         ));
+    }
+
+    public async Task<Result<UsersStatsResponse>> GetUsersStatsAsync(CancellationToken cancellationToken = default)
+    {
+        var users = await _userManager.Users.AsNoTracking().ToListAsync(cancellationToken);
+        var totalUsers = users.Count;
+        var disabledUsers = users.Count(x => x.IsDisabled);
+        var activeUsers = totalUsers - disabledUsers;
+
+        var userRoleCount = await _unitOfWork.Repository<IdentityUserRole<Guid>>()
+            .GetAllAsync(cancellationToken);
+
+        var distinctRoles = userRoleCount.Select(x => x.RoleId).Distinct().Count();
+
+        return Result.Success(new UsersStatsResponse(
+            totalUsers,
+            activeUsers,
+            disabledUsers,
+            distinctRoles));
+    }
+
+    public async Task<Result<ServiceListResult<UserResponse, UsersStatsResponse>>> GetUsersFilterResultAsync(RequestFilters filters, string? status, CancellationToken cancellationToken = default)
+    {
+        var users = (await GetUsersAsync(cancellationToken)).ToList();
+        var normalizedStatus = status?.Trim().ToLowerInvariant();
+
+        var filtered = users.Where(user =>
+            (string.IsNullOrWhiteSpace(filters.SearchTerm)
+             || user.FirstName.Contains(filters.SearchTerm, StringComparison.OrdinalIgnoreCase)
+             || user.LastName.Contains(filters.SearchTerm, StringComparison.OrdinalIgnoreCase)
+             || user.Email.Contains(filters.SearchTerm, StringComparison.OrdinalIgnoreCase))
+            && (string.IsNullOrWhiteSpace(normalizedStatus)
+                || normalizedStatus == "all"
+                || (normalizedStatus == "active" && !user.IsDisabled)
+                || (normalizedStatus == "disabled" && user.IsDisabled))
+        );
+
+        filtered = (filters.SortColumn?.ToLowerInvariant(), filters.SortDirection?.ToLowerInvariant()) switch
+        {
+            ("firstname", "desc") => filtered.OrderByDescending(x => x.FirstName),
+            ("firstname", _) => filtered.OrderBy(x => x.FirstName),
+            ("lastname", "desc") => filtered.OrderByDescending(x => x.LastName),
+            ("lastname", _) => filtered.OrderBy(x => x.LastName),
+            ("email", "desc") => filtered.OrderByDescending(x => x.Email),
+            ("email", _) => filtered.OrderBy(x => x.Email),
+            _ => filtered.OrderBy(x => x.FirstName)
+        };
+
+        var filteredList = filtered.ToList();
+        var totalCount = filteredList.Count;
+        var pageItems = filteredList
+            .Skip((filters.PageNumber - 1) * filters.PageSize)
+            .Take(filters.PageSize)
+            .ToList();
+
+        var paged = new PagedList<UserResponse>(pageItems, filters.PageNumber, totalCount, filters.PageSize);
+        var statsResult = await GetUsersStatsAsync(cancellationToken);
+        if (!statsResult.IsSuccess)
+            return Result.Failure<ServiceListResult<UserResponse, UsersStatsResponse>>(statsResult.Error);
+
+        return Result.Success(new ServiceListResult<UserResponse, UsersStatsResponse>(paged, statsResult.Value));
+    }
+
+    public async Task<Result<IEnumerable<CreateCompanyUserRecordResponse>>> GetCompanyUserRecordsAsync(Guid companyAccountUserId, CancellationToken cancellationToken = default)
+    {
+        var actor = await _userManager.FindByIdAsync(companyAccountUserId.ToString());
+        if (actor is null)
+            return Result.Failure<IEnumerable<CreateCompanyUserRecordResponse>>(UserErrors.UserNotFound);
+
+        var isCompanyAccount = await _userManager.IsInRoleAsync(actor, DefaultRoles.PartnerCompany);
+        if (!isCompanyAccount)
+            return Result.Failure<IEnumerable<CreateCompanyUserRecordResponse>>(new Error("User.Forbidden", "Only company accounts can view company user records.", StatusCodes.Status403Forbidden));
+
+        var actorCompany = await _unitOfWork.Repository<CompanyUser>()
+            .GetAsync(x => x.UserId == companyAccountUserId && x.IsPrimary && x.IsActive, cancellationToken: cancellationToken);
+
+        if (actorCompany is null)
+            return Result.Failure<IEnumerable<CreateCompanyUserRecordResponse>>(new Error("Company.NotLinked", "Company account is not linked to a company.", StatusCodes.Status400BadRequest));
+
+        var companyRecords = await _unitOfWork.Repository<CompanyUser>()
+            .GetAllAsync(x => x.CompanyId == actorCompany.CompanyId && x.IsActive && !x.IsPrimary, cancellationToken);
+
+        var recordUserIds = companyRecords.Select(x => x.UserId).ToHashSet();
+
+        var users = await _userManager.Users
+            .Where(x => recordUserIds.Contains(x.Id))
+            .ToListAsync(cancellationToken);
+
+        var records = users.Select(u => new CreateCompanyUserRecordResponse(
+            u.Id,
+            actorCompany.CompanyId,
+            u.FirstName,
+            ExtractBusinessIdentifier(u.UserName ?? string.Empty, actorCompany.CompanyId),
+            !u.IsDisabled
+        ));
+
+        return Result.Success(records);
+    }
+
+    public async Task<Result<CompanyUserRecordsStatsResponse>> GetCompanyUserRecordsStatsAsync(Guid companyAccountUserId, CancellationToken cancellationToken = default)
+    {
+        var recordsResult = await GetCompanyUserRecordsAsync(companyAccountUserId, cancellationToken);
+        if (!recordsResult.IsSuccess)
+            return Result.Failure<CompanyUserRecordsStatsResponse>(recordsResult.Error);
+
+        var records = recordsResult.Value.ToList();
+
+        return Result.Success(new CompanyUserRecordsStatsResponse(
+            records.Count,
+            records.Count(x => x.BusinessIdentifier.Length <= 7),
+            records.Count(x => x.BusinessIdentifier.Length > 7)
+        ));
+    }
+
+    public async Task<Result<ServiceListResult<CreateCompanyUserRecordResponse, CompanyUserRecordsStatsResponse>>> GetCompanyUserRecordsFilterResultAsync(Guid companyAccountUserId, RequestFilters filters, string? identifierMode, CancellationToken cancellationToken = default)
+    {
+        var recordsResult = await GetCompanyUserRecordsAsync(companyAccountUserId, cancellationToken);
+        if (!recordsResult.IsSuccess)
+            return Result.Failure<ServiceListResult<CreateCompanyUserRecordResponse, CompanyUserRecordsStatsResponse>>(recordsResult.Error);
+
+        var mode = identifierMode?.Trim().ToLowerInvariant();
+
+        var filtered = recordsResult.Value.Where(record =>
+            (string.IsNullOrWhiteSpace(filters.SearchTerm)
+             || record.DisplayName.Contains(filters.SearchTerm, StringComparison.OrdinalIgnoreCase)
+             || record.BusinessIdentifier.Contains(filters.SearchTerm, StringComparison.OrdinalIgnoreCase))
+            && (string.IsNullOrWhiteSpace(mode)
+                || mode == "all"
+                || (mode == "short" && record.BusinessIdentifier.Length <= 7)
+                || (mode == "long" && record.BusinessIdentifier.Length > 7))
+        ).ToList();
+
+        var totalCount = filtered.Count;
+        var pageItems = filtered
+            .Skip((filters.PageNumber - 1) * filters.PageSize)
+            .Take(filters.PageSize)
+            .ToList();
+
+        var paged = new PagedList<CreateCompanyUserRecordResponse>(pageItems, filters.PageNumber, totalCount, filters.PageSize);
+
+        var statsResult = await GetCompanyUserRecordsStatsAsync(companyAccountUserId, cancellationToken);
+        if (!statsResult.IsSuccess)
+            return Result.Failure<ServiceListResult<CreateCompanyUserRecordResponse, CompanyUserRecordsStatsResponse>>(statsResult.Error);
+
+        return Result.Success(new ServiceListResult<CreateCompanyUserRecordResponse, CompanyUserRecordsStatsResponse>(paged, statsResult.Value));
     }
 
     public async Task<Result<CreateCompanyAccountResponse>> CreateCompanyAccountAsync(Guid adminUserId, CreateCompanyAccountRequest request, CancellationToken cancellationToken = default)
@@ -254,5 +400,17 @@ public class UserServices(UserManager<ApplicationUser> userManager, IUnitOfWork 
         var cleaned = new string(businessIdentifier.Where(char.IsLetterOrDigit).ToArray()).ToLowerInvariant();
         var prefix = cleaned.Length > 16 ? cleaned[..16] : cleaned;
         return $"cu-{companyId:N}-{prefix}";
+    }
+
+    private static string ExtractBusinessIdentifier(string userName, Guid companyId)
+    {
+        var prefix = $"cu-{companyId:N}-";
+        if (userName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        {
+            var suffix = userName[prefix.Length..];
+            return suffix.ToUpperInvariant();
+        }
+
+        return userName.ToUpperInvariant();
     }
 }
