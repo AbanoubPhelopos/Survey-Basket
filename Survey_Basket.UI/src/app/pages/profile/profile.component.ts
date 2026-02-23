@@ -9,69 +9,78 @@ import { AuthService } from '../../core/services/auth.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8">
-      <div class="max-w-3xl mx-auto">
-        <h1 class="text-2xl font-bold text-gray-900 mb-8">Account Settings</h1>
+    <div class="page-wrapper pt-4 max-w-4xl mx-auto w-full">
+      <header class="page-header flex items-center justify-between gap-4">
+        <div>
+          <p class="text-xs tracking-wider text-[var(--accent)] font-bold mb-1 uppercase">User Settings</p>
+          <h1 class="page-header__title">Account Profile</h1>
+          <p class="page-header__desc">Manage your personal information and password security.</p>
+        </div>
+      </header>
 
-        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
-          <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
-            <h3 class="text-lg leading-6 font-medium text-gray-900">Profile Information</h3>
-            <p class="mt-1 max-w-2xl text-sm text-gray-500">Update your personal details.</p>
+      <div class="grid gap-6 auto-rows-max lg:grid-cols-12">
+        <!-- Profile Form -->
+        <div class="sb-surface rounded-xl border border-[var(--border)] overflow-hidden lg:col-span-12">
+          <div class="px-6 py-5 border-b border-[var(--border)] bg-[var(--bg-soft)]">
+            <h3 class="text-[0.95rem] font-bold text-[var(--text)]">Profile Information</h3>
+            <p class="mt-1 text-sm text-[var(--text-soft)]">Update your personal details.</p>
           </div>
-          <div class="px-4 py-5 sm:p-6">
+          <div class="p-6">
             <form [formGroup]="profileForm" (ngSubmit)="onUpdateProfile()">
-              <div class="grid grid-cols-6 gap-6">
-                <div class="col-span-6 sm:col-span-3">
-                  <label for="first-name" class="block text-sm font-medium text-gray-700">First name</label>
-                  <input type="text" formControlName="firstName" id="first-name" class="input-fancy mt-1">
-                </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <label class="block">
+                  <span class="block text-sm font-semibold mb-1.5 text-[var(--text)]">First name</span>
+                  <input type="text" formControlName="firstName" class="sb-input">
+                </label>
 
-                <div class="col-span-6 sm:col-span-3">
-                  <label for="last-name" class="block text-sm font-medium text-gray-700">Last name</label>
-                  <input type="text" formControlName="lastName" id="last-name" class="input-fancy mt-1">
-                </div>
+                <label class="block">
+                  <span class="block text-sm font-semibold mb-1.5 text-[var(--text)]">Last name</span>
+                  <input type="text" formControlName="lastName" class="sb-input">
+                </label>
 
-                <div class="col-span-6 sm:col-span-4">
-                  <label for="email" class="block text-sm font-medium text-gray-700">Email address</label>
-                  <input type="text" [value]="email()" disabled id="email" class="input-fancy mt-1 bg-gray-100 cursor-not-allowed">
-                </div>
+                <label class="block sm:col-span-2">
+                  <span class="block text-sm font-semibold mb-1.5 text-[var(--text)]">Email address</span>
+                  <input type="text" [value]="email()" disabled class="sb-input cursor-not-allowed text-[var(--text-soft)] bg-[var(--sidebar-hover)]">
+                  <p class="text-xs text-[var(--text-soft)] mt-1.5">Email address cannot be changed.</p>
+                </label>
               </div>
               <div class="mt-6 flex justify-end">
-                <button type="submit" [disabled]="profileForm.invalid || isUpdatingProfile" class="btn-primary w-auto px-4 py-2">
-                  {{ isUpdatingProfile ? 'Saving...' : 'Save' }}
+                <button type="submit" [disabled]="profileForm.invalid || isUpdatingProfile" class="sb-btn-primary shadow-sm px-6">
+                  {{ isUpdatingProfile ? 'Saving Changes...' : 'Save Profile' }}
                 </button>
               </div>
             </form>
           </div>
         </div>
 
-        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-          <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
-            <h3 class="text-lg leading-6 font-medium text-gray-900">Change Password</h3>
-            <p class="mt-1 max-w-2xl text-sm text-gray-500">Ensure your account is using a long, random password to stay secure.</p>
+        <!-- Password Form -->
+        <div class="sb-surface rounded-xl border border-[var(--border)] overflow-hidden lg:col-span-12">
+          <div class="px-6 py-5 border-b border-[var(--border)] bg-[var(--bg-soft)]">
+            <h3 class="text-[0.95rem] font-bold text-[var(--text)]">Change Password</h3>
+            <p class="mt-1 text-sm text-[var(--text-soft)]">Ensure your account is using a long, random password to stay secure.</p>
           </div>
-          <div class="px-4 py-5 sm:p-6">
+          <div class="p-6">
             <form [formGroup]="passwordForm" (ngSubmit)="onChangePassword()">
-              <div class="grid grid-cols-6 gap-6">
-                <div class="col-span-6 sm:col-span-4">
-                  <label for="current-password" class="block text-sm font-medium text-gray-700">Current Password</label>
-                  <input type="password" formControlName="currentPassword" id="current-password" class="input-fancy mt-1">
-                </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <label class="block">
+                  <span class="block text-sm font-semibold mb-1.5 text-[var(--text)]">Current Password</span>
+                  <input type="password" formControlName="currentPassword" class="sb-input">
+                </label>
 
-                <div class="col-span-6 sm:col-span-4">
-                  <label for="new-password" class="block text-sm font-medium text-gray-700">New Password</label>
-                  <input type="password" formControlName="newPassword" id="new-password" class="input-fancy mt-1">
-                </div>
+                <label class="block">
+                  <span class="block text-sm font-semibold mb-1.5 text-[var(--text)]">New Password</span>
+                  <input type="password" formControlName="newPassword" class="sb-input">
+                  <p class="text-xs text-[var(--text-soft)] mt-1.5">Minimum 6 characters required.</p>
+                </label>
               </div>
               <div class="mt-6 flex justify-end">
-                <button type="submit" [disabled]="passwordForm.invalid || isChangingPassword" class="btn-primary w-auto px-4 py-2 bg-gray-800 hover:bg-gray-900">
-                  {{ isChangingPassword ? 'Changing...' : 'Change Password' }}
+                <button type="submit" [disabled]="passwordForm.invalid || isChangingPassword" class="sb-btn-primary shadow-sm px-6">
+                  {{ isChangingPassword ? 'Updating Password...' : 'Change Password' }}
                 </button>
               </div>
             </form>
           </div>
         </div>
-
       </div>
     </div>
   `
@@ -79,7 +88,7 @@ import { AuthService } from '../../core/services/auth.service';
 export class ProfileComponent implements OnInit {
   profileForm: FormGroup;
   passwordForm: FormGroup;
-  
+
   isUpdatingProfile = false;
   isChangingPassword = false;
   email = signal('');

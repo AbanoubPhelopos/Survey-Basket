@@ -8,61 +8,67 @@ import { UserResponse } from '../../core/models/user';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8">
-      <div class="max-w-6xl mx-auto">
-        
-        <div class="mb-8 flex items-center justify-between">
-          <div>
-            <h1 class="text-2xl font-bold text-gray-900">Manage Users</h1>
-            <p class="mt-1 text-sm text-gray-500">View and manage system users.</p>
-          </div>
-        </div>
+    <section class="page-wrapper pt-4">
+      <header class="page-header">
+        <p class="text-xs tracking-wider text-[var(--accent)] font-bold mb-1 uppercase">Admin Control</p>
+        <h1 class="page-header__title">Manage Users</h1>
+        <p class="page-header__desc">View and monitor authorized system users and their roles.</p>
+      </header>
 
-        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+      <div class="sb-surface rounded-xl border border-[var(--border)] overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-[var(--text)]">
+            <thead class="bg-[var(--bg-soft)] text-[0.75rem] font-bold uppercase text-[var(--text-soft)] border-b border-[var(--border)]">
               <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Roles</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th scope="col" class="px-6 py-3 tracking-wider">User</th>
+                <th scope="col" class="px-6 py-3 tracking-wider">Email Address</th>
+                <th scope="col" class="px-6 py-3 tracking-wider">Roles</th>
+                <th scope="col" class="px-6 py-3 tracking-wider">Status</th>
+                <th scope="col" class="px-6 py-3 tracking-wider text-right">Actions</th>
               </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              <tr *ngFor="let user of users()">
+            <tbody class="divide-y divide-[var(--border)]">
+              <tr *ngFor="let user of users()" class="hover:bg-[var(--sidebar-hover)] transition-colors group">
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="flex items-center">
-                    <div class="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold">
+                  <div class="flex items-center gap-3">
+                    <div class="h-9 w-9 rounded-full bg-[var(--sidebar-avatar-bg)] border border-[var(--border)] flex items-center justify-center text-[var(--text-soft)] text-xs font-bold shadow-sm group-hover:bg-[var(--accent)] group-hover:text-white transition-colors">
                       {{ user.firstName[0] }}{{ user.lastName[0] }}
                     </div>
-                    <div class="ml-4">
-                      <div class="text-sm font-medium text-gray-900">{{ user.firstName }} {{ user.lastName }}</div>
+                    <div>
+                      <div class="text-[0.95rem] font-bold text-[var(--text)] leading-tight">{{ user.firstName }} {{ user.lastName }}</div>
                     </div>
                   </div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.email }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <span *ngFor="let role of user.roles" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-1">
-                    {{ role }}
-                  </span>
+                <td class="px-6 py-4 whitespace-nowrap text-[0.85rem] font-mono text-[var(--text-soft)]">{{ user.email }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex flex-wrap gap-1.5">
+                     <span *ngFor="let role of user.roles" class="inline-flex items-center px-2 py-0.5 rounded text-[0.65rem] font-bold uppercase tracking-wider bg-[var(--bg-soft)] border border-[var(--border)] text-[var(--text)] shadow-sm">
+                       {{ role }}
+                     </span>
+                  </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" 
-                        [ngClass]="user.isDisabled ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'">
+                  <span class="inline-flex items-center px-2.5 py-1 rounded text-[0.65rem] font-bold uppercase tracking-wider border shadow-sm" 
+                        [ngClass]="user.isDisabled ? 'bg-red-50 text-red-700 border-red-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'">
                     {{ user.isDisabled ? 'Disabled' : 'Active' }}
                   </span>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <button class="text-primary-600 hover:text-primary-900 font-medium">Edit</button>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                  <button class="text-[var(--text-soft)] hover:text-[var(--accent)] font-semibold transition-colors px-2 py-1 bg-[var(--bg-soft)] rounded border border-[var(--border)] text-xs shadow-sm">
+                    Manage
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="users().length === 0">
+                <td colspan="5" class="px-6 py-12">
+                   <div class="sb-empty text-sm">No users found.</div>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
-
       </div>
-    </div>
+    </section>
   `
 })
 export class UsersComponent implements OnInit {

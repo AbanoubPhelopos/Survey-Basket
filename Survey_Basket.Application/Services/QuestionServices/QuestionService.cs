@@ -260,9 +260,6 @@ public class QuestionService(
         if (HasAnyRole(roles, DefaultRoles.Admin, DefaultRoles.SystemAdmin))
             return Result.Success();
 
-        if (!HasAnyRole(roles, DefaultRoles.PartnerCompany))
-            return Result.Failure(QuestionErrors.QuestionAccessDenied);
-
         var poll = await _unitOfWork.Repository<Poll>().GetByIdAsync(pollId, cancellationToken);
         if (poll is null)
             return Result.Failure(PollErrors.PollNotFound);

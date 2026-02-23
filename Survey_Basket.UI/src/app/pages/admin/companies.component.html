@@ -1,54 +1,104 @@
-<section class="companies-page">
-  <header class="companies-page__header sb-surface sb-hero-gradient">
-    <div>
-      <p class="companies-page__eyebrow">Admin Control</p>
-      <h1>Create Company Account</h1>
-      <p class="sb-muted">Provision a company account in pending-password state. Company users are created later by that company account.</p>
-    </div>
+<section class="page-wrapper pt-4">
+  <header class="page-header">
+    <p class="text-xs tracking-wider text-[var(--accent)] font-bold mb-1 uppercase">Admin Control</p>
+    <h1 class="page-header__title">Create Company Account</h1>
+    <p class="page-header__desc">Provision a company account in pending-password state. Company users are created later
+      by that company account.</p>
   </header>
 
-  <div class="companies-page__content">
-    <form class="sb-surface companies-form" [formGroup]="form" (ngSubmit)="createCompanyAccount()">
-      <label>
-        <span>Company Name</span>
+  <div class="grid gap-6 auto-rows-max lg:grid-cols-12">
+    <form class="sb-surface p-6 rounded-xl space-y-5 lg:col-span-7" [formGroup]="form"
+      (ngSubmit)="createCompanyAccount()">
+      <label class="block">
+        <span class="block text-sm font-semibold mb-1.5">Company Name</span>
         <input class="sb-input" formControlName="companyName" placeholder="Acme Logistics" />
       </label>
 
-      <label>
-        <span>Contact Email</span>
+      <label class="block">
+        <span class="block text-sm font-semibold mb-1.5">Contact Email</span>
         <input class="sb-input" formControlName="contactEmail" placeholder="ops@acme.com" />
       </label>
 
-      <div class="companies-form__row">
-        <label>
-          <span>Contact First Name</span>
+      <div class="grid grid-cols-2 gap-4">
+        <label class="block">
+          <span class="block text-sm font-semibold mb-1.5">First Name</span>
           <input class="sb-input" formControlName="firstName" placeholder="Nora" />
         </label>
-        <label>
-          <span>Contact Last Name</span>
+        <label class="block">
+          <span class="block text-sm font-semibold mb-1.5">Last Name</span>
           <input class="sb-input" formControlName="lastName" placeholder="Kareem" />
         </label>
       </div>
 
-      <button class="sb-btn-primary" type="submit" [disabled]="loading()">
+      <button class="sb-btn-primary w-full mt-2" type="submit" [disabled]="loading()">
         {{ loading() ? 'Creating...' : 'Create Company Account' }}
       </button>
 
-      @if (errorMessage()) {
-      <p class="companies-form__error sb-error">{{ errorMessage() }}</p>
+      @if (successMessage()) {
+      <p class="text-emerald-600 text-sm font-semibold mt-2 bg-emerald-50 border border-emerald-200 p-3 rounded">{{
+        successMessage() }}</p>
       }
 
-      <p class="sb-muted">After creation, share the activation token securely with the company account owner.</p>
+      @if (errorMessage()) {
+      <p class="sb-error mt-2">{{ errorMessage() }}</p>
+      }
+
+      <p class="text-[0.8rem] text-[var(--text-soft)] mt-4">After creation, share the activation token securely with the
+        company account owner.</p>
     </form>
 
     @if (created()) {
-    <aside class="sb-surface companies-result">
-      <h2>Company Account Created</h2>
-      <p><strong>Company ID:</strong> {{ created()?.companyId }}</p>
-      <p><strong>Company Account User ID:</strong> {{ created()?.companyAccountUserId }}</p>
-      <p><strong>State:</strong> {{ created()?.activationState }}</p>
-      <p><strong>Activation Token:</strong></p>
-      <code>{{ created()?.activationToken }}</code>
+    <aside class="sb-surface p-6 rounded-xl flex flex-col gap-4 lg:col-span-5 h-fit border-l-4 border-l-indigo-500">
+      <h2 class="font-bold text-lg mb-2">Account Created Successfully</h2>
+
+      <div class="text-[0.85rem] space-y-2">
+        <p><strong class="text-[var(--text)]">Company ID:</strong> <span class="text-[var(--text-soft)]">{{
+            created()?.companyId }}</span></p>
+        <p><strong class="text-[var(--text)]">Company User ID:</strong> <span class="text-[var(--text-soft)]">{{
+            created()?.companyAccountUserId }}</span></p>
+        <p><strong class="text-[var(--text)]">State:</strong> <span
+            class="inline-block px-2 py-0.5 rounded text-[0.65rem] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200 ml-1">{{
+            created()?.activationState }}</span></p>
+      </div>
+
+      <div class="mt-2">
+        <strong class="text-sm font-semibold mb-1 block">Activation URL:</strong>
+        <code
+          class="block bg-[var(--bg-soft)] border border-[var(--border)] p-2 rounded text-xs select-all text-[var(--text)] break-all">{{ getActivationUrl(created()!.companyAccountUserId) }}</code>
+      </div>
+
+      <div>
+        <strong class="text-sm font-semibold mb-1 block">Activation Token:</strong>
+        <code
+          class="block bg-[var(--bg-soft)] border border-[var(--border)] p-2 rounded text-xs select-all text-[var(--text)] break-all">{{ created()?.activationToken }}</code>
+      </div>
+
+      <div class="flex flex-col gap-2 mt-4 pt-4 border-t border-[var(--border)]">
+        <button type="button" class="sb-btn-primary w-full"
+          (click)="openActivationPage(created()!.companyAccountUserId)">
+          Open Activation Page
+        </button>
+        <button type="button"
+          class="px-4 py-2 border border-[var(--border)] rounded font-semibold text-sm hover:bg-[var(--sidebar-hover)] transition-colors w-full"
+          (click)="copyActivationLink()">
+          Copy Activation Link
+        </button>
+        <button type="button"
+          class="px-4 py-2 border border-[var(--border)] rounded font-semibold text-sm hover:bg-[var(--sidebar-hover)] transition-colors w-full"
+          (click)="copyActivationToken()">
+          Copy Token
+        </button>
+        <button type="button"
+          class="px-4 py-2 border border-[var(--border)] rounded font-semibold text-sm hover:bg-[var(--sidebar-hover)] transition-colors w-full"
+          (click)="regenerateToken()" [disabled]="generatingToken()">
+          {{ generatingToken() ? 'Regenerating...' : 'Regenerate Token' }}
+        </button>
+      </div>
+
+      <p class="text-xs text-[var(--text-soft)] mt-2">
+        Next: share the activation URL and token with company owner, then they set password and log in using contact
+        email.
+      </p>
     </aside>
     }
   </div>

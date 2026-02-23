@@ -52,6 +52,16 @@
   font-weight: 600;
 }
 
+.companies-form__success {
+  margin: 0;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  border-radius: 0.7rem;
+  padding: 0.7rem 0.8rem;
+  font-weight: 600;
+}
+
 .companies-result h2 {
   margin-top: 0;
 }
@@ -66,6 +76,31 @@
   padding: 0.6rem;
   font-family: var(--font-mono);
   font-size: 0.82rem;
+}
+
+.companies-result__actions {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+
+.companies-result__secondary {
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  border-radius: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.companies-result__secondary:hover {
+  border-color: var(--accent);
+}
+
+.companies-result__hint {
+  margin: 0.8rem 0 0;
+  font-size: 0.84rem;
 }
 
 @media (min-width: 900px) {

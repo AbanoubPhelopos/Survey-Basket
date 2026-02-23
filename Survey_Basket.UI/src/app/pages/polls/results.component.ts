@@ -9,106 +9,124 @@ import { PollVotesResponse, VotesPerDayResponse, VotesPerQuestionResponse } from
   standalone: true,
   imports: [CommonModule, RouterModule],
   template: `
-    <div class="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
-      <div class="max-w-5xl mx-auto">
-        
-        <div class="mb-8 flex items-center justify-between">
-          <div>
-            <h1 class="text-2xl font-bold">Survey Results</h1>
-            <p class="mt-1 text-sm sb-muted">Analytics and response data.</p>
-          </div>
-          <a routerLink="/dashboard" class="text-sm font-medium">Back to Dashboard</a>
+    <div class="page-wrapper pt-4 max-w-5xl mx-auto w-full">
+      <header class="page-header flex items-center justify-between gap-4">
+        <div>
+          <p class="text-xs tracking-wider text-[var(--accent)] font-bold mb-1 uppercase">Survey Analytics</p>
+          <h1 class="page-header__title">Survey Results</h1>
+          <p class="page-header__desc">Analytics, response data, and voting trends.</p>
         </div>
+        <a routerLink="/dashboard" class="px-3 py-1.5 text-xs font-semibold rounded-md border border-[var(--border)] hover:bg-[var(--sidebar-hover)] transition-colors">Back to Dashboard</a>
+      </header>
 
-        <div *ngIf="errorMessage()" class="sb-error mb-4">{{ errorMessage() }}</div>
-        <div *ngIf="loading()" class="sb-empty mb-4">Loading survey analytics...</div>
+      <div *ngIf="errorMessage()" class="sb-error mb-4">{{ errorMessage() }}</div>
+      <div *ngIf="loading()" class="py-12 flex justify-center">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent)]"></div>
+      </div>
 
-        <div class="mb-6 border-b border-gray-200">
-          <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+      <ng-container *ngIf="!loading()">
+        <div class="mb-6 border-b border-[var(--border)]">
+          <nav class="-mb-px flex space-x-6" aria-label="Tabs">
             <button (click)="activeTab = 'overview'" 
-                    [class.border-primary-500]="activeTab === 'overview'"
-                    [class.text-primary-600]="activeTab === 'overview'"
-                    class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                    [class.border-[var(--accent)]]="activeTab === 'overview'"
+                    [class.text-[var(--text)]]="activeTab === 'overview'"
+                    [class.border-transparent]="activeTab !== 'overview'"
+                    [class.text-[var(--text-soft)]]="activeTab !== 'overview'"
+                    class="whitespace-nowrap py-3 px-1 border-b-2 font-bold text-sm hover:text-[var(--text)] transition-colors">
               Overview
             </button>
             <button (click)="activeTab = 'responses'" 
-                    [class.border-primary-500]="activeTab === 'responses'"
-                    [class.text-primary-600]="activeTab === 'responses'"
-                    class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                    [class.border-[var(--accent)]]="activeTab === 'responses'"
+                    [class.text-[var(--text)]]="activeTab === 'responses'"
+                    [class.border-transparent]="activeTab !== 'responses'"
+                    [class.text-[var(--text-soft)]]="activeTab !== 'responses'"
+                    class="whitespace-nowrap py-3 px-1 border-b-2 font-bold text-sm hover:text-[var(--text)] transition-colors">
               Responses
             </button>
             <button (click)="activeTab = 'trends'" 
-                    [class.border-primary-500]="activeTab === 'trends'"
-                    [class.text-primary-600]="activeTab === 'trends'"
-                    class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                    [class.border-[var(--accent)]]="activeTab === 'trends'"
+                    [class.text-[var(--text)]]="activeTab === 'trends'"
+                    [class.border-transparent]="activeTab !== 'trends'"
+                    [class.text-[var(--text-soft)]]="activeTab !== 'trends'"
+                    class="whitespace-nowrap py-3 px-1 border-b-2 font-bold text-sm hover:text-[var(--text)] transition-colors">
               Trends
             </button>
           </nav>
         </div>
 
-        <div *ngIf="!loading() && activeTab === 'overview'" class="space-y-6">
-          <div *ngFor="let q of votesPerQuestion()" class="sb-surface p-6">
-            <h3 class="text-lg font-medium mb-4">{{ q.question }}</h3>
-            <div class="space-y-3">
+        <div *ngIf="activeTab === 'overview'" class="space-y-6">
+          <div *ngFor="let q of votesPerQuestion(); let i=index" class="sb-surface rounded-xl p-6 border border-[var(--border)]">
+            <h3 class="text-base font-bold mb-5 flex items-start gap-2">
+              <span class="text-[0.7rem] bg-[var(--bg-soft)] text-[var(--text-soft)] px-1.5 py-0.5 rounded font-mono mt-0.5">Q{{ i + 1 }}</span>
+              <span>{{ q.question }}</span>
+            </h3>
+            <div class="space-y-4">
               <div *ngFor="let a of q.selectedAnswers">
-                <div class="flex justify-between text-sm font-medium mb-1">
-                  <span>{{ a.answer }}</span>
-                  <span>{{ a.count }} votes</span>
+                <div class="flex justify-between text-[0.85rem] font-semibold mb-1.5">
+                  <span class="text-[var(--text)]">{{ a.answer }}</span>
+                  <span class="text-[var(--text-soft)] text-xs font-mono bg-[var(--bg-soft)] px-1.5 rounded">{{ a.count }} votes</span>
                 </div>
-                <div class="w-full rounded-full h-2.5" style="background: var(--bg-soft)">
-                  <div class="h-2.5 rounded-full" style="background: var(--accent)" [style.width.%]="(a.count / getMaxCount(q.selectedAnswers)) * 100"></div>
+                <div class="w-full rounded-full h-2 bg-[var(--bg-soft)] overflow-hidden border border-[var(--border)]">
+                  <div class="h-full bg-[var(--accent)] rounded-full transition-all duration-500 relative" [style.width.%]="(a.count / getMaxCount(q.selectedAnswers)) * 100">
+                     <div class="absolute inset-0 bg-white/20 w-full" style="background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent); background-size: 1rem 1rem;"></div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-          <div *ngIf="votesPerQuestion().length === 0" class="sb-empty">No data available.</div>
+          <div *ngIf="votesPerQuestion().length === 0" class="sb-empty py-12 text-sm">No analytics data available yet.</div>
         </div>
 
-        <div *ngIf="!loading() && activeTab === 'responses'" class="sb-surface overflow-hidden rounded-lg">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Voter</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Answers</th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              <tr *ngFor="let vote of pollVotes()?.votes">
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ vote.voterName }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ vote.voteDate | date:'short' }}</td>
-                <td class="px-6 py-4 text-sm text-gray-500">
-                  <div *ngFor="let ans of vote.selectedAnswers" class="mb-1">
-                    <span class="font-medium">{{ ans.question }}:</span> {{ ans.answer }}
-                  </div>
-                </td>
-              </tr>
-              <tr *ngIf="!pollVotes()?.votes?.length">
-                <td colspan="3" class="px-6 py-12">
-                  <div class="sb-empty">No responses yet.</div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div *ngIf="!loading() && activeTab === 'trends'" class="sb-surface rounded-lg p-6">
-          <h3 class="text-lg font-medium mb-4">Votes per Day</h3>
-          <div class="space-y-3">
-             <div *ngFor="let d of votesPerDay()">
-                <div class="flex justify-between text-sm font-medium mb-1">
-                  <span>{{ d.date }}</span>
-                  <span>{{ d.voteCount }}</span>
-                </div>
-                <div class="w-full rounded-full h-2.5" style="background: var(--bg-soft)">
-                  <div class="h-2.5 rounded-full" style="background: var(--highlight)" [style.width.%]="(d.voteCount / getMaxVoteCount(votesPerDay())) * 100"></div>
-                </div>
-             </div>
-             <div *ngIf="votesPerDay().length === 0" class="sb-empty">No trend data available.</div>
+        <div *ngIf="activeTab === 'responses'" class="sb-surface overflow-hidden rounded-xl border border-[var(--border)]">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-[var(--text)]">
+              <thead class="bg-[var(--bg-soft)] text-xs font-bold uppercase text-[var(--text-soft)] border-b border-[var(--border)]">
+                <tr>
+                  <th scope="col" class="px-6 py-3 tracking-wider">Voter</th>
+                  <th scope="col" class="px-6 py-3 tracking-wider">Date</th>
+                  <th scope="col" class="px-6 py-3 tracking-wider">Answers</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[var(--border)]">
+                <tr *ngFor="let vote of pollVotes()?.votes" class="hover:bg-[var(--sidebar-hover)] transition-colors">
+                  <td class="px-6 py-4 whitespace-nowrap font-semibold">{{ vote.voterName }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap font-mono text-[0.8rem] text-[var(--text-soft)]">{{ vote.voteDate | date:'short' }}</td>
+                  <td class="px-6 py-4">
+                    <div class="space-y-2">
+                      <div *ngFor="let ans of vote.selectedAnswers; let idx=index" class="text-[0.85rem] leading-snug">
+                         <span class="font-bold text-[var(--text-soft)] text-[0.7rem] uppercase mr-1">Q{{idx+1}}</span>
+                         <span>{{ ans.answer }}</span>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr *ngIf="!pollVotes()?.votes?.length">
+                  <td colspan="3" class="px-6 py-12">
+                    <div class="sb-empty text-sm">No responses yet.</div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
-      </div>
+        <div *ngIf="activeTab === 'trends'" class="sb-surface rounded-xl p-6 border border-[var(--border)]">
+          <h3 class="text-base font-bold mb-6">Votes per Day</h3>
+          <div class="space-y-4">
+             <div *ngFor="let d of votesPerDay()">
+                <div class="flex justify-between text-[0.85rem] font-semibold mb-1.5">
+                  <span class="font-mono text-xs">{{ d.date | date:'mediumDate' }}</span>
+                  <span class="text-[var(--text-soft)] text-xs font-mono bg-[var(--bg-soft)] px-1.5 rounded">{{ d.voteCount }} votes</span>
+                </div>
+                <div class="w-full rounded-full h-2 bg-[var(--bg-soft)] overflow-hidden border border-[var(--border)]">
+                  <div class="h-full rounded-full transition-all duration-500" style="background: var(--highlight)" [style.width.%]="(d.voteCount / getMaxVoteCount(votesPerDay())) * 100"></div>
+                </div>
+             </div>
+             <div *ngIf="votesPerDay().length === 0" class="sb-empty py-8 text-sm">No trend data available yet.</div>
+          </div>
+        </div>
+      </ng-container>
+
     </div>
   `
 })

@@ -3,42 +3,75 @@
 @tailwind utilities;
 
 :root {
-  --font-heading: "Space Grotesk", "Segoe UI", sans-serif;
-  --font-body: "Manrope", "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono", "Consolas", monospace;
+  --font-heading: "Mona Sans", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 
-  --bg: #f4f7fb;
+  --bg: #f6f8fa;
   --bg-elevated: #ffffff;
-  --bg-soft: #eaf1f8;
-  --text: #102033;
-  --text-soft: #4b5d73;
-  --border: #d6e1ee;
-  --accent: #0f766e;
-  --accent-strong: #0b5c56;
+  --bg-soft: #f3f4f6;
+  --text: #1f2328;
+  --text-soft: #59636e;
+  --border: #d0d7de;
+  --accent: #0969da;
+  --accent-strong: #0550ae;
   --accent-contrast: #ffffff;
-  --highlight: #f59e0b;
-  --ring: rgba(15, 118, 110, 0.28);
-  --shadow: 0 14px 28px rgba(16, 32, 51, 0.12);
-  --hero-gradient: linear-gradient(145deg, #d9f2ee 0%, #f5f9ff 45%, #fff4db 100%);
+  --highlight: #8250df;
+  --ring: rgba(9, 105, 218, 0.3);
+  --shadow: 0 6px 22px rgba(31, 35, 40, 0.08);
+  --hero-gradient: linear-gradient(165deg, #ffffff 0%, #f6f8fa 45%, #edf2ff 100%);
+
+  --sidebar-bg: #ffffff;
+  --sidebar-panel: #f6f8fa;
+  --sidebar-border: #d0d7de;
+  --sidebar-hover: #f3f4f6;
+  --sidebar-active-bg: #ddf4ff;
+  --sidebar-active-border: #54aeff;
+  --sidebar-text: #1f2328;
+  --sidebar-muted: #59636e;
+  --sidebar-dot: #8c959f;
+  --sidebar-danger: #cf222e;
+  --sidebar-logo-bg: #ddf4ff;
+  --sidebar-logo-border: #54aeff;
+  --sidebar-logo-text: #0550ae;
+  --sidebar-avatar-bg: #eaeef2;
+  --sidebar-avatar-text: #57606a;
 }
 
 [data-theme="dark"] {
-  --bg: #0d1420;
-  --bg-elevated: #151f2f;
-  --bg-soft: #1b2a3f;
-  --text: #ebf2ff;
-  --text-soft: #9bb0cb;
-  --border: #2c3f5c;
-  --accent: #14b8a6;
-  --accent-strong: #0d9488;
-  --accent-contrast: #041313;
-  --highlight: #fbbf24;
-  --ring: rgba(20, 184, 166, 0.35);
-  --shadow: 0 16px 32px rgba(0, 0, 0, 0.35);
-  --hero-gradient: linear-gradient(145deg, #12253b 0%, #111b2a 45%, #2d220f 100%);
+  --bg: #0d1117;
+  --bg-elevated: #161b22;
+  --bg-soft: #21262d;
+  --text: #e6edf3;
+  --text-soft: #8b949e;
+  --border: #30363d;
+  --accent: #2f81f7;
+  --accent-strong: #1f6feb;
+  --accent-contrast: #ffffff;
+  --highlight: #a371f7;
+  --ring: rgba(47, 129, 247, 0.35);
+  --shadow: 0 10px 28px rgba(1, 4, 9, 0.42);
+  --hero-gradient: linear-gradient(165deg, #161b22 0%, #0d1117 45%, #1d2533 100%);
+
+  --sidebar-bg: #0d1117;
+  --sidebar-panel: #161b22;
+  --sidebar-border: #30363d;
+  --sidebar-hover: #21262d;
+  --sidebar-active-bg: rgba(56, 139, 253, 0.18);
+  --sidebar-active-border: #1f6feb;
+  --sidebar-text: #e6edf3;
+  --sidebar-muted: #8b949e;
+  --sidebar-dot: #6e7681;
+  --sidebar-danger: #ff7b72;
+  --sidebar-logo-bg: rgba(56, 139, 253, 0.22);
+  --sidebar-logo-border: #1f6feb;
+  --sidebar-logo-text: #c6e6ff;
+  --sidebar-avatar-bg: #21262d;
+  --sidebar-avatar-text: #e6edf3;
 }
 
 @layer base {
+
   html,
   body {
     min-height: 100%;
@@ -118,69 +151,7 @@
     transform: none;
   }
 
-  .input-fancy {
-    @apply sb-input;
-  }
 
-  .btn-primary {
-    @apply sb-btn-primary;
-  }
-
-  .auth-shell {
-    min-height: 100dvh;
-    display: grid;
-    grid-template-columns: 1fr;
-    background: var(--bg);
-  }
-
-  .auth-hero {
-    display: none;
-    padding: 2rem;
-    color: #ecfeff;
-    background: linear-gradient(155deg, #115e59 0%, #1d4ed8 55%, #312e81 100%);
-  }
-
-  .auth-panel {
-    display: grid;
-    place-items: center;
-    padding: 1.2rem;
-  }
-
-  .auth-card {
-    width: min(540px, 100%);
-    padding: 1.4rem;
-  }
-
-  .auth-form {
-    display: grid;
-    gap: 0.9rem;
-    margin-top: 1rem;
-  }
-
-  .auth-grid-2 {
-    display: grid;
-    gap: 0.9rem;
-  }
-
-  @media (min-width: 960px) {
-    .auth-shell {
-      grid-template-columns: 1fr 1fr;
-    }
-
-    .auth-hero {
-      display: grid;
-      align-content: center;
-      gap: 1rem;
-    }
-
-    .auth-card {
-      padding: 1.8rem;
-    }
-
-    .auth-grid-2 {
-      grid-template-columns: 1fr 1fr;
-    }
-  }
 }
 
 @layer utilities {
@@ -208,5 +179,36 @@
     border-radius: 0.8rem;
     padding: 0.75rem 0.9rem;
     font-weight: 600;
+  }
+
+  /* Page Standard Utilities */
+  .page-wrapper {
+    width: 100%;
+    /* Let the inner grid handle spacing */
+    display: grid;
+    gap: 1.25rem;
+    align-content: start;
+    font-size: 0.885rem;
+    /* Github scale base size */
+  }
+
+  .page-header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .page-header__title {
+    font-size: 1.35rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    margin: 0 0 0.35rem;
+  }
+
+  .page-header__desc {
+    font-size: 0.85rem;
+    color: var(--text-soft);
+    margin: 0;
   }
 }

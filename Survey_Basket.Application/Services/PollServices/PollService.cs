@@ -307,9 +307,6 @@ public class PollService(
         if (HasAnyRole(roles, DefaultRoles.Admin, DefaultRoles.SystemAdmin))
             return Result.Success();
 
-        if (!HasAnyRole(roles, DefaultRoles.PartnerCompany))
-            return Result.Failure(PollErrors.PollAccessDenied);
-
         // Backward-compatible ownership checks for polls created before PollOwner was introduced.
         if (poll.CreatedById == userId)
             return Result.Success();

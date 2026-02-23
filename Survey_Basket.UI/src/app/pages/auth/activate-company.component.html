@@ -1,26 +1,44 @@
-<section class="activate-page">
-  <div class="activate-card sb-surface">
-    <h1>Activate Company Account</h1>
-    <p class="sb-muted">Set the first password for your company account using the activation token shared by admin.</p>
-
-    <form [formGroup]="form" (ngSubmit)="activate()" class="activate-form">
-      <label>
-        <span>Activation Token</span>
-        <textarea class="sb-input" rows="4" formControlName="activationToken"></textarea>
-      </label>
-
-      <label>
-        <span>New Password</span>
-        <input type="password" class="sb-input" formControlName="newPassword" />
-      </label>
-
-      <button class="sb-btn-primary" type="submit" [disabled]="loading()">
-        {{ loading() ? 'Activating...' : 'Activate Account' }}
-      </button>
-    </form>
-
-    @if (errorMessage()) {
-    <p class="activate-error">{{ errorMessage() }}</p>
-    }
+<div class="min-h-screen bg-[var(--bg)] flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
+  <div class="sm:mx-auto sm:w-full sm:max-w-md text-center">
+    <div class="mx-auto h-12 w-12 bg-[var(--accent)] rounded-xl shadow-sm flex items-center justify-center mb-4">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-7 h-7 text-white">
+        <path fill-rule="evenodd"
+          d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z"
+          clip-rule="evenodd" />
+      </svg>
+    </div>
+    <h2 class="text-center text-2xl font-bold tracking-tight text-[var(--text)]">Activate Company Account</h2>
+    <p class="mt-2 text-center text-sm text-[var(--text-soft)]">
+      Set the first password for your company account using the activation token shared by the platform admin.
+    </p>
   </div>
-</section>
+
+  <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-[440px]">
+    <div class="sb-surface py-8 px-4 shadow-sm sm:rounded-xl sm:px-10 border border-[var(--border)]">
+      <form [formGroup]="form" (ngSubmit)="activate()" class="space-y-5">
+        <label class="block">
+          <span class="block text-sm font-semibold mb-1.5 text-[var(--text)]">Activation Token</span>
+          <textarea class="sb-input" rows="4" formControlName="activationToken"></textarea>
+        </label>
+
+        <label class="block">
+          <span class="block text-sm font-semibold mb-1.5 text-[var(--text)]">New Password</span>
+          <input type="password" class="sb-input" formControlName="newPassword" />
+        </label>
+
+        <div class="pt-2">
+          <button type="submit" [disabled]="loading() || form.invalid"
+            class="sb-btn-primary w-full py-2 shadow-sm font-semibold text-sm">
+            {{ loading() ? 'Activating...' : 'Activate Account' }}
+          </button>
+        </div>
+      </form>
+
+      @if (errorMessage()) {
+      <div class="mt-4 sb-error text-sm text-center">
+        {{ errorMessage() }}
+      </div>
+      }
+    </div>
+  </div>
+</div>
