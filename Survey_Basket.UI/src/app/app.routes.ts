@@ -1,7 +1,8 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './pages/auth/login.component';
-import { RegisterComponent } from './pages/auth/register.component';
 import { ActivateCompanyComponent } from './pages/auth/activate-company.component';
+import { CompanyMagicLoginComponent } from './pages/auth/company-magic-login.component';
+import { JoinCompanyComponent } from './pages/auth/join-company.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { CreatePollComponent } from './pages/polls/create-poll.component';
 import { EditPollComponent } from './pages/polls/edit-poll.component';
@@ -17,8 +18,9 @@ import { RolesComponent } from './pages/admin/roles.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
-  { path: 'register', component: RegisterComponent },
   { path: 'activate-company/:companyAccountUserId', component: ActivateCompanyComponent },
+  { path: 'company-magic-login', component: CompanyMagicLoginComponent },
+  { path: 'join-company', component: JoinCompanyComponent },
   {
     path: '',
     component: AppShellComponent,

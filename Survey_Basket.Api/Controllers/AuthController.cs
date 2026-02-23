@@ -43,10 +43,7 @@ public class AuthController(IAuthService authService) : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
     {
-        var result = await _authService.RegisterAsync(request, cancellationToken);
-        return result.IsSuccess
-            ? Ok()
-            : result.ToProblemDetails();
+        return Forbid();
     }
 
     [HttpPost("confirm-email")]
@@ -91,6 +88,33 @@ public class AuthController(IAuthService authService) : ControllerBase
         var result = await _authService.ActivateCompanyAccountAsync(request, cancellationToken);
         return result.IsSuccess
             ? Ok()
+            : result.ToProblemDetails();
+    }
+
+    [HttpPost("company/magic-link/request")]
+    public async Task<IActionResult> RequestCompanyMagicLink([FromBody] CompanyMagicLinkRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _authService.RequestCompanyMagicLinkAsync(request, cancellationToken);
+        return result.IsSuccess
+            ? Ok()
+            : result.ToProblemDetails();
+    }
+
+    [HttpPost("company/magic-link/redeem")]
+    public async Task<IActionResult> RedeemCompanyMagicLink([FromBody] CompanyMagicLinkRedeemRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _authService.RedeemCompanyMagicLinkAsync(request, cancellationToken);
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : result.ToProblemDetails();
+    }
+
+    [HttpPost("company-user/invite/redeem")]
+    public async Task<IActionResult> RedeemCompanyUserInvite([FromBody] CompanyUserInviteRedeemRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _authService.RedeemCompanyUserInviteAsync(request, cancellationToken);
+        return result.IsSuccess
+            ? Ok(result.Value)
             : result.ToProblemDetails();
     }
 }

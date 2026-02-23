@@ -3,9 +3,10 @@ import { Injectable } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { API_BASE_URL } from '../constants/api.constants';
 import { UserResponse, UsersStatsResponse } from '../models/user';
-import { CompanyUserRecordsStatsResponse, CreateCompanyUserRecordRequest, CreateCompanyUserRecordResponse } from '../models/company-user-record';
+import { CompanyUserInviteResponse, CompanyUserRecordsStatsResponse, CreateCompanyUserInviteRequest, CreateCompanyUserRecordRequest, CreateCompanyUserRecordResponse } from '../models/company-user-record';
 import { ServiceListResult, ServiceResult } from '../models/service-result';
 import { RequestFilters } from '../models/poll';
+import { AdminCompanyUserListItemResponse, AdminCompanyUsersStatsResponse, CompanyAccountListItemResponse, CompanyAccountsStatsResponse } from '../models/company-account';
 
 @Injectable({
   providedIn: 'root'
@@ -63,5 +64,59 @@ export class UserService {
 
   getCompanyUserRecordStats(): Observable<CompanyUserRecordsStatsResponse> {
     return this.http.get<CompanyUserRecordsStatsResponse>(`${this.apiUrl}/company-user-records/stats`);
+  }
+
+  getCompanyAccounts(filters: RequestFilters, state = 'all'): Observable<ServiceListResult<CompanyAccountListItemResponse, CompanyAccountsStatsResponse>> {
+    let params = new HttpParams()
+      .set('pageNumber', filters.pageNumber.toString())
+      .set('pageSize', filters.pageSize.toString())
+      .set('state', state);
+
+    if (filters.searchTerm) params = params.set('searchTerm', filters.searchTerm);
+    if (filters.sortColumn) params = params.set('sortColumn', filters.sortColumn);
+    if (filters.sortDirection) params = params.set('sortDirection', filters.sortDirection);
+
+    return this.http.get<ServiceResult<ServiceListResult<CompanyAccountListItemResponse, CompanyAccountsStatsResponse>>>(`${this.apiUrl}/company-accounts`, { params }).pipe(
+      map((result) => {
+        if (!result.succeeded || !result.data) {
+          throw new Error(result.error?.description ?? 'Failed to load company accounts');
+        }
+        return result.data;
+      })
+    );
+  }
+
+  setCompanyAccountLockState(companyAccountUserId: string, locked: boolean): Observable<void> {
+    const params = new HttpParams().set('locked', String(locked));
+    return this.http.put<void>(`${this.apiUrl}/company-accounts/${companyAccountUserId}/lock-state`, null, { params });
+  }
+
+  getAdminCompanyUsers(filters: RequestFilters, companyId?: string, status = 'all'): Observable<ServiceListResult<AdminCompanyUserListItemResponse, AdminCompanyUsersStatsResponse>> {
+    let params = new HttpParams()
+      .set('pageNumber', filters.pageNumber.toString())
+      .set('pageSize', filters.pageSize.toString())
+      .set('status', status);
+
+    if (companyId) params = params.set('companyId', companyId);
+    if (filters.searchTerm) params = params.set('searchTerm', filters.searchTerm);
+    if (filters.sortColumn) params = params.set('sortColumn', filters.sortColumn);
+    if (filters.sortDirection) params = params.set('sortDirection', filters.sortDirection);
+
+    return this.http.get<ServiceResult<ServiceListResult<AdminCompanyUserListItemResponse, AdminCompanyUsersStatsResponse>>>(`${this.apiUrl}/admin/company-users`, { params }).pipe(
+      map((result) => {
+        if (!result.succeeded || !result.data) {
+          throw new Error(result.error?.description ?? 'Failed to load company users');
+        }
+        return result.data;
+      })
+    );
+  }
+
+  createCompanyUserInvite(request: CreateCompanyUserInviteRequest): Observable<CompanyUserInviteResponse> {
+    return this.http.post<CompanyUserInviteResponse>(`${this.apiUrl}/company-user-invites`, request);
+  }
+
+  getCompanyUserInvites(): Observable<CompanyUserInviteResponse[]> {
+    return this.http.get<CompanyUserInviteResponse[]>(`${this.apiUrl}/company-user-invites`);
   }
 }

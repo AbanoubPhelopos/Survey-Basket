@@ -7,6 +7,8 @@ public class ApplicationUser : IdentityUser<Guid>
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public bool IsDisabled { get; set; }
+    public bool ProfileCompleted { get; set; } = false;
+    public bool IsFirstLogin { get; set; } = false;
 
     public List<RefreshToken> RefreshTokens { get; set; } = [];
     public ICollection<CompanyUser> CompanyUsers { get; set; } = [];

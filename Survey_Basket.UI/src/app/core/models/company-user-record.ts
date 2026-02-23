@@ -16,3 +16,20 @@ export interface CompanyUserRecordsStatsResponse {
   shortIdentifiers: number;
   longIdentifiers: number;
 }
+
+export interface CreateCompanyUserInviteRequest {
+  email?: string;
+  mobile?: string;
+  expiresInMinutes?: number;
+}
+
+export interface CompanyUserInviteResponse {
+  inviteId: string;
+  companyId: string;
+  inviteUrl: string;
+  qrPayload: string;
+  expiresOn: string;
+  emailHint?: string;
+  mobileHint?: string;
+  isUsed: boolean;
+}

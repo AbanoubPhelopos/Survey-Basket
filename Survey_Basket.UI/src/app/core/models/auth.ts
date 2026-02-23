@@ -8,8 +8,9 @@ export type AppRole = 'Admin' | 'SystemAdmin' | 'PartnerCompany' | 'CompanyUser'
 export interface CapabilityContext {
   roles: AppRole[];
   permissions: string[];
-  accountType?: 'AdminAccount' | 'CompanyAccount';
+  accountType?: 'AdminAccount' | 'CompanyAccount' | 'CompanyUserAccount';
   requiresActivation?: boolean;
+  requiresProfileCompletion?: boolean;
 }
 
 export interface RegisterRequest {
@@ -37,8 +38,9 @@ export interface LoginResponse {
   lastName: string;
   email: string;
   userId: string;
-  accountType?: 'AdminAccount' | 'CompanyAccount';
+  accountType?: 'AdminAccount' | 'CompanyAccount' | 'CompanyUserAccount';
   requiresActivation?: boolean;
+  requiresProfileCompletion?: boolean;
 }
 
 export interface User {
@@ -48,6 +50,18 @@ export interface User {
   lastName: string;
   permissions: string[];
   roles: string[];
-  accountType?: 'AdminAccount' | 'CompanyAccount';
+  accountType?: 'AdminAccount' | 'CompanyAccount' | 'CompanyUserAccount';
   requiresActivation?: boolean;
+  requiresProfileCompletion?: boolean;
+}
+
+export interface CompanyMagicLinkRedeemRequest { token: string; }
+
+export interface CompanyUserInviteRedeemRequest {
+  token: string;
+  email?: string;
+  mobile?: string;
+  firstName: string;
+  lastName: string;
+  password?: string;
 }

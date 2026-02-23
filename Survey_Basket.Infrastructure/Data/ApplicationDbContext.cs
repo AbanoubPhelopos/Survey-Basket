@@ -15,6 +15,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Answer> Answers { get; set; } = null!;
     public DbSet<Company> Companies { get; set; } = null!;
     public DbSet<CompanyUser> CompanyUsers { get; set; } = null!;
+    public DbSet<CompanyMagicLinkToken> CompanyMagicLinkTokens { get; set; } = null!;
+    public DbSet<CompanyUserInvite> CompanyUserInvites { get; set; } = null!;
     public DbSet<Poll> Polls { get; set; } = null!;
     public DbSet<PollAudience> PollAudiences { get; set; } = null!;
     public DbSet<PollOwner> PollOwners { get; set; } = null!;

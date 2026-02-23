@@ -4,9 +4,10 @@ import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import {
   ActivateCompanyAccountRequest,
+  CompanyMagicLinkRedeemRequest,
+  CompanyUserInviteRedeemRequest,
   LoginRequest,
   LoginResponse,
-  RegisterRequest,
   User
 } from '../models/auth';
 import { API_BASE_URL } from '../constants/api.constants';
@@ -31,16 +32,28 @@ export class AuthService {
     );
   }
 
-  register(request: RegisterRequest): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/register`, request);
-  }
-
   activateCompanyAccount(companyId: string, request: ActivateCompanyAccountRequest): Observable<void> {
     return this.http.post<void>(`${this.apiUrl}/activate-company`, {
       companyAccountUserId: companyId,
       activationToken: request.activationToken,
       newPassword: request.newPassword
     });
+  }
+
+  requestCompanyMagicLink(email: string): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/company/magic-link/request`, { email });
+  }
+
+  redeemCompanyMagicLink(request: CompanyMagicLinkRedeemRequest): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.apiUrl}/company/magic-link/redeem`, request).pipe(
+      tap((response) => this.setSession(response))
+    );
+  }
+
+  redeemCompanyUserInvite(request: CompanyUserInviteRedeemRequest): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.apiUrl}/company-user/invite/redeem`, request).pipe(
+      tap((response) => this.setSession(response))
+    );
   }
 
   logout(): void {
@@ -93,6 +106,18 @@ export class AuthService {
     return !!this.user()?.requiresActivation;
   }
 
+  requiresProfileCompletion(): boolean {
+    return !!this.user()?.requiresProfileCompletion;
+  }
+
+  markProfileCompleted(): void {
+    const current = this.user();
+    if (!current) return;
+    const next = { ...current, requiresProfileCompletion: false };
+    localStorage.setItem(this.userKey, JSON.stringify(next));
+    this.user.set(next);
+  }
+
   private setSession(authResult: LoginResponse): void {
     localStorage.setItem(this.tokenKey, authResult.token);
     
@@ -104,7 +129,8 @@ export class AuthService {
       permissions: authResult.permissions || [],
       roles: authResult.roles || [],
       accountType: authResult.accountType,
-      requiresActivation: authResult.requiresActivation
+      requiresActivation: authResult.requiresActivation,
+      requiresProfileCompletion: authResult.requiresProfileCompletion
     };
     
     localStorage.setItem(this.userKey, JSON.stringify(user));

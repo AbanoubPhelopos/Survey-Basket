@@ -123,6 +123,7 @@ export class ProfileComponent implements OnInit {
       this.accountService.updateProfile(this.profileForm.value).subscribe({
         next: () => {
           this.isUpdatingProfile = false;
+          this.authService.markProfileCompleted();
           this.uiFeedback.success('Profile updated', 'Your account details were updated successfully.');
         },
         error: () => {

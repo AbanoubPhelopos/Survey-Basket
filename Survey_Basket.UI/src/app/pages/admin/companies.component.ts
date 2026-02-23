@@ -1,9 +1,17 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AccountService } from '../../core/services/account.service';
-import { CreateCompanyAccountRequest, CreateCompanyAccountResponse } from '../../core/models/company-account';
+import {
+  AdminCompanyUserListItemResponse,
+  CompanyAccountListItemResponse,
+  CreateCompanyAccountRequest,
+  CreateCompanyAccountResponse
+} from '../../core/models/company-account';
 import { UiFeedbackService } from '../../core/services/ui-feedback.service';
+import { UserService } from '../../core/services/user.service';
+import { RequestFilters } from '../../core/models/poll';
+import { PagedList } from '../../core/models/service-result';
 
 @Component({
   selector: 'app-companies',
@@ -12,23 +20,60 @@ import { UiFeedbackService } from '../../core/services/ui-feedback.service';
   templateUrl: './companies.component.html',
   styleUrls: ['./companies.component.scss']
 })
-export class CompaniesComponent {
+export class CompaniesComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly accountService = inject(AccountService);
+  private readonly userService = inject(UserService);
   private readonly uiFeedback = inject(UiFeedbackService);
 
   readonly loading = signal(false);
+  readonly showCreateModal = signal(false);
   readonly generatingToken = signal(false);
   readonly created = signal<CreateCompanyAccountResponse | null>(null);
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
 
+  readonly accountFilters: RequestFilters = { pageNumber: 1, pageSize: 8, sortColumn: 'CreatedOn', sortDirection: 'DESC' };
+  readonly userFilters: RequestFilters = { pageNumber: 1, pageSize: 8, sortColumn: 'CompanyName', sortDirection: 'ASC' };
+
+  readonly companySearch = signal('');
+  readonly companyState = signal<'all' | 'active' | 'locked' | 'inactive'>('all');
+  readonly companyAccountsPage = signal<PagedList<CompanyAccountListItemResponse>>({
+    items: [], pageNumber: 1, totalPages: 0, totalCount: 0, hasPreviousPage: false, hasNextPage: false
+  });
+  readonly companyStats = signal({ totalCompanies: 0, activeCompanies: 0, inactiveCompanies: 0, lockedAccounts: 0 });
+
+  readonly companyUsersSearch = signal('');
+  readonly companyUsersStatus = signal<'all' | 'active' | 'locked'>('all');
+  readonly selectedCompanyId = signal<string>('all');
+  readonly adminCompanyUsersPage = signal<PagedList<AdminCompanyUserListItemResponse>>({
+    items: [], pageNumber: 1, totalPages: 0, totalCount: 0, hasPreviousPage: false, hasNextPage: false
+  });
+  readonly adminCompanyUsersStats = signal({ totalUsers: 0, lockedUsers: 0, activeUsers: 0, companiesCount: 0 });
+
+  readonly companyOptions = computed(() => {
+    const unique = new Map<string, string>();
+    this.companyAccountsPage().items.forEach((item) => {
+      unique.set(item.companyId, item.companyName);
+    });
+
+    return Array.from(unique.entries()).map(([id, name]) => ({ id, name }));
+  });
+
   readonly form = this.fb.group({
     companyName: ['', [Validators.required, Validators.minLength(2)]],
     contactEmail: ['', [Validators.required, Validators.email]],
     firstName: ['', [Validators.required, Validators.minLength(2)]],
-    lastName: ['', [Validators.required, Validators.minLength(2)]]
+    lastName: ['', [Validators.required, Validators.minLength(2)]],
+    websiteUrl: [''],
+    linkedInUrl: [''],
+    logoUrl: ['']
   });
+
+  ngOnInit(): void {
+    this.loadCompanyAccounts();
+    this.loadAdminCompanyUsers();
+  }
 
   createCompanyAccount(): void {
     if (this.form.invalid) {
@@ -48,6 +93,8 @@ export class CompaniesComponent {
         this.successMessage.set('Company account created. Share the activation link and token securely.');
         this.uiFeedback.success('Company created', 'Company account created with a new activation token.');
         this.loading.set(false);
+        this.showCreateModal.set(false);
+        this.loadCompanyAccounts();
       },
       error: (error) => {
         if (error?.status === 403) {
@@ -57,6 +104,73 @@ export class CompaniesComponent {
         }
         this.uiFeedback.error('Company creation failed', this.errorMessage() || 'Unable to create company account.');
         this.loading.set(false);
+      }
+    });
+  }
+
+  openCreateModal(): void {
+    this.showCreateModal.set(true);
+  }
+
+  closeCreateModal(): void {
+    this.showCreateModal.set(false);
+  }
+
+  changeCompanyPage(page: number): void {
+    if (page < 1 || page > (this.companyAccountsPage().totalPages || 1)) return;
+    this.accountFilters.pageNumber = page;
+    this.loadCompanyAccounts();
+  }
+
+  changeCompanyUsersPage(page: number): void {
+    if (page < 1 || page > (this.adminCompanyUsersPage().totalPages || 1)) return;
+    this.userFilters.pageNumber = page;
+    this.loadAdminCompanyUsers();
+  }
+
+  onCompanySearchInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.companySearch.set(input.value);
+    this.accountFilters.pageNumber = 1;
+    this.loadCompanyAccounts();
+  }
+
+  onCompanyStateChange(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    this.companyState.set((select.value as 'all' | 'active' | 'locked' | 'inactive') ?? 'all');
+    this.accountFilters.pageNumber = 1;
+    this.loadCompanyAccounts();
+  }
+
+  onCompanyUsersSearchInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.companyUsersSearch.set(input.value);
+    this.userFilters.pageNumber = 1;
+    this.loadAdminCompanyUsers();
+  }
+
+  onCompanyUsersStatusChange(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    this.companyUsersStatus.set((select.value as 'all' | 'active' | 'locked') ?? 'all');
+    this.userFilters.pageNumber = 1;
+    this.loadAdminCompanyUsers();
+  }
+
+  onSelectedCompanyChange(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    this.selectedCompanyId.set(select.value || 'all');
+    this.userFilters.pageNumber = 1;
+    this.loadAdminCompanyUsers();
+  }
+
+  setCompanyAccountLockState(account: CompanyAccountListItemResponse, locked: boolean): void {
+    this.userService.setCompanyAccountLockState(account.companyAccountUserId, locked).subscribe({
+      next: () => {
+        this.uiFeedback.success(locked ? 'Account locked' : 'Account unlocked', `${account.companyName} account state updated.`);
+        this.loadCompanyAccounts();
+      },
+      error: () => {
+        this.uiFeedback.error('Update failed', 'Unable to update company account lock state.');
       }
     });
   }
@@ -81,27 +195,19 @@ export class CompaniesComponent {
 
   copyActivationToken(): void {
     const token = this.created()?.activationToken;
-    if (!token) {
-      return;
-    }
-
+    if (!token) return;
     this.copyText(token, 'Activation token copied.');
   }
 
   copyActivationLink(): void {
     const companyAccountUserId = this.created()?.companyAccountUserId;
-    if (!companyAccountUserId) {
-      return;
-    }
-
+    if (!companyAccountUserId) return;
     this.copyText(this.getActivationUrl(companyAccountUserId), 'Activation link copied.');
   }
 
   regenerateToken(): void {
     const companyAccountUserId = this.created()?.companyAccountUserId;
-    if (!companyAccountUserId) {
-      return;
-    }
+    if (!companyAccountUserId) return;
 
     this.generatingToken.set(true);
     this.errorMessage.set(null);
@@ -115,10 +221,7 @@ export class CompaniesComponent {
           return;
         }
 
-        this.created.set({
-          ...current,
-          activationToken: result.activationToken
-        });
+        this.created.set({ ...current, activationToken: result.activationToken });
         this.successMessage.set('A new activation token was generated.');
         this.uiFeedback.success('Token regenerated', 'A new activation token has been issued.');
         this.generatingToken.set(false);
@@ -127,6 +230,34 @@ export class CompaniesComponent {
         this.errorMessage.set(error?.error?.detail || 'Failed to regenerate activation token.');
         this.uiFeedback.error('Token generation failed', this.errorMessage() || 'Failed to regenerate token.');
         this.generatingToken.set(false);
+      }
+    });
+  }
+
+  private loadCompanyAccounts(): void {
+    this.accountFilters.searchTerm = this.companySearch().trim() || undefined;
+    this.userService.getCompanyAccounts(this.accountFilters, this.companyState()).subscribe({
+      next: (result) => {
+        this.companyAccountsPage.set(result.items);
+        this.companyStats.set(result.stats);
+      },
+      error: () => {
+        this.uiFeedback.error('Load failed', 'Unable to load company accounts.');
+      }
+    });
+  }
+
+  private loadAdminCompanyUsers(): void {
+    this.userFilters.searchTerm = this.companyUsersSearch().trim() || undefined;
+    const companyId = this.selectedCompanyId() === 'all' ? undefined : this.selectedCompanyId();
+
+    this.userService.getAdminCompanyUsers(this.userFilters, companyId, this.companyUsersStatus()).subscribe({
+      next: (result) => {
+        this.adminCompanyUsersPage.set(result.items);
+        this.adminCompanyUsersStats.set(result.stats);
+      },
+      error: () => {
+        this.uiFeedback.error('Load failed', 'Unable to load company users list.');
       }
     });
   }

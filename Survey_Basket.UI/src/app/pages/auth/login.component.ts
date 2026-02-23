@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -16,10 +16,7 @@ import { UiFeedbackService } from '../../core/services/ui-feedback.service';
            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-7 h-7 text-white"><path d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 9a.75.75 0 00-1.5 0v2.25H9a.75.75 0 000 1.5h2.25V15a.75.75 0 001.5 0v-2.25H15a.75.75 0 000-1.5h-2.25V9z" /></svg>
         </div>
         <h2 class="text-center text-2xl font-bold tracking-tight text-[var(--text)]">Sign in to your account</h2>
-        <p class="mt-2 text-center text-sm text-[var(--text-soft)]">
-          Or
-          <a routerLink="/register" class="font-semibold text-[var(--accent)] hover:text-blue-800 transition-colors">create a new account</a>
-        </p>
+        <p class="mt-2 text-center text-sm text-[var(--text-soft)]">Company and company-user onboarding is invite-only.</p>
       </div>
 
       <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-[400px]">
@@ -44,6 +41,14 @@ import { UiFeedbackService } from '../../core/services/ui-feedback.service';
               </button>
             </div>
           </form>
+
+          <div class="mt-5 pt-4 border-t border-[var(--border)] space-y-2">
+            <p class="text-xs font-semibold text-[var(--text-soft)]">Company first-time access</p>
+            <div class="flex gap-2">
+              <input class="sb-input" placeholder="company email" [value]="magicEmail()" (input)="onMagicEmail($event)" />
+              <button type="button" class="sb-btn-secondary text-xs px-3" (click)="requestMagicLink()">Send Link</button>
+            </div>
+          </div>
         </div>
         
         <p class="text-center text-xs text-[var(--text-soft)] mt-6">
@@ -59,6 +64,7 @@ export class LoginComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
   private uiFeedback = inject(UiFeedbackService);
+  magicEmail = signal('');
 
   constructor(private fb: FormBuilder) {
     this.loginForm = this.fb.group({
@@ -81,5 +87,23 @@ export class LoginComponent {
         }
       });
     }
+  }
+
+  onMagicEmail(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.magicEmail.set(input.value);
+  }
+
+  requestMagicLink(): void {
+    const email = this.magicEmail().trim();
+    if (!email) {
+      this.uiFeedback.warning('Email required', 'Enter company account email first.');
+      return;
+    }
+
+    this.authService.requestCompanyMagicLink(email).subscribe({
+      next: () => this.uiFeedback.info('If account exists', 'A one-time login link has been sent.'),
+      error: () => this.uiFeedback.error('Request failed', 'Unable to request magic link right now.')
+    });
   }
 }

@@ -172,6 +172,14 @@ public class QuestionService(
         if (!currentUser.IsSuccess)
             return Result.Failure<IEnumerable<QuestionResponse>>(currentUser.Error);
 
+        if (HasAnyRole(currentUser.Value.Roles, DefaultRoles.CompanyUser))
+        {
+            var isProfileCompleted = await _unitOfWork.Repository<ApplicationUser>()
+                .AnyAsync(x => x.Id == userId && x.ProfileCompleted, cancellationToken);
+            if (!isProfileCompleted)
+                return Result.Failure<IEnumerable<QuestionResponse>>(UserErrors.ProfileIncomplete);
+        }
+
         var hasVote = await _unitOfWork.Repository<Vote>().AnyAsync(x => x.PollId == pollId && x.UserId == userId, cancellationToken);
 
         if (hasVote)

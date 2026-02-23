@@ -15,4 +15,7 @@ public interface IAuthService
     Task<Result> SendResetPasswordCode(string email);
     Task<Result> ResetPasswordAsync(ResetPasswordRequest request);
     Task<Result> ActivateCompanyAccountAsync(ActivateCompanyAccountRequest request, CancellationToken cancellationToken = default);
+    Task<Result> RequestCompanyMagicLinkAsync(CompanyMagicLinkRequest request, CancellationToken cancellationToken = default);
+    Task<Result<AuthResponse>> RedeemCompanyMagicLinkAsync(CompanyMagicLinkRedeemRequest request, CancellationToken cancellationToken = default);
+    Task<Result<AuthResponse>> RedeemCompanyUserInviteAsync(CompanyUserInviteRedeemRequest request, CancellationToken cancellationToken = default);
 }

@@ -4,7 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RequestFilters } from '../../core/models/poll';
 import { PagedList } from '../../core/models/service-result';
 import { UserService } from '../../core/services/user.service';
-import { CreateCompanyUserRecordRequest, CreateCompanyUserRecordResponse } from '../../core/models/company-user-record';
+import { CompanyUserInviteResponse, CreateCompanyUserInviteRequest, CreateCompanyUserRecordRequest, CreateCompanyUserRecordResponse } from '../../core/models/company-user-record';
 import { UiFeedbackService } from '../../core/services/ui-feedback.service';
 
 @Component({
@@ -27,6 +27,8 @@ export class CompanyUsersComponent implements OnInit {
   readonly visibleColumns = signal<Array<'name' | 'identifier' | 'recordId'>>(['name', 'identifier', 'recordId']);
   readonly showColumnsMenu = signal(false);
   readonly stats = signal({ totalRecords: 0, shortIdentifiers: 0, longIdentifiers: 0 });
+  readonly invites = signal<CompanyUserInviteResponse[]>([]);
+  readonly inviteUrl = signal('');
   readonly totalPages = computed(() => this.recordsPage().totalPages || 1);
   readonly pagedRecords = computed(() => this.recordsPage().items);
   readonly recordsCount = computed(() => this.stats().totalRecords);
@@ -38,6 +40,12 @@ export class CompanyUsersComponent implements OnInit {
   readonly form = this.fb.group({
     displayName: ['', [Validators.required, Validators.minLength(2)]],
     businessIdentifier: ['', [Validators.required, Validators.minLength(3)]]
+  });
+
+  readonly inviteForm = this.fb.group({
+    email: [''],
+    mobile: [''],
+    expiresInMinutes: [15]
   });
 
   createRecord(): void {
@@ -71,6 +79,29 @@ export class CompanyUsersComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadRecords();
+    this.loadInvites();
+  }
+
+  createInvite(): void {
+    const payload = this.inviteForm.getRawValue() as CreateCompanyUserInviteRequest;
+    if (!payload.email && !payload.mobile) {
+      this.uiFeedback.warning('Identity required', 'Provide email or mobile for secure invite generation.');
+      return;
+    }
+
+    this.userService.createCompanyUserInvite(payload).subscribe({
+      next: (invite) => {
+        const absolute = typeof window === 'undefined' ? invite.inviteUrl : `${window.location.origin}${invite.inviteUrl}`;
+        this.inviteUrl.set(absolute);
+        this.uiFeedback.success('Invite created', 'One-time QR invite generated successfully.');
+        this.loadInvites();
+      },
+      error: () => this.uiFeedback.error('Invite failed', 'Unable to create company user invite.')
+    });
+  }
+
+  qrImageUrl(payload: string): string {
+    return `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(payload)}`;
   }
 
   onSearchInput(event: Event): void {
@@ -118,6 +149,13 @@ export class CompanyUsersComponent implements OnInit {
     this.userService.getCompanyUserRecords(this.filters, this.idFilter()).subscribe((result) => {
       this.recordsPage.set(result.items);
       this.stats.set(result.stats);
+    });
+  }
+
+  private loadInvites(): void {
+    this.userService.getCompanyUserInvites().subscribe({
+      next: (items) => this.invites.set(items),
+      error: () => this.invites.set([])
     });
   }
 }

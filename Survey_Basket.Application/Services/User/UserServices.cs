@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.WebUtilities;
+using System.Security.Cryptography;
 using System.Text;
 using Survey_Basket.Application.Abstractions;
 using Survey_Basket.Application.Abstractions.Const;
@@ -40,7 +41,9 @@ public class UserServices(UserManager<ApplicationUser> userManager, IUnitOfWork 
             .Where(u => u.Id == userId)
             .ExecuteUpdateAsync(u => u
                 .SetProperty(u => u.FirstName, request.FirstName)
-                .SetProperty(u => u.LastName, request.LastName), cancellationToken);
+                .SetProperty(u => u.LastName, request.LastName)
+                .SetProperty(u => u.ProfileCompleted, true)
+                .SetProperty(u => u.IsFirstLogin, false), cancellationToken);
 
         return Result.Success();
     }
@@ -241,6 +244,10 @@ public class UserServices(UserManager<ApplicationUser> userManager, IUnitOfWork 
             Name = request.CompanyName.Trim(),
             Code = BuildCompanyCode(request.CompanyName),
             IsActive = true,
+            ContactEmail = request.ContactEmail.Trim(),
+            WebsiteUrl = string.IsNullOrWhiteSpace(request.WebsiteUrl) ? null : request.WebsiteUrl.Trim(),
+            LinkedInUrl = string.IsNullOrWhiteSpace(request.LinkedInUrl) ? null : request.LinkedInUrl.Trim(),
+            LogoUrl = string.IsNullOrWhiteSpace(request.LogoUrl) ? null : request.LogoUrl.Trim(),
             CreatedById = adminUserId
         };
 
@@ -254,7 +261,9 @@ public class UserServices(UserManager<ApplicationUser> userManager, IUnitOfWork 
             FirstName = request.FirstName.Trim(),
             LastName = request.LastName.Trim(),
             EmailConfirmed = true,
-            IsDisabled = true
+            IsDisabled = true,
+            ProfileCompleted = true,
+            IsFirstLogin = true
         };
 
         var tempPassword = $"Tmp!{Guid.NewGuid():N}aA1";
@@ -291,6 +300,182 @@ public class UserServices(UserManager<ApplicationUser> userManager, IUnitOfWork 
             activationToken,
             "PendingPassword"
         ));
+    }
+
+    public async Task<Result<ServiceListResult<CompanyAccountListItemResponse, CompanyAccountsStatsResponse>>> GetCompanyAccountsFilterResultAsync(Guid actorUserId, RequestFilters filters, string? state, CancellationToken cancellationToken = default)
+    {
+        var actor = await _userManager.FindByIdAsync(actorUserId.ToString());
+        if (actor is null)
+            return Result.Failure<ServiceListResult<CompanyAccountListItemResponse, CompanyAccountsStatsResponse>>(UserErrors.UserNotFound);
+
+        if (!await IsAdminAsync(actor))
+            return Result.Failure<ServiceListResult<CompanyAccountListItemResponse, CompanyAccountsStatsResponse>>(new Error("User.Forbidden", "Only admins can view company accounts.", StatusCodes.Status403Forbidden));
+
+        var links = await _unitOfWork.Repository<CompanyUser>()
+            .GetAllAsync(x => x.IsPrimary && x.IsActive, includes: ["Company", "User"], cancellationToken: cancellationToken);
+
+        var items = links
+            .Where(x => x.Company is not null && x.User is not null)
+            .Select(x =>
+            {
+                var company = x.Company;
+                var user = x.User;
+                var isLocked = user.IsDisabled;
+                var accountState = isLocked ? "Locked" : "Active";
+                var companySlug = company.Code.Trim().ToLowerInvariant();
+
+                return new CompanyAccountListItemResponse(
+                    company.Id,
+                    company.Name,
+                    company.Code,
+                    company.IsActive,
+                    user.Id,
+                    $"{user.FirstName} {user.LastName}".Trim(),
+                    user.Email ?? string.Empty,
+                    isLocked,
+                    accountState,
+                    string.IsNullOrWhiteSpace(company.LogoUrl)
+                        ? $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(company.Name)}&background=0f766e&color=ffffff"
+                        : company.LogoUrl,
+                    string.IsNullOrWhiteSpace(company.WebsiteUrl)
+                        ? $"https://{companySlug}.example.com"
+                        : company.WebsiteUrl,
+                    string.IsNullOrWhiteSpace(company.LinkedInUrl)
+                        ? $"https://www.linkedin.com/search/results/companies/?keywords={Uri.EscapeDataString(company.Name)}"
+                        : company.LinkedInUrl,
+                    company.CreatedOn
+                );
+            })
+            .ToList();
+
+        var normalizedState = state?.Trim().ToLowerInvariant();
+        var filtered = items.Where(x =>
+            (string.IsNullOrWhiteSpace(filters.SearchTerm)
+             || x.CompanyName.Contains(filters.SearchTerm, StringComparison.OrdinalIgnoreCase)
+             || x.ContactEmail.Contains(filters.SearchTerm, StringComparison.OrdinalIgnoreCase)
+             || x.CompanyCode.Contains(filters.SearchTerm, StringComparison.OrdinalIgnoreCase))
+            && (string.IsNullOrWhiteSpace(normalizedState)
+                || normalizedState == "all"
+                || (normalizedState == "active" && !x.IsLocked)
+                || (normalizedState == "locked" && x.IsLocked)
+                || (normalizedState == "inactive" && !x.CompanyIsActive))
+        );
+
+        filtered = (filters.SortColumn?.ToLowerInvariant(), filters.SortDirection?.ToLowerInvariant()) switch
+        {
+            ("companyname", "desc") => filtered.OrderByDescending(x => x.CompanyName),
+            ("companyname", _) => filtered.OrderBy(x => x.CompanyName),
+            ("contactemail", "desc") => filtered.OrderByDescending(x => x.ContactEmail),
+            ("contactemail", _) => filtered.OrderBy(x => x.ContactEmail),
+            _ => filtered.OrderByDescending(x => x.CreatedOn)
+        };
+
+        var filteredList = filtered.ToList();
+        var pagedItems = filteredList
+            .Skip((filters.PageNumber - 1) * filters.PageSize)
+            .Take(filters.PageSize)
+            .ToList();
+
+        var stats = new CompanyAccountsStatsResponse(
+            items.Count,
+            items.Count(x => x.CompanyIsActive),
+            items.Count(x => !x.CompanyIsActive),
+            items.Count(x => x.IsLocked)
+        );
+
+        var paged = new PagedList<CompanyAccountListItemResponse>(pagedItems, filters.PageNumber, filteredList.Count, filters.PageSize);
+        return Result.Success(new ServiceListResult<CompanyAccountListItemResponse, CompanyAccountsStatsResponse>(paged, stats));
+    }
+
+    public async Task<Result> SetCompanyAccountLockStateAsync(Guid actorUserId, Guid companyAccountUserId, bool locked, CancellationToken cancellationToken = default)
+    {
+        var actor = await _userManager.FindByIdAsync(actorUserId.ToString());
+        if (actor is null)
+            return Result.Failure(UserErrors.UserNotFound);
+
+        if (!await IsAdminAsync(actor))
+            return Result.Failure(new Error("User.Forbidden", "Only admins can lock or unlock company accounts.", StatusCodes.Status403Forbidden));
+
+        var target = await _userManager.FindByIdAsync(companyAccountUserId.ToString());
+        if (target is null)
+            return Result.Failure(UserErrors.UserNotFound);
+
+        var isCompanyAccount = await _userManager.IsInRoleAsync(target, DefaultRoles.PartnerCompany);
+        if (!isCompanyAccount)
+            return Result.Failure(new Error("User.InvalidRole", "Target user is not a company account.", StatusCodes.Status400BadRequest));
+
+        target.IsDisabled = locked;
+        var update = await _userManager.UpdateAsync(target);
+        if (!update.Succeeded)
+        {
+            var error = update.Errors.First();
+            return Result.Failure(new Error(error.Code, error.Description, StatusCodes.Status400BadRequest));
+        }
+
+        return Result.Success();
+    }
+
+    public async Task<Result<ServiceListResult<AdminCompanyUserListItemResponse, AdminCompanyUsersStatsResponse>>> GetAdminCompanyUsersFilterResultAsync(Guid actorUserId, RequestFilters filters, Guid? companyId, string? status, CancellationToken cancellationToken = default)
+    {
+        var actor = await _userManager.FindByIdAsync(actorUserId.ToString());
+        if (actor is null)
+            return Result.Failure<ServiceListResult<AdminCompanyUserListItemResponse, AdminCompanyUsersStatsResponse>>(UserErrors.UserNotFound);
+
+        if (!await IsAdminAsync(actor))
+            return Result.Failure<ServiceListResult<AdminCompanyUserListItemResponse, AdminCompanyUsersStatsResponse>>(new Error("User.Forbidden", "Only admins can view company users.", StatusCodes.Status403Forbidden));
+
+        var links = await _unitOfWork.Repository<CompanyUser>()
+            .GetAllAsync(x => !x.IsPrimary && x.IsActive && (!companyId.HasValue || x.CompanyId == companyId), includes: ["Company", "User"], cancellationToken: cancellationToken);
+
+        var list = links
+            .Where(x => x.Company is not null && x.User is not null)
+            .Select(x => new AdminCompanyUserListItemResponse(
+                x.CompanyId,
+                x.Company.Name,
+                x.UserId,
+                x.User.FirstName,
+                ExtractBusinessIdentifier(x.User.UserName ?? string.Empty, x.CompanyId),
+                x.User.IsDisabled,
+                x.IsPrimary
+            ))
+            .ToList();
+
+        var normalizedStatus = status?.Trim().ToLowerInvariant();
+        var filtered = list.Where(x =>
+            (string.IsNullOrWhiteSpace(filters.SearchTerm)
+             || x.DisplayName.Contains(filters.SearchTerm, StringComparison.OrdinalIgnoreCase)
+             || x.BusinessIdentifier.Contains(filters.SearchTerm, StringComparison.OrdinalIgnoreCase)
+             || x.CompanyName.Contains(filters.SearchTerm, StringComparison.OrdinalIgnoreCase))
+            && (string.IsNullOrWhiteSpace(normalizedStatus)
+                || normalizedStatus == "all"
+                || (normalizedStatus == "active" && !x.IsLocked)
+                || (normalizedStatus == "locked" && x.IsLocked))
+        );
+
+        filtered = (filters.SortColumn?.ToLowerInvariant(), filters.SortDirection?.ToLowerInvariant()) switch
+        {
+            ("companyname", "desc") => filtered.OrderByDescending(x => x.CompanyName),
+            ("companyname", _) => filtered.OrderBy(x => x.CompanyName),
+            ("displayname", "desc") => filtered.OrderByDescending(x => x.DisplayName),
+            ("displayname", _) => filtered.OrderBy(x => x.DisplayName),
+            _ => filtered.OrderBy(x => x.CompanyName).ThenBy(x => x.DisplayName)
+        };
+
+        var filteredList = filtered.ToList();
+        var pagedItems = filteredList
+            .Skip((filters.PageNumber - 1) * filters.PageSize)
+            .Take(filters.PageSize)
+            .ToList();
+
+        var stats = new AdminCompanyUsersStatsResponse(
+            list.Count,
+            list.Count(x => x.IsLocked),
+            list.Count(x => !x.IsLocked),
+            list.Select(x => x.CompanyId).Distinct().Count()
+        );
+
+        var paged = new PagedList<AdminCompanyUserListItemResponse>(pagedItems, filters.PageNumber, filteredList.Count, filters.PageSize);
+        return Result.Success(new ServiceListResult<AdminCompanyUserListItemResponse, AdminCompanyUsersStatsResponse>(paged, stats));
     }
 
     public async Task<Result<string>> GenerateCompanyActivationTokenAsync(Guid adminUserId, Guid companyAccountUserId, CancellationToken cancellationToken = default)
@@ -344,7 +529,9 @@ public class UserServices(UserManager<ApplicationUser> userManager, IUnitOfWork 
             Email = $"{recordUserName}@records.local",
             UserName = recordUserName,
             EmailConfirmed = true,
-            IsDisabled = true
+            IsDisabled = true,
+            ProfileCompleted = false,
+            IsFirstLogin = true
         };
 
         var tempPassword = $"Tmp!{Guid.NewGuid():N}aA1";
@@ -382,6 +569,94 @@ public class UserServices(UserManager<ApplicationUser> userManager, IUnitOfWork 
         ));
     }
 
+    public async Task<Result<CompanyUserInviteResponse>> CreateCompanyUserInviteAsync(Guid actorUserId, CreateCompanyUserInviteRequest request, CancellationToken cancellationToken = default)
+    {
+        var actor = await _userManager.FindByIdAsync(actorUserId.ToString());
+        if (actor is null)
+            return Result.Failure<CompanyUserInviteResponse>(UserErrors.UserNotFound);
+
+        var isCompanyAccount = await _userManager.IsInRoleAsync(actor, DefaultRoles.PartnerCompany);
+        if (!isCompanyAccount)
+            return Result.Failure<CompanyUserInviteResponse>(new Error("User.Forbidden", "Only company accounts can generate invites.", StatusCodes.Status403Forbidden));
+
+        var actorCompany = await _unitOfWork.Repository<CompanyUser>()
+            .GetAsync(x => x.UserId == actorUserId && x.IsPrimary && x.IsActive, cancellationToken: cancellationToken);
+
+        if (actorCompany is null)
+            return Result.Failure<CompanyUserInviteResponse>(new Error("Company.NotLinked", "Company account is not linked to a company.", StatusCodes.Status400BadRequest));
+
+        var emailHint = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim().ToLowerInvariant();
+        var mobileHint = string.IsNullOrWhiteSpace(request.Mobile) ? null : request.Mobile.Trim();
+
+        if (string.IsNullOrWhiteSpace(emailHint) && string.IsNullOrWhiteSpace(mobileHint))
+            return Result.Failure<CompanyUserInviteResponse>(new Error("Invite.IdentityRequired", "Email or mobile is required to create a secure invite.", StatusCodes.Status400BadRequest));
+
+        var rawToken = WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(48));
+        var tokenHash = ComputeSha256(rawToken);
+        var expiresOn = DateTime.UtcNow.AddMinutes(Math.Clamp(request.ExpiresInMinutes ?? 15, 5, 60));
+
+        var invite = new CompanyUserInvite
+        {
+            CompanyId = actorCompany.CompanyId,
+            TokenHash = tokenHash,
+            EmailHint = emailHint,
+            MobileHint = mobileHint,
+            ExpiresOn = expiresOn,
+            CreatedById = actorUserId
+        };
+
+        await _unitOfWork.Repository<CompanyUserInvite>().AddAsync(invite, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        var url = $"/join-company?token={rawToken}";
+
+        return Result.Success(new CompanyUserInviteResponse(
+            invite.Id,
+            invite.CompanyId,
+            url,
+            url,
+            invite.ExpiresOn,
+            invite.EmailHint,
+            invite.MobileHint,
+            false
+        ));
+    }
+
+    public async Task<Result<IEnumerable<CompanyUserInviteResponse>>> GetCompanyUserInvitesAsync(Guid actorUserId, CancellationToken cancellationToken = default)
+    {
+        var actor = await _userManager.FindByIdAsync(actorUserId.ToString());
+        if (actor is null)
+            return Result.Failure<IEnumerable<CompanyUserInviteResponse>>(UserErrors.UserNotFound);
+
+        var isCompanyAccount = await _userManager.IsInRoleAsync(actor, DefaultRoles.PartnerCompany);
+        if (!isCompanyAccount)
+            return Result.Failure<IEnumerable<CompanyUserInviteResponse>>(new Error("User.Forbidden", "Only company accounts can view invites.", StatusCodes.Status403Forbidden));
+
+        var actorCompany = await _unitOfWork.Repository<CompanyUser>()
+            .GetAsync(x => x.UserId == actorUserId && x.IsPrimary && x.IsActive, cancellationToken: cancellationToken);
+
+        if (actorCompany is null)
+            return Result.Failure<IEnumerable<CompanyUserInviteResponse>>(new Error("Company.NotLinked", "Company account is not linked to a company.", StatusCodes.Status400BadRequest));
+
+        var invites = await _unitOfWork.Repository<CompanyUserInvite>()
+            .GetAllAsync(x => x.CompanyId == actorCompany.CompanyId, cancellationToken);
+
+        var response = invites
+            .OrderByDescending(x => x.CreatedOn)
+            .Select(invite => new CompanyUserInviteResponse(
+                invite.Id,
+                invite.CompanyId,
+                string.Empty,
+                string.Empty,
+                invite.ExpiresOn,
+                invite.EmailHint,
+                invite.MobileHint,
+                invite.UsedOn.HasValue
+            ));
+
+        return Result.Success(response);
+    }
+
     private async Task<string> GenerateEncodedResetTokenAsync(ApplicationUser user)
     {
         var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
@@ -402,6 +677,12 @@ public class UserServices(UserManager<ApplicationUser> userManager, IUnitOfWork 
         return $"cu-{companyId:N}-{prefix}";
     }
 
+    private async Task<bool> IsAdminAsync(ApplicationUser user)
+    {
+        return await _userManager.IsInRoleAsync(user, DefaultRoles.Admin)
+            || await _userManager.IsInRoleAsync(user, DefaultRoles.SystemAdmin);
+    }
+
     private static string ExtractBusinessIdentifier(string userName, Guid companyId)
     {
         var prefix = $"cu-{companyId:N}-";
@@ -412,5 +693,11 @@ public class UserServices(UserManager<ApplicationUser> userManager, IUnitOfWork 
         }
 
         return userName.ToUpperInvariant();
+    }
+
+    private static string ComputeSha256(string value)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(value));
+        return Convert.ToHexString(bytes);
     }
 }

@@ -12,5 +12,6 @@ public record AuthResponse(
     IEnumerable<string> Roles,
     IEnumerable<string> Permissions,
     string? AccountType = null,
-    bool RequiresActivation = false
+    bool RequiresActivation = false,
+    bool RequiresProfileCompletion = false
 );
