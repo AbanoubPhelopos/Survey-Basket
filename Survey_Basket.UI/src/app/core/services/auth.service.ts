@@ -5,6 +5,7 @@ import { Observable, tap } from 'rxjs';
 import {
   ActivateCompanyAccountRequest,
   CompanyMagicLinkRedeemRequest,
+  CompanyPollAccessRedeemRequest,
   CompanyUserInviteRedeemRequest,
   LoginRequest,
   LoginResponse,
@@ -52,6 +53,12 @@ export class AuthService {
 
   redeemCompanyUserInvite(request: CompanyUserInviteRedeemRequest): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.apiUrl}/company-user/invite/redeem`, request).pipe(
+      tap((response) => this.setSession(response))
+    );
+  }
+
+  redeemCompanyPollAccess(request: CompanyPollAccessRedeemRequest): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.apiUrl}/company-user/poll-access/redeem`, request).pipe(
       tap((response) => this.setSession(response))
     );
   }
@@ -110,10 +117,22 @@ export class AuthService {
     return !!this.user()?.requiresProfileCompletion;
   }
 
+  requiresPasswordSetup(): boolean {
+    return !!this.user()?.requiresPasswordSetup;
+  }
+
   markProfileCompleted(): void {
     const current = this.user();
     if (!current) return;
     const next = { ...current, requiresProfileCompletion: false };
+    localStorage.setItem(this.userKey, JSON.stringify(next));
+    this.user.set(next);
+  }
+
+  markPasswordSetupCompleted(): void {
+    const current = this.user();
+    if (!current) return;
+    const next = { ...current, requiresPasswordSetup: false, redirectPollId: undefined };
     localStorage.setItem(this.userKey, JSON.stringify(next));
     this.user.set(next);
   }
@@ -130,7 +149,9 @@ export class AuthService {
       roles: authResult.roles || [],
       accountType: authResult.accountType,
       requiresActivation: authResult.requiresActivation,
-      requiresProfileCompletion: authResult.requiresProfileCompletion
+      requiresProfileCompletion: authResult.requiresProfileCompletion,
+      requiresPasswordSetup: authResult.requiresPasswordSetup,
+      redirectPollId: authResult.redirectPollId
     };
     
     localStorage.setItem(this.userKey, JSON.stringify(user));

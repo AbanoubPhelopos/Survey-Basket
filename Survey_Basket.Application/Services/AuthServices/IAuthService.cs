@@ -18,4 +18,5 @@ public interface IAuthService
     Task<Result> RequestCompanyMagicLinkAsync(CompanyMagicLinkRequest request, CancellationToken cancellationToken = default);
     Task<Result<AuthResponse>> RedeemCompanyMagicLinkAsync(CompanyMagicLinkRedeemRequest request, CancellationToken cancellationToken = default);
     Task<Result<AuthResponse>> RedeemCompanyUserInviteAsync(CompanyUserInviteRedeemRequest request, CancellationToken cancellationToken = default);
+    Task<Result<AuthResponse>> RedeemCompanyPollAccessAsync(CompanyPollAccessRedeemRequest request, CancellationToken cancellationToken = default);
 }

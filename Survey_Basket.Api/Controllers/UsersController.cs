@@ -166,4 +166,14 @@ public class UsersController(IUserServices userServices, ILogger<UsersController
             ? Ok(result.Value)
             : result.ToProblemDetails();
     }
+
+    [HttpPost("company-poll-access-links")]
+    [HasPermission(Permissions.ManageCompanyUsers)]
+    public async Task<IActionResult> CreateCompanyPollAccessLink([FromBody] CreateCompanyPollAccessLinkRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _userServices.CreateCompanyPollAccessLinkAsync(User.GetUserId(), request, cancellationToken);
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : result.ToProblemDetails();
+    }
 }

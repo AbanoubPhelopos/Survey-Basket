@@ -26,6 +26,10 @@ export class AccountService {
     return this.http.put<void>(`${this.apiUrl}/change-password`, request);
   }
 
+  setInitialPassword(newPassword: string): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/set-initial-password`, { newPassword });
+  }
+
   createCompanyAccount(request: CreateCompanyAccountRequest): Observable<CreateCompanyAccountResponse> {
     return this.http.post<CreateCompanyAccountResponse>(`${this.usersApiUrl}/company-accounts`, request);
   }

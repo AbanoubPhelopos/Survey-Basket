@@ -120,4 +120,13 @@ public class AuthController(IAuthService authService) : ControllerBase
             ? Ok(result.Value)
             : result.ToProblemDetails();
     }
+
+    [HttpPost("company-user/poll-access/redeem")]
+    public async Task<IActionResult> RedeemCompanyPollAccess([FromBody] CompanyPollAccessRedeemRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _authService.RedeemCompanyPollAccessAsync(request, cancellationToken);
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : result.ToProblemDetails();
+    }
 }

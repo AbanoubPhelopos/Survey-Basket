@@ -21,7 +21,9 @@ public interface IUserServices
     Task<Result<ServiceListResult<AdminCompanyUserListItemResponse, AdminCompanyUsersStatsResponse>>> GetAdminCompanyUsersFilterResultAsync(Guid actorUserId, RequestFilters filters, Guid? companyId, string? status, CancellationToken cancellationToken = default);
     Task<Result<CompanyUserInviteResponse>> CreateCompanyUserInviteAsync(Guid actorUserId, CreateCompanyUserInviteRequest request, CancellationToken cancellationToken = default);
     Task<Result<IEnumerable<CompanyUserInviteResponse>>> GetCompanyUserInvitesAsync(Guid actorUserId, CancellationToken cancellationToken = default);
+    Task<Result<CompanyPollAccessLinkResponse>> CreateCompanyPollAccessLinkAsync(Guid actorUserId, CreateCompanyPollAccessLinkRequest request, CancellationToken cancellationToken = default);
     Task<Result<CompanyMagicLoginLinkResponse>> GenerateCompanyMagicLoginLinkAsync(Guid adminUserId, Guid companyAccountUserId, CancellationToken cancellationToken = default);
     Task<Result<string>> GenerateCompanyActivationTokenAsync(Guid adminUserId, Guid companyAccountUserId, CancellationToken cancellationToken = default);
     Task<Result<CreateCompanyUserRecordResponse>> CreateCompanyUserRecordAsync(Guid companyAccountUserId, CreateCompanyUserRecordRequest request, CancellationToken cancellationToken = default);
+    Task<Result> SetInitialPasswordAsync(Guid userId, string newPassword, CancellationToken cancellationToken = default);
 }

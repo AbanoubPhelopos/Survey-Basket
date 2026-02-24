@@ -1,6 +1,8 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
+import { UserProfileResponse } from '../../core/models/account';
 import { AccountService } from '../../core/services/account.service';
 import { AuthService } from '../../core/services/auth.service';
 import { UiFeedbackService } from '../../core/services/ui-feedback.service';
@@ -10,144 +12,228 @@ import { UiFeedbackService } from '../../core/services/ui-feedback.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="page-wrapper pt-4 max-w-4xl mx-auto w-full">
-      <div class="grid gap-6 auto-rows-max lg:grid-cols-12">
-        <!-- Profile Form -->
-        <div class="sb-surface rounded-xl border border-[var(--border)] overflow-hidden lg:col-span-12">
-          <div class="px-6 py-5 border-b border-[var(--border)] bg-[var(--bg-soft)]">
-            <h3 class="text-[0.95rem] font-bold text-[var(--text)]">Profile Information</h3>
-            <p class="mt-1 text-sm text-[var(--text-soft)]">Update your personal details.</p>
-          </div>
-          <div class="p-6">
-            <form [formGroup]="profileForm" (ngSubmit)="onUpdateProfile()">
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <label class="block">
-                  <span class="block text-sm font-semibold mb-1.5 text-[var(--text)]">First name</span>
-                  <input type="text" formControlName="firstName" class="sb-input">
-                </label>
+    <section class="page-wrapper py-6">
+      <header class="mb-6">
+        <h1 class="text-2xl font-bold text-[var(--text)]">Profile</h1>
+        <p class="text-sm text-[var(--text-soft)] mt-1">Update your account details and security settings.</p>
+      </header>
 
-                <label class="block">
-                  <span class="block text-sm font-semibold mb-1.5 text-[var(--text)]">Last name</span>
-                  <input type="text" formControlName="lastName" class="sb-input">
-                </label>
+      @if (loadError()) {
+        <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ loadError() }}</div>
+      }
 
-                <label class="block sm:col-span-2">
-                  <span class="block text-sm font-semibold mb-1.5 text-[var(--text)]">Email address</span>
-                  <input type="text" [value]="email()" disabled class="sb-input cursor-not-allowed text-[var(--text-soft)] bg-[var(--sidebar-hover)]">
-                  <p class="text-xs text-[var(--text-soft)] mt-1.5">Email address cannot be changed.</p>
-                </label>
-              </div>
-              <div class="mt-6 flex justify-end">
-                <button type="submit" [disabled]="profileForm.invalid || isUpdatingProfile" class="sb-btn-primary shadow-sm px-6">
-                  {{ isUpdatingProfile ? 'Saving Changes...' : 'Save Profile' }}
-                </button>
-              </div>
-            </form>
+      <div class="grid gap-5">
+        <article class="sb-surface border border-[var(--border)] rounded-xl p-5">
+          <div class="flex items-center justify-between gap-4 mb-4">
+            <h2 class="text-lg font-semibold text-[var(--text)]">Personal information</h2>
+            @if (requiresProfileCompletion()) {
+              <span class="inline-flex items-center rounded px-2 py-1 text-[0.65rem] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200">Required</span>
+            }
           </div>
-        </div>
 
-        <!-- Password Form -->
-        <div class="sb-surface rounded-xl border border-[var(--border)] overflow-hidden lg:col-span-12">
-          <div class="px-6 py-5 border-b border-[var(--border)] bg-[var(--bg-soft)]">
-            <h3 class="text-[0.95rem] font-bold text-[var(--text)]">Change Password</h3>
-            <p class="mt-1 text-sm text-[var(--text-soft)]">Ensure your account is using a long, random password to stay secure.</p>
-          </div>
-          <div class="p-6">
-            <form [formGroup]="passwordForm" (ngSubmit)="onChangePassword()">
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <label class="block">
-                  <span class="block text-sm font-semibold mb-1.5 text-[var(--text)]">Current Password</span>
-                  <input type="password" formControlName="currentPassword" class="sb-input">
-                </label>
+          <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="grid gap-4 md:grid-cols-2">
+            <label class="block">
+              <span class="text-sm font-semibold text-[var(--text)]">First name</span>
+              <input type="text" formControlName="firstName" class="sb-input mt-1" placeholder="First name" />
+            </label>
+            <label class="block">
+              <span class="text-sm font-semibold text-[var(--text)]">Last name</span>
+              <input type="text" formControlName="lastName" class="sb-input mt-1" placeholder="Last name" />
+            </label>
+            <label class="block md:col-span-2">
+              <span class="text-sm font-semibold text-[var(--text)]">Email address</span>
+              <input type="email" formControlName="email" class="sb-input mt-1" readonly />
+            </label>
 
-                <label class="block">
-                  <span class="block text-sm font-semibold mb-1.5 text-[var(--text)]">New Password</span>
-                  <input type="password" formControlName="newPassword" class="sb-input">
-                  <p class="text-xs text-[var(--text-soft)] mt-1.5">Minimum 6 characters required.</p>
-                </label>
-              </div>
-              <div class="mt-6 flex justify-end">
-                <button type="submit" [disabled]="passwordForm.invalid || isChangingPassword" class="sb-btn-primary shadow-sm px-6">
-                  {{ isChangingPassword ? 'Updating Password...' : 'Change Password' }}
-                </button>
-              </div>
-            </form>
+            <div class="md:col-span-2 pt-1">
+              <button type="submit" class="sb-btn-primary" [disabled]="savingProfile() || profileForm.invalid">
+                {{ savingProfile() ? 'Saving...' : 'Save profile' }}
+              </button>
+            </div>
+          </form>
+        </article>
+
+        <article class="sb-surface border border-[var(--border)] rounded-xl p-5">
+          <div class="flex items-center justify-between gap-4 mb-4">
+            <h2 class="text-lg font-semibold text-[var(--text)]">Password</h2>
+            @if (requiresPasswordSetup()) {
+              <span class="inline-flex items-center rounded px-2 py-1 text-[0.65rem] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200">Setup required</span>
+            }
           </div>
-        </div>
+
+          <form [formGroup]="passwordForm" (ngSubmit)="savePassword()" class="grid gap-4 md:grid-cols-2">
+            @if (!requiresPasswordSetup()) {
+              <label class="block md:col-span-2">
+                <span class="text-sm font-semibold text-[var(--text)]">Current password</span>
+                <input type="password" formControlName="currentPassword" class="sb-input mt-1" placeholder="Current password" />
+              </label>
+            }
+
+            <label class="block">
+              <span class="text-sm font-semibold text-[var(--text)]">New password</span>
+              <input type="password" formControlName="newPassword" class="sb-input mt-1" placeholder="At least 6 characters" />
+            </label>
+            <label class="block">
+              <span class="text-sm font-semibold text-[var(--text)]">Confirm password</span>
+              <input type="password" formControlName="confirmPassword" class="sb-input mt-1" placeholder="Re-enter password" />
+            </label>
+
+            @if (passwordError()) {
+              <p class="md:col-span-2 text-sm text-red-700">{{ passwordError() }}</p>
+            }
+
+            <div class="md:col-span-2 pt-1">
+              <button type="submit" class="sb-btn-primary" [disabled]="savingPassword() || passwordForm.invalid">
+                {{ savingPassword() ? 'Saving...' : (requiresPasswordSetup() ? 'Set password' : 'Change password') }}
+              </button>
+            </div>
+          </form>
+        </article>
       </div>
-    </div>
+    </section>
   `
 })
 export class ProfileComponent implements OnInit {
-  profileForm: FormGroup;
-  passwordForm: FormGroup;
+  private readonly fb = inject(FormBuilder);
+  private readonly accountService = inject(AccountService);
+  private readonly authService = inject(AuthService);
+  private readonly uiFeedback = inject(UiFeedbackService);
+  private readonly router = inject(Router);
 
-  isUpdatingProfile = false;
-  isChangingPassword = false;
-  email = signal('');
+  protected readonly user = this.authService.user;
+  protected readonly requiresProfileCompletion = computed(() => !!this.user()?.requiresProfileCompletion);
+  protected readonly requiresPasswordSetup = computed(() => !!this.user()?.requiresPasswordSetup);
+  protected readonly savingProfile = signal(false);
+  protected readonly savingPassword = signal(false);
+  protected readonly loadError = signal<string | null>(null);
+  protected readonly passwordError = signal<string | null>(null);
 
-  private fb = inject(FormBuilder);
-  private accountService = inject(AccountService);
-  private authService = inject(AuthService);
-  private uiFeedback = inject(UiFeedbackService);
+  protected readonly profileForm = this.fb.group({
+    firstName: ['', [Validators.required]],
+    lastName: ['', [Validators.required]],
+    email: [{ value: '', disabled: true }]
+  });
 
-  constructor() {
-    this.profileForm = this.fb.group({
-      firstName: ['', Validators.required],
-      lastName: ['', Validators.required]
-    });
+  protected readonly passwordForm = this.fb.group({
+    currentPassword: [''],
+    newPassword: ['', [Validators.required, Validators.minLength(6)]],
+    confirmPassword: ['', [Validators.required, Validators.minLength(6)]]
+  });
 
-    this.passwordForm = this.fb.group({
-      currentPassword: ['', Validators.required],
-      newPassword: ['', [Validators.required, Validators.minLength(6)]]
-    });
-  }
-
-  ngOnInit() {
-    this.loadProfile();
-  }
-
-  loadProfile() {
-    this.accountService.getProfile().subscribe(user => {
-      this.email.set(user.email);
+  ngOnInit(): void {
+    const currentUser = this.user();
+    if (currentUser) {
       this.profileForm.patchValue({
-        firstName: user.firstName,
-        lastName: user.lastName
+        firstName: currentUser.firstName ?? '',
+        lastName: currentUser.lastName ?? '',
+        email: currentUser.email ?? ''
       });
+    }
+
+    this.accountService.getProfile().subscribe({
+      next: (profile: UserProfileResponse) => {
+        this.profileForm.patchValue({
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          email: profile.email
+        });
+      },
+      error: () => {
+        this.loadError.set('Unable to load the latest profile details. You can still update your information.');
+      }
     });
   }
 
-  onUpdateProfile() {
-    if (this.profileForm.valid) {
-      this.isUpdatingProfile = true;
-      this.accountService.updateProfile(this.profileForm.value).subscribe({
-        next: () => {
-          this.isUpdatingProfile = false;
-          this.authService.markProfileCompleted();
-          this.uiFeedback.success('Profile updated', 'Your account details were updated successfully.');
-        },
-        error: () => {
-          this.isUpdatingProfile = false;
-          this.uiFeedback.error('Update failed', 'Unable to update profile right now.');
-        }
-      });
+  protected saveProfile(): void {
+    if (this.profileForm.invalid) {
+      this.profileForm.markAllAsTouched();
+      return;
     }
+
+    const firstName = this.profileForm.controls.firstName.value?.trim() ?? '';
+    const lastName = this.profileForm.controls.lastName.value?.trim() ?? '';
+
+    this.savingProfile.set(true);
+    this.accountService.updateProfile({ firstName, lastName }).subscribe({
+      next: () => {
+        this.savingProfile.set(false);
+        this.authService.markProfileCompleted();
+        this.uiFeedback.success('Profile updated', 'Your personal details were saved.');
+        this.navigateIfRequirementsCleared();
+      },
+      error: (error: { error?: { detail?: string } }) => {
+        this.savingProfile.set(false);
+        this.uiFeedback.error('Unable to save profile', error?.error?.detail || 'Please try again.');
+      }
+    });
   }
 
-  onChangePassword() {
-    if (this.passwordForm.valid) {
-      this.isChangingPassword = true;
-      this.accountService.changePassword(this.passwordForm.value).subscribe({
+  protected savePassword(): void {
+    this.passwordError.set(null);
+
+    if (this.passwordForm.invalid) {
+      this.passwordForm.markAllAsTouched();
+      return;
+    }
+
+    const newPassword = this.passwordForm.controls.newPassword.value ?? '';
+    const confirmPassword = this.passwordForm.controls.confirmPassword.value ?? '';
+    const currentPassword = this.passwordForm.controls.currentPassword.value ?? '';
+
+    if (newPassword !== confirmPassword) {
+      this.passwordError.set('New password and confirmation do not match.');
+      return;
+    }
+
+    this.savingPassword.set(true);
+
+    if (this.requiresPasswordSetup()) {
+      this.accountService.setInitialPassword(newPassword).subscribe({
         next: () => {
-          this.isChangingPassword = false;
+          this.savingPassword.set(false);
+          this.authService.markPasswordSetupCompleted();
           this.passwordForm.reset();
-          this.uiFeedback.success('Password changed', 'Your password has been updated successfully.');
+          this.uiFeedback.success('Password set', 'Your password has been configured successfully.');
+          this.navigateIfRequirementsCleared();
         },
-        error: () => {
-          this.isChangingPassword = false;
-          this.uiFeedback.error('Password update failed', 'Unable to change password. Check current password and retry.');
+        error: (error: { error?: { detail?: string } }) => {
+          this.savingPassword.set(false);
+          this.uiFeedback.error('Unable to set password', error?.error?.detail || 'Please try again.');
         }
       });
+      return;
     }
+
+    if (!currentPassword) {
+      this.savingPassword.set(false);
+      this.passwordError.set('Current password is required to change your password.');
+      return;
+    }
+
+    this.accountService.changePassword({ currentPassword, newPassword }).subscribe({
+      next: () => {
+        this.savingPassword.set(false);
+        this.passwordForm.reset();
+        this.uiFeedback.success('Password updated', 'Your password has been changed.');
+      },
+      error: (error: { error?: { detail?: string } }) => {
+        this.savingPassword.set(false);
+        this.uiFeedback.error('Unable to change password', error?.error?.detail || 'Please try again.');
+      }
+    });
+  }
+
+  private navigateIfRequirementsCleared(): void {
+    if (this.requiresProfileCompletion() || this.requiresPasswordSetup()) {
+      return;
+    }
+
+    const redirectPollId = this.user()?.redirectPollId;
+    if (redirectPollId) {
+      this.router.navigate(['/polls', redirectPollId, 'vote']);
+      return;
+    }
+
+    this.router.navigate(['/dashboard']);
   }
 }

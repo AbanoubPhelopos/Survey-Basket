@@ -432,7 +432,103 @@ public class AuthService(
         return Result.Success(response);
     }
 
-    private async Task<AuthResponse> BuildAuthResponseAsync(ApplicationUser user, CancellationToken cancellationToken)
+    public async Task<Result<AuthResponse>> RedeemCompanyPollAccessAsync(CompanyPollAccessRedeemRequest request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Token))
+            return Result.Failure<AuthResponse>(UserErrors.InvalidToken);
+
+        if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
+            return Result.Failure<AuthResponse>(new Error("User.PasswordRequired", "Password is required and must be at least 6 characters.", StatusCodes.Status400BadRequest));
+
+        var tokenHash = ComputeSha256(request.Token.Trim());
+        var accessLink = await _unitOfWork.Repository<CompanyPollAccessLink>()
+            .GetAsync(x => x.TokenHash == tokenHash && x.RevokedOn == null, cancellationToken: cancellationToken);
+
+        if (accessLink is null || accessLink.ExpiresOn < DateTime.UtcNow)
+            return Result.Failure<AuthResponse>(UserErrors.InvalidToken);
+
+        var email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim().ToLowerInvariant();
+        var mobile = string.IsNullOrWhiteSpace(request.Mobile) ? null : request.Mobile.Trim();
+        if (string.IsNullOrWhiteSpace(email) && string.IsNullOrWhiteSpace(mobile))
+            return Result.Failure<AuthResponse>(new Error("User.IdentityRequired", "Email or mobile is required.", StatusCodes.Status400BadRequest));
+
+        ApplicationUser? user = null;
+        if (!string.IsNullOrWhiteSpace(email))
+            user = await _userManager.FindByEmailAsync(email);
+
+        if (user is null && !string.IsNullOrWhiteSpace(mobile))
+            user = await _userManager.Users.FirstOrDefaultAsync(x => x.PhoneNumber == mobile, cancellationToken);
+
+        if (user is null)
+        {
+            user = new ApplicationUser
+            {
+                Email = email,
+                UserName = email ?? $"mob-{mobile}",
+                PhoneNumber = mobile,
+                FirstName = request.FirstName.Trim(),
+                LastName = request.LastName.Trim(),
+                EmailConfirmed = !string.IsNullOrWhiteSpace(email),
+                PhoneNumberConfirmed = !string.IsNullOrWhiteSpace(mobile),
+                IsDisabled = false,
+                ProfileCompleted = true,
+                IsFirstLogin = false
+            };
+
+            var createResult = await _userManager.CreateAsync(user, request.Password);
+            if (!createResult.Succeeded)
+            {
+                var createError = createResult.Errors.First();
+                return Result.Failure<AuthResponse>(new Error(createError.Code, createError.Description, StatusCodes.Status400BadRequest));
+            }
+        }
+        else
+        {
+            user.FirstName = request.FirstName.Trim();
+            user.LastName = request.LastName.Trim();
+            if (!string.IsNullOrWhiteSpace(email)) user.Email = email;
+            if (!string.IsNullOrWhiteSpace(mobile)) user.PhoneNumber = mobile;
+            user.ProfileCompleted = true;
+            user.IsFirstLogin = false;
+            user.IsDisabled = false;
+
+            if (await _userManager.HasPasswordAsync(user))
+            {
+                var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+                await _userManager.ResetPasswordAsync(user, resetToken, request.Password);
+            }
+            else
+            {
+                await _userManager.AddPasswordAsync(user, request.Password);
+            }
+
+            await _userManager.UpdateAsync(user);
+        }
+
+        var currentRoles = await _userManager.GetRolesAsync(user);
+        if (!currentRoles.Contains(DefaultRoles.CompanyUser))
+            await _userManager.AddToRoleAsync(user, DefaultRoles.CompanyUser);
+
+        var linkExists = await _unitOfWork.Repository<CompanyUser>()
+            .AnyAsync(x => x.CompanyId == accessLink.CompanyId && x.UserId == user.Id && x.IsActive, cancellationToken);
+
+        if (!linkExists)
+        {
+            await _unitOfWork.Repository<CompanyUser>().AddAsync(new CompanyUser
+            {
+                CompanyId = accessLink.CompanyId,
+                UserId = user.Id,
+                IsPrimary = false,
+                IsActive = true
+            }, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+
+        var response = await BuildAuthResponseAsync(user, cancellationToken, accessLink.PollId);
+        return Result.Success(response);
+    }
+
+    private async Task<AuthResponse> BuildAuthResponseAsync(ApplicationUser user, CancellationToken cancellationToken, Guid? redirectPollId = null)
     {
         var (userRoles, userPermissions) = await GetUserRolesAndPermissions(user, cancellationToken);
 
@@ -444,6 +540,7 @@ public class AuthService(
 
         var requiresActivation = userRoles.Contains(DefaultRoles.PartnerCompany) && user.IsDisabled;
         var requiresProfileCompletion = userRoles.Contains(DefaultRoles.CompanyUser) && !user.ProfileCompleted;
+        var requiresPasswordSetup = user.IsFirstLogin;
 
         var (token, expiresIn) = _jwtProvider.GenerateToken(user, userRoles, userPermissions);
         var refreshToken = GenerateRefreshToken();
@@ -470,7 +567,9 @@ public class AuthService(
             userPermissions,
             accountType,
             requiresActivation,
-            requiresProfileCompletion
+            requiresProfileCompletion,
+            requiresPasswordSetup,
+            redirectPollId
         );
     }
 

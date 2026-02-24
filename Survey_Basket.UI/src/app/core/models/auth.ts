@@ -11,6 +11,8 @@ export interface CapabilityContext {
   accountType?: 'AdminAccount' | 'CompanyAccount' | 'CompanyUserAccount';
   requiresActivation?: boolean;
   requiresProfileCompletion?: boolean;
+  requiresPasswordSetup?: boolean;
+  redirectPollId?: string;
 }
 
 export interface RegisterRequest {
@@ -41,6 +43,8 @@ export interface LoginResponse {
   accountType?: 'AdminAccount' | 'CompanyAccount' | 'CompanyUserAccount';
   requiresActivation?: boolean;
   requiresProfileCompletion?: boolean;
+  requiresPasswordSetup?: boolean;
+  redirectPollId?: string;
 }
 
 export interface User {
@@ -53,6 +57,8 @@ export interface User {
   accountType?: 'AdminAccount' | 'CompanyAccount' | 'CompanyUserAccount';
   requiresActivation?: boolean;
   requiresProfileCompletion?: boolean;
+  requiresPasswordSetup?: boolean;
+  redirectPollId?: string;
 }
 
 export interface CompanyMagicLinkRedeemRequest { token: string; }
@@ -64,4 +70,13 @@ export interface CompanyUserInviteRedeemRequest {
   firstName: string;
   lastName: string;
   password?: string;
+}
+
+export interface CompanyPollAccessRedeemRequest {
+  token: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  mobile?: string;
+  password: string;
 }

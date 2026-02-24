@@ -52,15 +52,49 @@ public class UserServices(UserManager<ApplicationUser> userManager, IUnitOfWork 
     public async Task<Result> ChangePassword(Guid userId, ChangePasswordRequest request, CancellationToken cancellationToken)
     {
         var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is null)
+            return Result.Failure(UserErrors.UserNotFound);
 
-        var result = await _userManager.ChangePasswordAsync(user!, request.CurrentPassword, request.NewPassword);
+        var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
 
         if (result.Succeeded)
+        {
+            user.IsFirstLogin = false;
+            await _userManager.UpdateAsync(user);
             return Result.Success();
+        }
 
         var error = result.Errors.First();
         return Result.Failure(new Error(error.Code, error.Description, StatusCodes.Status400BadRequest));
 
+    }
+
+    public async Task<Result> SetInitialPasswordAsync(Guid userId, string newPassword, CancellationToken cancellationToken = default)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is null)
+            return Result.Failure(UserErrors.UserNotFound);
+
+        if (!user.IsFirstLogin)
+            return Result.Failure(new Error("User.InitialPasswordAlreadySet", "Initial password has already been configured.", StatusCodes.Status400BadRequest));
+
+        var remove = await _userManager.RemovePasswordAsync(user);
+        if (!remove.Succeeded)
+        {
+            var removeError = remove.Errors.First();
+            return Result.Failure(new Error(removeError.Code, removeError.Description, StatusCodes.Status400BadRequest));
+        }
+
+        var add = await _userManager.AddPasswordAsync(user, newPassword);
+        if (!add.Succeeded)
+        {
+            var addError = add.Errors.First();
+            return Result.Failure(new Error(addError.Code, addError.Description, StatusCodes.Status400BadRequest));
+        }
+
+        user.IsFirstLogin = false;
+        await _userManager.UpdateAsync(user);
+        return Result.Success();
     }
 
     public async Task<IEnumerable<UserResponse>> GetUsersAsync(CancellationToken cancellationToken = default)
@@ -624,6 +658,60 @@ public class UserServices(UserManager<ApplicationUser> userManager, IUnitOfWork 
             invite.EmailHint,
             invite.MobileHint,
             false
+        ));
+    }
+
+    public async Task<Result<CompanyPollAccessLinkResponse>> CreateCompanyPollAccessLinkAsync(Guid actorUserId, CreateCompanyPollAccessLinkRequest request, CancellationToken cancellationToken = default)
+    {
+        var actor = await _userManager.FindByIdAsync(actorUserId.ToString());
+        if (actor is null)
+            return Result.Failure<CompanyPollAccessLinkResponse>(UserErrors.UserNotFound);
+
+        var isCompanyAccount = await _userManager.IsInRoleAsync(actor, DefaultRoles.PartnerCompany);
+        if (!isCompanyAccount)
+            return Result.Failure<CompanyPollAccessLinkResponse>(new Error("User.Forbidden", "Only company accounts can generate poll QR links.", StatusCodes.Status403Forbidden));
+
+        var actorCompany = await _unitOfWork.Repository<CompanyUser>()
+            .GetAsync(x => x.UserId == actorUserId && x.IsPrimary && x.IsActive, cancellationToken: cancellationToken);
+
+        if (actorCompany is null)
+            return Result.Failure<CompanyPollAccessLinkResponse>(new Error("Company.NotLinked", "Company account is not linked to a company.", StatusCodes.Status400BadRequest));
+
+        var pollExists = await _unitOfWork.Repository<Poll>()
+            .AnyAsync(x => x.Id == request.PollId && x.IsPublished, cancellationToken);
+        if (!pollExists)
+            return Result.Failure<CompanyPollAccessLinkResponse>(PollErrors.PollNotFound);
+
+        var targeted = await _unitOfWork.Repository<PollAudience>()
+            .AnyAsync(x => x.PollId == request.PollId && x.CompanyId == actorCompany.CompanyId, cancellationToken);
+        if (!targeted)
+            return Result.Failure<CompanyPollAccessLinkResponse>(new Error("Poll.NotTargeted", "Poll is not targeted to your company.", StatusCodes.Status403Forbidden));
+
+        var rawToken = WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(48));
+        var tokenHash = ComputeSha256(rawToken);
+        var expiresOn = DateTime.UtcNow.AddMinutes(Math.Clamp(request.ExpiresInMinutes ?? 240, 30, 4320));
+
+        var link = new CompanyPollAccessLink
+        {
+            CompanyId = actorCompany.CompanyId,
+            PollId = request.PollId,
+            TokenHash = tokenHash,
+            ExpiresOn = expiresOn,
+            CreatedById = actorUserId
+        };
+
+        await _unitOfWork.Repository<CompanyPollAccessLink>().AddAsync(link, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        var joinUrl = $"/join-company-poll?token={rawToken}";
+
+        return Result.Success(new CompanyPollAccessLinkResponse(
+            link.Id,
+            link.CompanyId,
+            link.PollId,
+            joinUrl,
+            joinUrl,
+            expiresOn
         ));
     }
 
