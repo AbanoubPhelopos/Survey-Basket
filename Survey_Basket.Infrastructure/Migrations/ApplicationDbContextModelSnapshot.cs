@@ -526,6 +526,9 @@ namespace Survey_Basket.Infrastructure.Migrations
                     b.Property<bool>("IsDisabled")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsFirstLogin")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -552,6 +555,9 @@ namespace Survey_Basket.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ProfileCompleted")
                         .HasColumnType("boolean");
 
                     b.Property<string>("SecurityStamp")
@@ -585,12 +591,14 @@ namespace Survey_Basket.Infrastructure.Migrations
                             EmailConfirmed = true,
                             FirstName = "System",
                             IsDisabled = false,
+                            IsFirstLogin = false,
                             LastName = "Admin",
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@SURVEY-BASKET.COM",
                             NormalizedUserName = "ADMIN@SURVEY-BASKET.COM",
                             PasswordHash = "AQAAAAIAAYagAAAAEKpmT4S7ZgT1MSi05zzZ52s35/cDGYOCqx14N8/+c8aB9Z9RgMilFy9XA7Y3lexE+g==",
                             PhoneNumberConfirmed = false,
+                            ProfileCompleted = false,
                             SecurityStamp = "F66F472946EC4BBB86994AFF718329A7",
                             TwoFactorEnabled = false,
                             UserName = "admin@survey-basket.com"
@@ -608,6 +616,9 @@ namespace Survey_Basket.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<string>("ContactEmail")
+                        .HasColumnType("text");
+
                     b.Property<Guid>("CreatedById")
                         .HasColumnType("uuid");
 
@@ -616,6 +627,12 @@ namespace Survey_Basket.Infrastructure.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("LinkedInUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("LogoUrl")
+                        .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -627,6 +644,9 @@ namespace Survey_Basket.Infrastructure.Migrations
 
                     b.Property<DateTime?>("UpdatedOn")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("WebsiteUrl")
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -641,6 +661,51 @@ namespace Survey_Basket.Infrastructure.Migrations
                     b.HasIndex("UpdatedById");
 
                     b.ToTable("Companies");
+                });
+
+            modelBuilder.Entity("Survey_Basket.Domain.Entities.CompanyMagicLinkToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("RevokedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UsedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("CompanyMagicLinkTokens");
                 });
 
             modelBuilder.Entity("Survey_Basket.Domain.Entities.CompanyUser", b =>
@@ -685,6 +750,57 @@ namespace Survey_Basket.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("CompanyUsers");
+                });
+
+            modelBuilder.Entity("Survey_Basket.Domain.Entities.CompanyUserInvite", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EmailHint")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("ExpiresOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("MobileHint")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("RevokedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UsedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("CompanyUserInvites");
                 });
 
             modelBuilder.Entity("Survey_Basket.Domain.Entities.Poll", b =>
@@ -1067,6 +1183,31 @@ namespace Survey_Basket.Infrastructure.Migrations
                     b.Navigation("UpdatedBy");
                 });
 
+            modelBuilder.Entity("Survey_Basket.Domain.Entities.CompanyMagicLinkToken", b =>
+                {
+                    b.HasOne("Survey_Basket.Domain.Entities.ApplicationUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Survey_Basket.Domain.Entities.ApplicationUser", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.HasOne("Survey_Basket.Domain.Entities.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("UpdatedBy");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Survey_Basket.Domain.Entities.CompanyUser", b =>
                 {
                     b.HasOne("Survey_Basket.Domain.Entities.Company", "Company")
@@ -1099,6 +1240,31 @@ namespace Survey_Basket.Infrastructure.Migrations
                     b.Navigation("UpdatedBy");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Survey_Basket.Domain.Entities.CompanyUserInvite", b =>
+                {
+                    b.HasOne("Survey_Basket.Domain.Entities.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Survey_Basket.Domain.Entities.ApplicationUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Survey_Basket.Domain.Entities.ApplicationUser", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("Company");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("UpdatedBy");
                 });
 
             modelBuilder.Entity("Survey_Basket.Domain.Entities.Poll", b =>

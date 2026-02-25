@@ -1,55 +1,247 @@
-<section class="companies-page">
-  <header class="companies-page__header sb-surface sb-hero-gradient">
-    <div>
-      <p class="companies-page__eyebrow">Admin Control</p>
-      <h1>Create Company Account</h1>
-      <p class="sb-muted">Provision a company account in pending-password state. Company users are created later by that company account.</p>
-    </div>
-  </header>
+<section class="page-wrapper pt-4">
+  <div class="flex justify-end">
+    <button type="button" class="sb-btn-primary" (click)="openCreateModal()">Create Company</button>
+  </div>
 
-  <div class="companies-page__content">
-    <form class="sb-surface companies-form" [formGroup]="form" (ngSubmit)="createCompanyAccount()">
-      <label>
-        <span>Company Name</span>
+  @if (showCreateModal()) {
+    <div class="sb-confirm__backdrop" (click)="closeCreateModal()"></div>
+    <section class="sb-confirm max-w-2xl">
+      <form class="space-y-5" [formGroup]="form" (ngSubmit)="createCompanyAccount()">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-bold">Create Company Account</h2>
+          <button type="button" class="sb-btn-secondary text-xs" (click)="closeCreateModal()">Close</button>
+        </div>
+
+      <label class="block">
+        <span class="block text-sm font-semibold mb-1.5">Company Name</span>
         <input class="sb-input" formControlName="companyName" placeholder="Acme Logistics" />
       </label>
 
-      <label>
-        <span>Contact Email</span>
+      <label class="block">
+        <span class="block text-sm font-semibold mb-1.5">Contact Email</span>
         <input class="sb-input" formControlName="contactEmail" placeholder="ops@acme.com" />
       </label>
 
-      <div class="companies-form__row">
-        <label>
-          <span>Contact First Name</span>
+      <div class="grid grid-cols-2 gap-4">
+        <label class="block">
+          <span class="block text-sm font-semibold mb-1.5">First Name</span>
           <input class="sb-input" formControlName="firstName" placeholder="Nora" />
         </label>
-        <label>
-          <span>Contact Last Name</span>
+        <label class="block">
+          <span class="block text-sm font-semibold mb-1.5">Last Name</span>
           <input class="sb-input" formControlName="lastName" placeholder="Kareem" />
         </label>
       </div>
 
-      <button class="sb-btn-primary" type="submit" [disabled]="loading()">
+      <label class="block">
+        <span class="block text-sm font-semibold mb-1.5">Website URL (optional)</span>
+        <input class="sb-input" formControlName="websiteUrl" placeholder="https://example.com" />
+      </label>
+
+      <label class="block">
+        <span class="block text-sm font-semibold mb-1.5">LinkedIn URL (optional)</span>
+        <input class="sb-input" formControlName="linkedInUrl" placeholder="https://linkedin.com/company/example" />
+      </label>
+
+      <label class="block">
+        <span class="block text-sm font-semibold mb-1.5">Logo URL (optional)</span>
+        <input class="sb-input" formControlName="logoUrl" placeholder="https://cdn.example.com/logo.png" />
+      </label>
+
+      <button class="sb-btn-primary w-full mt-2" type="submit" [disabled]="loading()">
         {{ loading() ? 'Creating...' : 'Create Company Account' }}
       </button>
 
-      @if (errorMessage()) {
-      <p class="companies-form__error sb-error">{{ errorMessage() }}</p>
-      }
+      @if (successMessage()) { <p class="text-emerald-600 text-sm font-semibold mt-2 bg-emerald-50 border border-emerald-200 p-3 rounded">{{ successMessage() }}</p> }
+      @if (errorMessage()) { <p class="sb-error mt-2">{{ errorMessage() }}</p> }
+      </form>
+    </section>
+  }
 
-      <p class="sb-muted">After creation, share the activation token securely with the company account owner.</p>
-    </form>
+  @if (showMagicQrModal() && magicLogin()) {
+    <div class="sb-confirm__backdrop" (click)="closeMagicQrModal()"></div>
+    <section class="sb-confirm max-w-xl">
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-bold">Company Login QR</h2>
+        <button type="button" class="sb-btn-secondary text-xs" (click)="closeMagicQrModal()">Close</button>
+      </div>
+      <p class="text-sm sb-muted mt-1">One-time secure link for first-time company login.</p>
+      <div class="mt-4 flex flex-col items-center gap-3">
+        <img [src]="qrImageUrl(magicLogin()!.qrPayload)" alt="Company login QR" class="border border-[var(--border)] rounded-lg bg-white p-2" />
+        <code class="block w-full bg-[var(--bg-soft)] border border-[var(--border)] p-2 rounded text-xs break-all">{{ magicLogin()!.loginUrl }}</code>
+        <p class="text-xs sb-muted">Expires: {{ magicLogin()!.expiresOn | date:'short' }}</p>
+        <button type="button" class="sb-btn-secondary" (click)="copyMagicLoginLink()">Copy Link</button>
+      </div>
+    </section>
+  }
 
-    @if (created()) {
-    <aside class="sb-surface companies-result">
-      <h2>Company Account Created</h2>
-      <p><strong>Company ID:</strong> {{ created()?.companyId }}</p>
-      <p><strong>Company Account User ID:</strong> {{ created()?.companyAccountUserId }}</p>
-      <p><strong>State:</strong> {{ created()?.activationState }}</p>
-      <p><strong>Activation Token:</strong></p>
-      <code>{{ created()?.activationToken }}</code>
-    </aside>
+  @if (created()) {
+    <aside class="sb-surface p-6 rounded-xl flex flex-col gap-4 h-fit border-l-4 border-l-[var(--accent)]">
+        <h2 class="font-bold text-lg mb-2">Account Created Successfully</h2>
+        <div class="text-[0.85rem] space-y-2">
+          <p><strong>Company ID:</strong> <span class="text-[var(--text-soft)]">{{ created()?.companyId }}</span></p>
+          <p><strong>Company User ID:</strong> <span class="text-[var(--text-soft)]">{{ created()?.companyAccountUserId }}</span></p>
+          <p><strong>State:</strong> <span class="inline-block px-2 py-0.5 rounded text-[0.65rem] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200 ml-1">{{ created()?.activationState }}</span></p>
+        </div>
+
+        <div>
+          <strong class="text-sm font-semibold mb-1 block">Activation URL:</strong>
+          <code class="block bg-[var(--bg-soft)] border border-[var(--border)] p-2 rounded text-xs select-all text-[var(--text)] break-all">{{ getActivationUrl(created()!.companyAccountUserId) }}</code>
+        </div>
+
+        <div>
+          <strong class="text-sm font-semibold mb-1 block">Activation Token:</strong>
+          <code class="block bg-[var(--bg-soft)] border border-[var(--border)] p-2 rounded text-xs select-all text-[var(--text)] break-all">{{ created()?.activationToken }}</code>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 mt-3">
+          <button type="button" class="sb-btn-primary" (click)="openActivationPage(created()!.companyAccountUserId)">Open Activation</button>
+          <button type="button" class="sb-btn-secondary" (click)="copyActivationLink()">Copy Link</button>
+          <button type="button" class="sb-btn-secondary" (click)="copyActivationToken()">Copy Token</button>
+          <button type="button" class="sb-btn-secondary" (click)="regenerateToken()" [disabled]="generatingToken()">{{ generatingToken() ? 'Regenerating...' : 'Regenerate Token' }}</button>
+        </div>
+      </aside>
+    }
+
+  <div class="sb-stats-grid">
+    <article class="sb-stat"><p class="sb-stat__label">Total Companies</p><p class="sb-stat__value">{{ companyStats().totalCompanies }}</p></article>
+    <article class="sb-stat"><p class="sb-stat__label">Active Companies</p><p class="sb-stat__value">{{ companyStats().activeCompanies }}</p></article>
+    <article class="sb-stat"><p class="sb-stat__label">Inactive Companies</p><p class="sb-stat__value">{{ companyStats().inactiveCompanies }}</p></article>
+    <article class="sb-stat"><p class="sb-stat__label">Locked Accounts</p><p class="sb-stat__value">{{ companyStats().lockedAccounts }}</p></article>
+  </div>
+
+  <div class="sb-toolbar">
+    <div class="sb-toolbar__group">
+      <input class="sb-input sb-search" [value]="companySearch()" (input)="onCompanySearchInput($event)" placeholder="Search companies, code, email" />
+      <select class="sb-select" [value]="companyState()" (change)="onCompanyStateChange($event)">
+        <option value="all">All companies</option>
+        <option value="active">Active accounts</option>
+        <option value="locked">Locked accounts</option>
+        <option value="inactive">Inactive companies</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="sb-table-wrap">
+    <div class="overflow-x-auto">
+      <table class="sb-table">
+        <thead>
+          <tr>
+            <th>Company</th>
+            <th>Contact</th>
+            <th>Links</th>
+            <th>Account State</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (company of companyAccountsPage().items; track company.companyAccountUserId) {
+            <tr>
+              <td>
+                <div class="flex items-center gap-3">
+                  <img [src]="company.logoUrl" alt="logo" class="h-9 w-9 rounded-full border border-[var(--border)]" />
+                  <div>
+                    <p class="m-0 font-semibold">{{ company.companyName }}</p>
+                    <p class="m-0 text-xs text-[var(--text-soft)]">{{ company.companyCode }}</p>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <p class="m-0 text-sm font-semibold">{{ company.accountFullName }}</p>
+                <p class="m-0 text-xs text-[var(--text-soft)]">{{ company.contactEmail }}</p>
+              </td>
+              <td>
+                <div class="flex gap-2 text-xs">
+                  <a [href]="company.websiteUrl" target="_blank" rel="noreferrer" class="sb-btn-secondary px-2 py-1">Site</a>
+                  <a [href]="company.linkedInUrl" target="_blank" rel="noreferrer" class="sb-btn-secondary px-2 py-1">LinkedIn</a>
+                </div>
+              </td>
+              <td>
+                <span class="inline-flex items-center px-2.5 py-1 rounded text-[0.65rem] font-bold uppercase tracking-wider border" [ngClass]="company.isLocked ? 'bg-red-50 text-red-700 border-red-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'">{{ company.isLocked ? 'Locked' : 'Active' }}</span>
+              </td>
+              <td>
+                <div class="flex gap-2">
+                  <button type="button" class="sb-btn-secondary text-xs px-2 py-1" (click)="generateMagicLoginLink(company)">Get Login QR</button>
+                  @if (company.isLocked) {
+                    <button type="button" class="sb-btn-secondary text-xs px-2 py-1" (click)="setCompanyAccountLockState(company, false)">Unlock</button>
+                  } @else {
+                    <button type="button" class="sb-btn-secondary text-xs px-2 py-1" (click)="setCompanyAccountLockState(company, true)">Lock</button>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+          @if (!companyAccountsPage().items.length) { <tr><td colspan="5"><div class="sb-empty text-sm my-3">No company accounts found.</div></td></tr> }
+        </tbody>
+      </table>
+    </div>
+    @if (companyAccountsPage().totalPages > 1) {
+      <div class="sb-pagination">
+        <p class="sb-pagination__info">Page {{ companyAccountsPage().pageNumber }} of {{ companyAccountsPage().totalPages }}</p>
+        <div class="sb-pagination__controls">
+          <button class="sb-pagination__button" [disabled]="!companyAccountsPage().hasPreviousPage" (click)="changeCompanyPage(companyAccountsPage().pageNumber - 1)">Prev</button>
+          <button class="sb-pagination__button" [disabled]="!companyAccountsPage().hasNextPage" (click)="changeCompanyPage(companyAccountsPage().pageNumber + 1)">Next</button>
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="sb-stats-grid">
+    <article class="sb-stat"><p class="sb-stat__label">Company Users</p><p class="sb-stat__value">{{ adminCompanyUsersStats().totalUsers }}</p></article>
+    <article class="sb-stat"><p class="sb-stat__label">Active Users</p><p class="sb-stat__value">{{ adminCompanyUsersStats().activeUsers }}</p></article>
+    <article class="sb-stat"><p class="sb-stat__label">Locked Users</p><p class="sb-stat__value">{{ adminCompanyUsersStats().lockedUsers }}</p></article>
+    <article class="sb-stat"><p class="sb-stat__label">Companies Represented</p><p class="sb-stat__value">{{ adminCompanyUsersStats().companiesCount }}</p></article>
+  </div>
+
+  <div class="sb-toolbar">
+    <div class="sb-toolbar__group">
+      <input class="sb-input sb-search" [value]="companyUsersSearch()" (input)="onCompanyUsersSearchInput($event)" placeholder="Search company users" />
+      <select class="sb-select" [value]="selectedCompanyId()" (change)="onSelectedCompanyChange($event)">
+        <option value="all">All companies</option>
+        @for (opt of companyOptions(); track opt.id) {
+          <option [value]="opt.id">{{ opt.name }}</option>
+        }
+      </select>
+      <select class="sb-select" [value]="companyUsersStatus()" (change)="onCompanyUsersStatusChange($event)">
+        <option value="all">All status</option>
+        <option value="active">Active</option>
+        <option value="locked">Locked</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="sb-table-wrap">
+    <div class="overflow-x-auto">
+      <table class="sb-table">
+        <thead>
+          <tr>
+            <th>Company</th>
+            <th>User</th>
+            <th>Business Identifier</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (u of adminCompanyUsersPage().items; track u.companyUserRecordId) {
+            <tr>
+              <td class="font-semibold">{{ u.companyName }}</td>
+              <td>{{ u.displayName }}</td>
+              <td class="font-mono text-xs">{{ u.businessIdentifier }}</td>
+              <td><span class="inline-flex items-center px-2.5 py-1 rounded text-[0.65rem] font-bold uppercase tracking-wider border" [ngClass]="u.isLocked ? 'bg-red-50 text-red-700 border-red-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'">{{ u.isLocked ? 'Locked' : 'Active' }}</span></td>
+            </tr>
+          }
+          @if (!adminCompanyUsersPage().items.length) { <tr><td colspan="4"><div class="sb-empty text-sm my-3">No company users found for selected filters.</div></td></tr> }
+        </tbody>
+      </table>
+    </div>
+    @if (adminCompanyUsersPage().totalPages > 1) {
+      <div class="sb-pagination">
+        <p class="sb-pagination__info">Page {{ adminCompanyUsersPage().pageNumber }} of {{ adminCompanyUsersPage().totalPages }}</p>
+        <div class="sb-pagination__controls">
+          <button class="sb-pagination__button" [disabled]="!adminCompanyUsersPage().hasPreviousPage" (click)="changeCompanyUsersPage(adminCompanyUsersPage().pageNumber - 1)">Prev</button>
+          <button class="sb-pagination__button" [disabled]="!adminCompanyUsersPage().hasNextPage" (click)="changeCompanyUsersPage(adminCompanyUsersPage().pageNumber + 1)">Next</button>
+        </div>
+      </div>
     }
   </div>
 </section>

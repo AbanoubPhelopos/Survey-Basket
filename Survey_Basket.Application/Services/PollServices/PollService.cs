@@ -134,6 +134,80 @@ public class PollService(
         return Result.Success(result);
     }
 
+    public async Task<Result<ServiceListResult<PollResponse, PollStatsResponse>>> GetFilterResult(RequestFilters filters, string? status, Guid userId, IEnumerable<string> roles, CancellationToken cancellationToken = default)
+    {
+        HashSet<Guid>? visiblePollIds = null;
+        if (HasAnyRole(roles, DefaultRoles.PartnerCompany)
+            && !HasAnyRole(roles, DefaultRoles.Admin, DefaultRoles.SystemAdmin))
+        {
+            visiblePollIds = (await _unitOfWork.Repository<PollOwner>()
+                .GetAllAsync(x => x.UserId == userId, cancellationToken))
+                .Select(x => x.PollId)
+                .ToHashSet();
+        }
+
+        var normalizedStatus = status?.Trim().ToLowerInvariant();
+
+        var (polls, totalCount) = await _unitOfWork.Repository<Poll>().GetPagedAsync(
+            filters.PageNumber,
+            filters.PageSize,
+            filters.SortColumn,
+            filters.SortDirection,
+            p => (visiblePollIds == null || visiblePollIds.Contains(p.Id))
+                 && (string.IsNullOrEmpty(filters.SearchTerm) || p.Title.Contains(filters.SearchTerm))
+                 && (string.IsNullOrWhiteSpace(normalizedStatus)
+                     || normalizedStatus == "all"
+                     || (normalizedStatus == "active" && p.IsPublished)
+                     || (normalizedStatus == "draft" && !p.IsPublished)),
+            cancellationToken);
+
+        var paged = new PagedList<PollResponse>(polls.Adapt<IEnumerable<PollResponse>>(), filters.PageNumber, totalCount, filters.PageSize);
+        var statsResult = await GetStats(userId, roles, cancellationToken);
+        if (!statsResult.IsSuccess)
+            return Result.Failure<ServiceListResult<PollResponse, PollStatsResponse>>(statsResult.Error);
+
+        return Result.Success(new ServiceListResult<PollResponse, PollStatsResponse>(paged, statsResult.Value));
+    }
+
+    public async Task<Result<PollStatsResponse>> GetStats(Guid userId, IEnumerable<string> roles, CancellationToken cancellationToken = default)
+    {
+        HashSet<Guid>? visiblePollIds = null;
+        if (HasAnyRole(roles, DefaultRoles.PartnerCompany)
+            && !HasAnyRole(roles, DefaultRoles.Admin, DefaultRoles.SystemAdmin))
+        {
+            visiblePollIds = (await _unitOfWork.Repository<PollOwner>()
+                .GetAllAsync(x => x.UserId == userId, cancellationToken))
+                .Select(x => x.PollId)
+                .ToHashSet();
+        }
+
+        var polls = await _unitOfWork.Repository<Poll>()
+            .GetAllAsync(x => visiblePollIds == null || visiblePollIds.Contains(x.Id), cancellationToken);
+
+        var pollIds = polls.Select(x => x.Id).ToHashSet();
+
+        var totalPolls = polls.Count();
+        var activePolls = polls.Count(x => x.IsPublished);
+        var draftPolls = totalPolls - activePolls;
+
+        var votes = await _unitOfWork.Repository<Vote>()
+            .GetAllAsync(x => pollIds.Contains(x.PollId), cancellationToken);
+
+        var voteIds = votes.Select(x => x.Id).ToHashSet();
+
+        var answersCount = voteIds.Count == 0
+            ? 0
+            : (await _unitOfWork.Repository<VoteAnswers>()
+                .GetAllAsync(x => voteIds.Contains(x.VoteId), cancellationToken)).Count();
+
+        return Result.Success(new PollStatsResponse(
+            totalPolls,
+            activePolls,
+            draftPolls,
+            votes.Count(),
+            answersCount));
+    }
+
     public async Task<Result<IEnumerable<PollResponse>>> GetCurrent(CancellationToken cancellationToken = default)
     {
         var userContext = GetCurrentUserContext();
@@ -306,9 +380,6 @@ public class PollService(
     {
         if (HasAnyRole(roles, DefaultRoles.Admin, DefaultRoles.SystemAdmin))
             return Result.Success();
-
-        if (!HasAnyRole(roles, DefaultRoles.PartnerCompany))
-            return Result.Failure(PollErrors.PollAccessDenied);
 
         // Backward-compatible ownership checks for polls created before PollOwner was introduced.
         if (poll.CreatedById == userId)

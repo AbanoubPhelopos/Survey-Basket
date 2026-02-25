@@ -23,4 +23,8 @@ export class ResultService {
   getVotesPerQuestion(pollId: string): Observable<VotesPerQuestionResponse[]> {
     return this.http.get<VotesPerQuestionResponse[]>(`${this.apiUrl}/${pollId}/results/votes-per-question`);
   }
+
+  getPollAnalytics(pollId: string): Observable<{ pollId: string; title: string; totalSubmissions: number; questions: Array<{ questionId: string; question: string; questionType: string; responses: number; buckets: Array<{ value: string; count: number }> }> }> {
+    return this.http.get<{ pollId: string; title: string; totalSubmissions: number; questions: Array<{ questionId: string; question: string; questionType: string; responses: number; buckets: Array<{ value: string; count: number }> }> }>(`${this.apiUrl}/${pollId}/results/analytics`);
+  }
 }

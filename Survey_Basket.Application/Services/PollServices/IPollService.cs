@@ -7,6 +7,8 @@ namespace Survey_Basket.Application.Services.PollServices;
 public interface IPollService
 {
     Task<Result<PagedList<PollResponse>>> Get(RequestFilters filters, CancellationToken cancellationToken = default);
+    Task<Result<ServiceListResult<PollResponse, PollStatsResponse>>> GetFilterResult(RequestFilters filters, string? status, Guid userId, IEnumerable<string> roles, CancellationToken cancellationToken = default);
+    Task<Result<PollStatsResponse>> GetStats(Guid userId, IEnumerable<string> roles, CancellationToken cancellationToken = default);
     Task<Result<IEnumerable<PollResponse>>> GetCurrent(CancellationToken cancellationToken = default);
     Task<Result<PollResponse>> Get(Guid id, CancellationToken cancellationToken = default);
     Task<Result> CreatePollAsync(CreatePollRequests poll, CancellationToken cancellationToken = default);

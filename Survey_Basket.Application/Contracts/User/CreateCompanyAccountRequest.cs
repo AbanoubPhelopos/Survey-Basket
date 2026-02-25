@@ -4,5 +4,8 @@ public sealed record CreateCompanyAccountRequest(
     string CompanyName,
     string ContactEmail,
     string FirstName,
-    string LastName
+    string LastName,
+    string? WebsiteUrl,
+    string? LinkedInUrl,
+    string? LogoUrl
 );

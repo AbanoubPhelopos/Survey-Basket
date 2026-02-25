@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Survey_Basket.Application.Abstractions.Const;
 using Survey_Basket.Application.Abstractions;
+using Survey_Basket.Application.Contracts.Common;
 using Survey_Basket.Application.Contracts.Roles;
 using Survey_Basket.Application.Errors;
 using Survey_Basket.Domain.Abstractions;
@@ -21,6 +22,65 @@ namespace Survey_Basket.Application.Services.RoleService
         => await _roleManager.Roles.Where(x => !x.IsDefault && (!x.IsDeleted || (includeDisables.HasValue && includeDisables.Value)))
         .ProjectToType<RoleResponse>()
         .ToListAsync(cancellationToken);
+
+        public async Task<Result<ServiceListResult<RoleResponse, RoleStatsResponse>>> GetRolesFilterResult(RequestFilters filters, string? status, bool? includeDisables = false, CancellationToken cancellationToken = default)
+        {
+            var roles = await GetRoles(includeDisables, cancellationToken);
+            var normalizedStatus = status?.Trim().ToLowerInvariant();
+
+            var filtered = roles.Where(role =>
+                (string.IsNullOrWhiteSpace(filters.SearchTerm)
+                 || role.Name.Contains(filters.SearchTerm, StringComparison.OrdinalIgnoreCase))
+                && (string.IsNullOrWhiteSpace(normalizedStatus)
+                    || normalizedStatus == "all"
+                    || (normalizedStatus == "active" && !role.IsDeleted)
+                    || (normalizedStatus == "disabled" && role.IsDeleted))
+            );
+
+            filtered = (filters.SortColumn?.ToLowerInvariant(), filters.SortDirection?.ToLowerInvariant()) switch
+            {
+                ("name", "desc") => filtered.OrderByDescending(x => x.Name),
+                ("name", _) => filtered.OrderBy(x => x.Name),
+                _ => filtered.OrderBy(x => x.Name)
+            };
+
+            var filteredList = filtered.ToList();
+            var totalCount = filteredList.Count;
+
+            var pageItems = filteredList
+                .Skip((filters.PageNumber - 1) * filters.PageSize)
+                .Take(filters.PageSize)
+                .ToList();
+
+            var paged = new PagedList<RoleResponse>(pageItems, filters.PageNumber, totalCount, filters.PageSize);
+            var statsResult = await GetRoleStats(cancellationToken);
+            if (!statsResult.IsSuccess)
+                return Result.Failure<ServiceListResult<RoleResponse, RoleStatsResponse>>(statsResult.Error);
+
+            return Result.Success(new ServiceListResult<RoleResponse, RoleStatsResponse>(paged, statsResult.Value));
+        }
+
+        public async Task<Result<RoleStatsResponse>> GetRoleStats(CancellationToken cancellationToken = default)
+        {
+            var roles = await _roleManager.Roles
+                .Where(x => !x.IsDefault)
+                .Select(x => new { x.Id, x.IsDeleted })
+                .ToListAsync(cancellationToken);
+
+            var roleIds = roles.Select(x => x.Id).ToHashSet();
+            var permissionLinks = await _unitOfWork.Repository<IdentityRoleClaim<Guid>>()
+                .GetAllAsync(x => roleIds.Contains(x.RoleId), cancellationToken);
+
+            var totalRoles = roles.Count;
+            var disabledRoles = roles.Count(x => x.IsDeleted);
+            var activeRoles = totalRoles - disabledRoles;
+
+            return Result.Success(new RoleStatsResponse(
+                totalRoles,
+                activeRoles,
+                disabledRoles,
+                permissionLinks.Count()));
+        }
 
         public async Task<Result<RoleDetailResponse>> GetRole(string roleId, CancellationToken cancellationToken = default)
         {

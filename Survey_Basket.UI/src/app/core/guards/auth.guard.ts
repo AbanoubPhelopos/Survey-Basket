@@ -18,6 +18,14 @@ export const authGuard: CanActivateFn = (route, state) => {
       return router.createUrlTree(['/activate-company', companyAccountUserId]);
     }
 
+    if (authService.requiresProfileCompletion() && !state.url.startsWith('/profile')) {
+      return router.createUrlTree(['/profile']);
+    }
+
+    if (authService.requiresPasswordSetup() && !state.url.startsWith('/profile')) {
+      return router.createUrlTree(['/profile']);
+    }
+
     if (requiredRoles.length > 0 && !authService.hasAnyRole(requiredRoles)) {
       return router.createUrlTree(['/dashboard']);
     }

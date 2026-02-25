@@ -1,27 +1,52 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
+using Survey_Basket.Api.Models;
 using Survey_Basket.Application.Abstractions.Const;
+using Survey_Basket.Application.Contracts.Common;
 using Survey_Basket.Application.Contracts.Polls;
+using Survey_Basket.Application.Extensions;
 using Survey_Basket.Application.Services.AuthServices.Filter;
 using Survey_Basket.Application.Services.PollServices;
-
-
-using Survey_Basket.Application.Contracts.Common;
 
 namespace Survey_Basket.Api.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class PollsController(IPollService pollService) : ControllerBase
+public class PollsController(IPollService pollService, ILogger<PollsController> logger) : ControllerBase
 {
     private readonly IPollService _pollService = pollService;
+    private readonly ILogger<PollsController> _logger = logger;
 
     [HttpGet]
     [HasPermission(Permissions.GetPolls)]
-    public async Task<IActionResult> GetPolls([FromQuery] RequestFilters filters, CancellationToken cancellationToken)
+    public async Task<ActionResult<ServiceResult<ServiceListResult<PollResponse, PollStatsResponse>>>> GetPolls([FromQuery] RequestFilters filters, [FromQuery] string? status, CancellationToken cancellationToken)
     {
-        var result = await _pollService.Get(filters, cancellationToken);
+        try
+        {
+            var roles = ReadRoles();
+            var userId = User.GetUserId();
+            var result = await _pollService.GetFilterResult(filters, status, userId, roles, cancellationToken);
+
+            return result.IsSuccess
+                ? Ok(ServiceResult<ServiceListResult<PollResponse, PollStatsResponse>>.Success(result.Value))
+                : Ok(ServiceResult<ServiceListResult<PollResponse, PollStatsResponse>>.Failed(new ServiceError(result.Error.Message, int.TryParse(result.Error.Code, out var c) ? c : (result.Error.statusCode ?? 400))));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error filtering polls");
+            return Ok(ServiceResult<ServiceListResult<PollResponse, PollStatsResponse>>.Failed(new ServiceError(ex.Message, 500)));
+        }
+    }
+
+    [HttpGet("stats")]
+    [HasPermission(Permissions.GetPolls)]
+    public async Task<IActionResult> GetPollStats(CancellationToken cancellationToken)
+    {
+        var roles = ReadRoles();
+        var userId = User.GetUserId();
+        var result = await _pollService.GetStats(userId, roles, cancellationToken);
         return result.IsSuccess
             ? Ok(result.Value)
             : result.ToProblemDetails();
@@ -101,5 +126,21 @@ public class PollsController(IPollService pollService) : ControllerBase
         var result = await _pollService.TogglePublishStatusAsync(id, cancellationToken);
 
         return result.IsSuccess ? NoContent() : result.ToProblemDetails();
+    }
+
+    private List<string> ReadRoles()
+    {
+        var rolesClaim = User.Claims.FirstOrDefault(x => x.Type == "roles")?.Value;
+        if (string.IsNullOrWhiteSpace(rolesClaim))
+            return [];
+
+        try
+        {
+            return JsonSerializer.Deserialize<List<string>>(rolesClaim) ?? [];
+        }
+        catch
+        {
+            return [];
+        }
     }
 }

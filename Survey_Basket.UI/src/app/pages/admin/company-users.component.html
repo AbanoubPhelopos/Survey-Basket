@@ -1,46 +1,141 @@
-<section class="company-users-page">
-  <header class="sb-surface sb-hero-gradient company-users-header">
-    <h1>Company User Records</h1>
-    <p class="sb-muted">Create non-authenticated records scoped to your company only.</p>
-  </header>
-
-  <div class="company-users-grid">
-    <form class="sb-surface company-users-form" [formGroup]="form" (ngSubmit)="createRecord()">
-      <label>
-        <span>Display Name</span>
+<section class="page-wrapper pt-4">
+  <div class="grid gap-6 auto-rows-max lg:grid-cols-12">
+    <form class="sb-surface p-6 rounded-xl space-y-5 lg:col-span-5 h-fit" [formGroup]="form"
+      (ngSubmit)="createRecord()">
+      <label class="block">
+        <span class="block text-sm font-semibold mb-1.5">Display Name</span>
         <input class="sb-input" formControlName="displayName" placeholder="Warehouse Supervisor" />
       </label>
 
-      <label>
-        <span>Business Identifier</span>
+      <label class="block">
+        <span class="block text-sm font-semibold mb-1.5">Business Identifier</span>
         <input class="sb-input" formControlName="businessIdentifier" placeholder="EMP-1023" />
       </label>
 
-      <button class="sb-btn-primary" type="submit" [disabled]="loading()">
+      <button class="sb-btn-primary w-full mt-2" type="submit" [disabled]="loading()">
         {{ loading() ? 'Creating...' : 'Create Record' }}
       </button>
 
       @if (errorMessage()) {
-      <p class="company-users-error sb-error">{{ errorMessage() }}</p>
+      <p class="sb-error mt-2">{{ errorMessage() }}</p>
       }
+
+      <div class="pt-4 border-t border-[var(--border)] space-y-3">
+        <h3 class="text-sm font-bold">Secure QR Invite</h3>
+        <div [formGroup]="inviteForm" class="space-y-3">
+          <input class="sb-input" formControlName="email" placeholder="Invite email (optional)" />
+          <input class="sb-input" formControlName="mobile" placeholder="Invite mobile (optional)" />
+          <input class="sb-input" type="number" formControlName="expiresInMinutes" placeholder="Expires in minutes" />
+          <button class="sb-btn-secondary w-full" type="button" (click)="createInvite()">Generate One-Time Invite</button>
+        </div>
+
+        @if (inviteUrl()) {
+          <div class="space-y-2">
+            <img [src]="qrImageUrl(inviteUrl())" alt="Invite QR" class="border border-[var(--border)] rounded-lg bg-white p-2" />
+            <code class="block bg-[var(--bg-soft)] border border-[var(--border)] p-2 rounded text-xs break-all">{{ inviteUrl() }}</code>
+          </div>
+        }
+
+        @if (invites().length) {
+          <div class="space-y-1 pt-2">
+            <p class="text-xs font-semibold text-[var(--text-soft)]">Recent Invites</p>
+            @for (i of invites().slice(0, 5); track i.inviteId) {
+              <p class="text-xs text-[var(--text-soft)]">{{ i.emailHint || i.mobileHint || 'Generic' }} - {{ i.isUsed ? 'Used' : 'Active' }}</p>
+            }
+          </div>
+        }
+      </div>
     </form>
 
-    <section class="sb-surface company-users-list">
-      <h2>Created Records</h2>
+    <section class="space-y-3 lg:col-span-7">
+      <div class="sb-stats-grid">
+        <article class="sb-stat">
+          <p class="sb-stat__label">Total Records</p>
+          <p class="sb-stat__value">{{ recordsCount() }}</p>
+        </article>
+        <article class="sb-stat">
+          <p class="sb-stat__label">Short IDs</p>
+          <p class="sb-stat__value">{{ shortIdentifierCount() }}</p>
+        </article>
+        <article class="sb-stat">
+          <p class="sb-stat__label">Long IDs</p>
+          <p class="sb-stat__value">{{ longIdentifierCount() }}</p>
+        </article>
+      </div>
 
-      @if (records().length === 0) {
-      <p class="sb-empty">No company user records created in this session yet.</p>
-      }
-
-      @for (record of records(); track record.companyUserRecordId) {
-      <article class="company-record">
-        <div>
-          <h3>{{ record.displayName }}</h3>
-          <p class="sb-muted">{{ record.businessIdentifier }}</p>
+      <div class="sb-toolbar">
+        <div class="sb-toolbar__group">
+          <input class="sb-input sb-search" [value]="searchTerm()" (input)="onSearchInput($event)" placeholder="Search by display name or identifier" />
+          <select class="sb-select" [value]="idFilter()" (change)="onFilterChange($event)">
+            <option value="all">All IDs</option>
+            <option value="short">Short IDs</option>
+            <option value="long">Long IDs</option>
+          </select>
         </div>
-        <span class="company-record__badge">Non-authenticated</span>
-      </article>
-      }
+
+        <div class="sb-columns">
+          <button type="button" class="sb-btn-secondary text-xs px-3 py-2" (click)="showColumnsMenu.set(!showColumnsMenu())">Columns</button>
+          @if (showColumnsMenu()) {
+            <div class="sb-columns__panel">
+              <label class="sb-columns__option">
+                <input type="checkbox" [checked]="isColumnVisible('name')" (change)="toggleColumn('name')" />
+                <span class="sb-icon-badge">N</span>
+                <span>Name</span>
+              </label>
+              <label class="sb-columns__option">
+                <input type="checkbox" [checked]="isColumnVisible('identifier')" (change)="toggleColumn('identifier')" />
+                <span class="sb-icon-badge">BI</span>
+                <span>Business ID</span>
+              </label>
+              <label class="sb-columns__option">
+                <input type="checkbox" [checked]="isColumnVisible('recordId')" (change)="toggleColumn('recordId')" />
+                <span class="sb-icon-badge">ID</span>
+                <span>Record ID</span>
+              </label>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="sb-table-wrap">
+        <div class="overflow-x-auto">
+          <table class="sb-table">
+            <thead>
+              <tr>
+                @if (isColumnVisible('name')) { <th>Name</th> }
+                @if (isColumnVisible('identifier')) { <th>Business Identifier</th> }
+                @if (isColumnVisible('recordId')) { <th>Record ID</th> }
+              </tr>
+            </thead>
+            <tbody>
+              @for (record of pagedRecords(); track record.companyUserRecordId) {
+                <tr>
+                  @if (isColumnVisible('name')) { <td class="font-semibold">{{ record.displayName }}</td> }
+                  @if (isColumnVisible('identifier')) { <td class="font-mono text-[0.8rem]">{{ record.businessIdentifier }}</td> }
+                  @if (isColumnVisible('recordId')) { <td class="font-mono text-[0.72rem] text-[var(--text-soft)]">{{ record.companyUserRecordId }}</td> }
+                </tr>
+              }
+              @if (!pagedRecords().length) {
+                <tr>
+                  <td [attr.colspan]="visibleColumns().length">
+                    <div class="sb-empty text-sm my-3">No records match the selected filters.</div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (recordsPage().totalPages > 1) {
+          <div class="sb-pagination">
+            <p class="sb-pagination__info">Page {{ recordsPage().pageNumber }} of {{ recordsPage().totalPages }}</p>
+            <div class="sb-pagination__controls">
+              <button class="sb-pagination__button" [disabled]="!recordsPage().hasPreviousPage" (click)="changePage(recordsPage().pageNumber - 1)">Prev</button>
+              <button class="sb-pagination__button" [disabled]="!recordsPage().hasNextPage" (click)="changePage(recordsPage().pageNumber + 1)">Next</button>
+            </div>
+          </div>
+        }
+      </div>
     </section>
   </div>
 </section>

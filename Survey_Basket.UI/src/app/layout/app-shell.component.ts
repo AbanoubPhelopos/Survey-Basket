@@ -17,6 +17,7 @@ export class AppShellComponent {
   private readonly themeService = inject(ThemeService);
 
   protected readonly currentTheme = this.themeService.mode;
+  protected readonly user = this.authService.user;
 
   protected readonly navItems = computed(() =>
     APP_NAV_ITEMS.filter((item) => {
@@ -36,5 +37,9 @@ export class AppShellComponent {
 
   protected logout(): void {
     this.authService.logout();
+  }
+
+  protected getInitials(firstName?: string, lastName?: string): string {
+    return `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase() || 'SB';
   }
 }

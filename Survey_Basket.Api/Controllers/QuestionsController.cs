@@ -1,5 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Survey_Basket.Api.Models;
 using Survey_Basket.Application.Abstractions.Const;
 using Survey_Basket.Application.Contracts.Question;
 using Survey_Basket.Application.Services.AuthServices.Filter;
@@ -10,17 +11,26 @@ namespace Survey_Basket.Api.Controllers;
 [Route("api/polls/{pollId:guid}/[controller]")]
 [ApiController]
 [Authorize]
-public class QuestionsController(IQuestionService questionService) : ControllerBase
+public class QuestionsController(IQuestionService questionService, ILogger<QuestionsController> logger) : ControllerBase
 {
     private readonly IQuestionService _questionService = questionService;
+    private readonly ILogger<QuestionsController> _logger = logger;
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromRoute] Guid pollId, CancellationToken cancellationToken)
+    public async Task<ActionResult<ServiceResult<IEnumerable<QuestionResponse>>>> GetAll([FromRoute] Guid pollId, CancellationToken cancellationToken)
     {
-        var result = await _questionService.GetQuestionsAsync(pollId, cancellationToken);
-        return result.IsSuccess
-            ? Ok(result.Value)
-            : result.ToProblemDetails();
+        try
+        {
+            var result = await _questionService.GetQuestionsAsync(pollId, cancellationToken);
+            return result.IsSuccess
+                ? Ok(ServiceResult<IEnumerable<QuestionResponse>>.Success(result.Value))
+                : Ok(ServiceResult<IEnumerable<QuestionResponse>>.Failed(new ServiceError(result.Error.Message, int.TryParse(result.Error.Code, out var c) ? c : (result.Error.statusCode ?? 400))));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading questions for poll {PollId}", pollId);
+            return Ok(ServiceResult<IEnumerable<QuestionResponse>>.Failed(new ServiceError(ex.Message, 500)));
+        }
     }
 
 

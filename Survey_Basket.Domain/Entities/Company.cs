@@ -6,6 +6,10 @@ public sealed class Company : AuditableEntity
     public string Name { get; set; } = string.Empty;
     public string Code { get; set; } = string.Empty;
     public bool IsActive { get; set; } = true;
+    public string? ContactEmail { get; set; }
+    public string? WebsiteUrl { get; set; }
+    public string? LinkedInUrl { get; set; }
+    public string? LogoUrl { get; set; }
 
     public ICollection<CompanyUser> Users { get; set; } = [];
     public ICollection<PollAudience> TargetedPolls { get; set; } = [];

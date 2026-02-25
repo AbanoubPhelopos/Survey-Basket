@@ -1,59 +1,53 @@
-# SurveyBasketUI
+# Survey Basket UI
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.1.4.
+Frontend application for Survey Basket, built with Angular 21.
 
-## Development server
+## What Is Included
 
-To start a local development server, run:
+- Role-aware navigation shell with responsive layout.
+- Light/dark theme system (system default on first visit + persisted user choice).
+- Redesigned authentication pages (login/register) with improved CTA visibility and responsive behavior.
+- Admin company-account provisioning screen.
+- Company account activation screen (first-time password setup).
+- Company-scoped user-record management screen (non-authenticated records).
+- Roles management screen and full route wiring under authenticated shell.
 
-```bash
-ng serve
-```
+## Recent Fixes
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+- Fixed login/register visual issues and restored clear visible action buttons.
+- Added stronger empty/error state components in company and results workflows.
+- Added route guard activation redirect for accounts that require first-time activation.
+- Aligned frontend role/permission flows with backend company provisioning and activation endpoints.
 
-## Code scaffolding
+## Run Locally
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
+From `Survey_Basket.UI`:
 
 ```bash
-ng build
+npm install
+npm run start
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Open `http://localhost:4200/`.
 
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+## Build
 
 ```bash
-ng test
+npm run build
 ```
 
-## Running end-to-end tests
+Build output is in `Survey_Basket.UI/dist/Survey_Basket.UI`.
 
-For end-to-end (e2e) testing, run:
+## Test
 
 ```bash
-ng e2e
+npm run test
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## Backend Integration Notes
 
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- The UI expects the API base URL configured in `src/app/core/constants/api.constants.ts`.
+- New key backend flows used by UI:
+  - Company account creation (admin only)
+  - Company account activation (one-time token/password setup)
+  - Company user record creation (company scope, non-authenticated)

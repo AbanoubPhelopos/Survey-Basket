@@ -41,6 +41,16 @@ public class AccountController(IUserServices userServices) : ControllerBase
             : result.ToProblemDetails();
     }
 
+    [HttpPut("set-initial-password")]
+    public async Task<IActionResult> SetInitialPassword([FromBody] SetInitialPasswordRequest request, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        var result = await _userServices.SetInitialPasswordAsync(userId, request.NewPassword, cancellationToken);
+        return result.IsSuccess
+            ? NoContent()
+            : result.ToProblemDetails();
+    }
+
     [HttpPost("company-accounts/{companyAccountUserId:guid}/activation-token")]
     [HasPermission(Permissions.ManageCompanies)]
     public async Task<IActionResult> GenerateCompanyActivationToken([FromRoute] Guid companyAccountUserId, CancellationToken cancellationToken)

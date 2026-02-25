@@ -22,6 +22,7 @@ public static class UserErrors
     public static readonly Error EmailAlreadyConfirmed = new("User.EmailAlreadyConfirmed", "Email is already confirmed.", StatusCodes.Status400BadRequest);
     public static readonly Error EmailNotConfirmed = new("User.EmailNotConfirmed", "Email is not confirmed.", StatusCodes.Status400BadRequest);
     public static readonly Error CompanyUserLoginNotAllowed = new("User.CompanyUserLoginNotAllowed", "Company user records cannot sign in.", StatusCodes.Status403Forbidden);
+    public static readonly Error ProfileIncomplete = new("User.ProfileIncomplete", "Complete your profile before answering polls.", StatusCodes.Status403Forbidden);
 
 
 }

@@ -23,6 +23,14 @@ public class VoteService(
     {
         var roles = GetCurrentRoles();
 
+        if (HasAnyRole(roles, DefaultRoles.CompanyUser))
+        {
+            var profileCompleted = await _unitOfWork.Repository<ApplicationUser>()
+                .AnyAsync(x => x.Id == userId && x.ProfileCompleted, cancellationToken);
+            if (!profileCompleted)
+                return Result.Failure(UserErrors.ProfileIncomplete);
+        }
+
         var hasVote = await _unitOfWork.Repository<Vote>()
             .AnyAsync(x => x.PollId == pollId && x.UserId == userId, cancellationToken);
         if (hasVote)

@@ -172,6 +172,14 @@ public class QuestionService(
         if (!currentUser.IsSuccess)
             return Result.Failure<IEnumerable<QuestionResponse>>(currentUser.Error);
 
+        if (HasAnyRole(currentUser.Value.Roles, DefaultRoles.CompanyUser))
+        {
+            var isProfileCompleted = await _unitOfWork.Repository<ApplicationUser>()
+                .AnyAsync(x => x.Id == userId && x.ProfileCompleted, cancellationToken);
+            if (!isProfileCompleted)
+                return Result.Failure<IEnumerable<QuestionResponse>>(UserErrors.ProfileIncomplete);
+        }
+
         var hasVote = await _unitOfWork.Repository<Vote>().AnyAsync(x => x.PollId == pollId && x.UserId == userId, cancellationToken);
 
         if (hasVote)
@@ -259,9 +267,6 @@ public class QuestionService(
     {
         if (HasAnyRole(roles, DefaultRoles.Admin, DefaultRoles.SystemAdmin))
             return Result.Success();
-
-        if (!HasAnyRole(roles, DefaultRoles.PartnerCompany))
-            return Result.Failure(QuestionErrors.QuestionAccessDenied);
 
         var poll = await _unitOfWork.Repository<Poll>().GetByIdAsync(pollId, cancellationToken);
         if (poll is null)

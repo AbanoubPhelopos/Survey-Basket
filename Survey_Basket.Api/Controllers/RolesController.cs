@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Survey_Basket.Api.Models;
 using Survey_Basket.Application.Abstractions.Const;
+using Survey_Basket.Application.Contracts.Common;
 using Survey_Basket.Application.Contracts.Roles;
 using Survey_Basket.Application.Services.AuthServices.Filter;
 using Survey_Basket.Application.Services.RoleService;
@@ -8,15 +10,36 @@ namespace Survey_Basket.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class RolesController(IRoleService roleService) : ControllerBase
+    public class RolesController(IRoleService roleService, ILogger<RolesController> logger) : ControllerBase
     {
         private readonly IRoleService _roleService = roleService;
+        private readonly ILogger<RolesController> _logger = logger;
         [HttpGet("")]
         [HasPermission(Permissions.GetRoles)]
-        public async Task<IActionResult> Get([FromQuery] bool includeDisabled, CancellationToken cancellationToken)
+        public async Task<ActionResult<ServiceResult<ServiceListResult<RoleResponse, RoleStatsResponse>>>> Get([FromQuery] RequestFilters filters, [FromQuery] string? status, [FromQuery] bool includeDisabled, CancellationToken cancellationToken)
         {
-            var roles = await _roleService.GetRoles(includeDisabled, cancellationToken);
-            return Ok(roles);
+            try
+            {
+                var result = await _roleService.GetRolesFilterResult(filters, status, includeDisabled, cancellationToken);
+                return result.IsSuccess
+                    ? Ok(ServiceResult<ServiceListResult<RoleResponse, RoleStatsResponse>>.Success(result.Value))
+                    : Ok(ServiceResult<ServiceListResult<RoleResponse, RoleStatsResponse>>.Failed(new ServiceError(result.Error.Message, int.TryParse(result.Error.Code, out var c) ? c : (result.Error.statusCode ?? 400))));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error filtering roles");
+                return Ok(ServiceResult<ServiceListResult<RoleResponse, RoleStatsResponse>>.Failed(new ServiceError(ex.Message, 500)));
+            }
+        }
+
+        [HttpGet("stats")]
+        [HasPermission(Permissions.GetRoles)]
+        public async Task<IActionResult> GetStats(CancellationToken cancellationToken)
+        {
+            var result = await _roleService.GetRoleStats(cancellationToken);
+            return result.IsSuccess
+                ? Ok(result.Value)
+                : result.ToProblemDetails();
         }
 
         [HttpGet("{Id}")]

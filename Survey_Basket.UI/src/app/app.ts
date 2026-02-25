@@ -1,10 +1,11 @@
 import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ThemeService } from './core/services/theme.service';
+import { UiFeedbackComponent } from './shared/ui-feedback/ui-feedback.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, UiFeedbackComponent],
   templateUrl: './app.html',
   styleUrls: ['./app.css']
 })
