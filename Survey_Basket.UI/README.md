@@ -1,23 +1,26 @@
 # Survey Basket UI
 
-Frontend application for Survey Basket, built with Angular 21.
+Angular 21 frontend for the Survey Basket platform.
 
-## What Is Included
+It is designed around business roles (Admin, Partner Company, Company User/Member) and focuses on secure survey distribution with company-level targeting.
 
-- Role-aware navigation shell with responsive layout.
-- Light/dark theme system (system default on first visit + persisted user choice).
-- Redesigned authentication pages (login/register) with improved CTA visibility and responsive behavior.
-- Admin company-account provisioning screen.
-- Company account activation screen (first-time password setup).
-- Company-scoped user-record management screen (non-authenticated records).
-- Roles management screen and full route wiring under authenticated shell.
+## Business Experiences Covered
 
-## Recent Fixes
+- Admin dashboard for poll lifecycle and company operations.
+- Company-first-login flow with forced password setup.
+- Poll creation/editing with target-company selection.
+- Company poll QR/link generation for participant distribution.
+- Participant poll join flow with required email/mobile before answering.
+- Vote screens that prevent duplicate submission and show previously submitted answers.
+- Analytics screens (row data, votes per day, votes per question).
 
-- Fixed login/register visual issues and restored clear visible action buttons.
-- Added stronger empty/error state components in company and results workflows.
-- Added route guard activation redirect for accounts that require first-time activation.
-- Aligned frontend role/permission flows with backend company provisioning and activation endpoints.
+## Main UI Areas
+
+- `src/app/pages/auth`: login, company activation, join-by-link pages.
+- `src/app/pages/polls`: create/edit/vote/results flows.
+- `src/app/pages/admin`: company accounts, company users, roles, users.
+- `src/app/core/services`: API client services and auth/session orchestration.
+- `src/app/core/guards`: route access and first-login enforcement.
 
 ## Run Locally
 
@@ -25,10 +28,10 @@ From `Survey_Basket.UI`:
 
 ```bash
 npm install
-npm run start
+npm start
 ```
 
-Open `http://localhost:4200/`.
+Open `http://localhost:4200`.
 
 ## Build
 
@@ -36,7 +39,7 @@ Open `http://localhost:4200/`.
 npm run build
 ```
 
-Build output is in `Survey_Basket.UI/dist/Survey_Basket.UI`.
+Output: `Survey_Basket.UI/dist/Survey_Basket.UI`.
 
 ## Test
 
@@ -44,10 +47,18 @@ Build output is in `Survey_Basket.UI/dist/Survey_Basket.UI`.
 npm run test
 ```
 
-## Backend Integration Notes
+## API Integration
 
-- The UI expects the API base URL configured in `src/app/core/constants/api.constants.ts`.
-- New key backend flows used by UI:
-  - Company account creation (admin only)
-  - Company account activation (one-time token/password setup)
-  - Company user record creation (company scope, non-authenticated)
+- API base URL is configured in `src/app/core/constants/api.constants.ts`.
+- Expected backend capabilities used by this UI:
+  - company account provisioning + first-login setup
+  - poll targeting by selected companies
+  - poll QR access link generation and redemption
+  - vote submission and participant history retrieval
+  - analytics endpoints
+
+## UX Notes
+
+- Route guards redirect users to required setup pages (for example forced password setup).
+- Poll visibility and actions are role-aware to match backend permissions.
+- Error states surface backend business messages when available, to reduce ambiguous failures.
