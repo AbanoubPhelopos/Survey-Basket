@@ -3,6 +3,7 @@ namespace Survey_Basket.Application.Contracts.Polls;
 public sealed record CreatePollRequests(
     string Title,
     string Summary,
+    bool IsPublished,
     DateOnly StartedAt,
     DateOnly? EndedAt,
     IEnumerable<Guid>? TargetCompanyIds = null
@@ -11,6 +12,7 @@ public sealed record CreatePollRequests(
 public sealed record UpdatePollRequests(
     string Title,
     string Summary,
+    bool IsPublished,
     DateOnly StartedAt,
     DateOnly? EndedAt,
     IEnumerable<Guid>? TargetCompanyIds = null

@@ -619,7 +619,7 @@ public class UserServices(UserManager<ApplicationUser> userManager, IUnitOfWork 
             return Result.Failure<CompanyUserInviteResponse>(new Error("User.Forbidden", "Only company accounts can generate invites.", StatusCodes.Status403Forbidden));
 
         var actorCompany = await _unitOfWork.Repository<CompanyUser>()
-            .GetAsync(x => x.UserId == actorUserId && x.IsPrimary && x.IsActive, cancellationToken: cancellationToken);
+            .GetAsync(x => x.UserId == actorUserId && x.IsActive, cancellationToken: cancellationToken);
 
         if (actorCompany is null)
             return Result.Failure<CompanyUserInviteResponse>(new Error("Company.NotLinked", "Company account is not linked to a company.", StatusCodes.Status400BadRequest));
@@ -677,14 +677,18 @@ public class UserServices(UserManager<ApplicationUser> userManager, IUnitOfWork 
         if (actorCompany is null)
             return Result.Failure<CompanyPollAccessLinkResponse>(new Error("Company.NotLinked", "Company account is not linked to a company.", StatusCodes.Status400BadRequest));
 
-        var pollExists = await _unitOfWork.Repository<Poll>()
-            .AnyAsync(x => x.Id == request.PollId && x.IsPublished, cancellationToken);
-        if (!pollExists)
+        var poll = await _unitOfWork.Repository<Poll>()
+            .GetByIdAsync(request.PollId, cancellationToken);
+
+        if (poll is null || !poll.IsPublished)
             return Result.Failure<CompanyPollAccessLinkResponse>(PollErrors.PollNotFound);
 
         var targeted = await _unitOfWork.Repository<PollAudience>()
             .AnyAsync(x => x.PollId == request.PollId && x.CompanyId == actorCompany.CompanyId, cancellationToken);
-        if (!targeted)
+
+        var companyOwnsPoll = poll.OwnerCompanyId.HasValue && poll.OwnerCompanyId.Value == actorCompany.CompanyId;
+
+        if (!targeted && !companyOwnsPoll)
             return Result.Failure<CompanyPollAccessLinkResponse>(new Error("Poll.NotTargeted", "Poll is not targeted to your company.", StatusCodes.Status403Forbidden));
 
         var rawToken = WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(48));

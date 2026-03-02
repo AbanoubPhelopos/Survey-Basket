@@ -76,7 +76,7 @@ export interface CompanyPollAccessRedeemRequest {
   token: string;
   firstName: string;
   lastName: string;
-  email?: string;
-  mobile?: string;
+  email: string;
+  mobile: string;
   password: string;
 }

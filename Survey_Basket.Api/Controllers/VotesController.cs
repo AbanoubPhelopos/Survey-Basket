@@ -47,4 +47,14 @@ public class VotesController(IQuestionService questionService, IVoteService vote
         return result.IsSuccess
             ? Created() : result.ToProblemDetails();
     }
+
+    [HttpGet("me")]
+    [HasPermission(Permissions.GetPolls)]
+    public async Task<IActionResult> MyVote([FromRoute] Guid pollId, CancellationToken cancellationToken)
+    {
+        var result = await _voteService.GetMyVoteAsync(pollId, User.GetUserId(), cancellationToken);
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : result.ToProblemDetails();
+    }
 }

@@ -53,7 +53,7 @@ public class PollService(
             Summary = poll.Summary,
             StartedAt = poll.StartedAt,
             EndedAt = poll.EndedAt,
-            IsPublished = false,
+            IsPublished = poll.IsPublished,
             OwnerCompanyId = ownerCompanyId,
             CreatedById = userContext.Value.UserId
         };
@@ -268,6 +268,7 @@ public class PollService(
 
         existingPoll.Title = updatedPoll.Title;
         existingPoll.Summary = updatedPoll.Summary;
+        existingPoll.IsPublished = updatedPoll.IsPublished;
         existingPoll.StartedAt = updatedPoll.StartedAt;
         existingPoll.EndedAt = updatedPoll.EndedAt;
         existingPoll.UpdatedById = userContext.Value.UserId;
@@ -402,6 +403,15 @@ public class PollService(
 
         if (poll.OwnerCompanyId.HasValue && companyIds.Contains(poll.OwnerCompanyId.Value))
             return Result.Success();
+
+        if (HasAnyRole(roles, DefaultRoles.PartnerCompany) && companyIds.Count > 0)
+        {
+            var isTargetedToCompany = await _unitOfWork.Repository<PollAudience>()
+                .AnyAsync(x => x.PollId == poll.Id && companyIds.Contains(x.CompanyId), cancellationToken);
+
+            if (isTargetedToCompany)
+                return Result.Success();
+        }
 
         var ownsPoll = await _unitOfWork.Repository<PollOwner>()
             .AnyAsync(x => x.PollId == poll.Id && x.UserId == userId, cancellationToken);

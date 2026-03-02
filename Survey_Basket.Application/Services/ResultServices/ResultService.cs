@@ -134,10 +134,27 @@ public class ResultService(IUnitOfWork unitOfWork, IHttpContextAccessor httpCont
         if (!HasAnyRole(userContext.Value.Roles, DefaultRoles.PartnerCompany))
             return Result.Failure(PollErrors.PollAccessDenied);
 
+        if (poll.CreatedById == userContext.Value.UserId)
+            return Result.Success();
+
         var ownsPoll = await _unitOfWork.Repository<PollOwner>()
             .AnyAsync(x => x.PollId == pollId && x.UserId == userContext.Value.UserId, cancellationToken);
 
-        return ownsPoll ? Result.Success() : Result.Failure(PollErrors.PollAccessDenied);
+        if (ownsPoll)
+            return Result.Success();
+
+        var companyIds = (await _unitOfWork.Repository<CompanyUser>()
+            .GetAllAsync(x => x.UserId == userContext.Value.UserId && x.IsActive, cancellationToken))
+            .Select(x => x.CompanyId)
+            .ToHashSet();
+
+        if (poll.OwnerCompanyId.HasValue && companyIds.Contains(poll.OwnerCompanyId.Value))
+            return Result.Success();
+
+        var isTargeted = await _unitOfWork.Repository<PollAudience>()
+            .AnyAsync(x => x.PollId == pollId && companyIds.Contains(x.CompanyId), cancellationToken);
+
+        return isTargeted ? Result.Success() : Result.Failure(PollErrors.PollAccessDenied);
     }
 
     private static string FormatVoteAnswer(VoteAnswers answer)
@@ -178,6 +195,14 @@ public class ResultService(IUnitOfWork unitOfWork, IHttpContextAccessor httpCont
 
         var rolesClaim = user.Claims.FirstOrDefault(x => x.Type == "roles")?.Value;
         var roles = DeserializeRoles(rolesClaim);
+
+        var roleClaims = user.Claims
+            .Where(x => x.Type == ClaimTypes.Role || x.Type == "role")
+            .Select(x => x.Value)
+            .Where(x => !string.IsNullOrWhiteSpace(x));
+
+        roles.AddRange(roleClaims);
+        roles = roles.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
         return Result.Success((userId, roles));
     }

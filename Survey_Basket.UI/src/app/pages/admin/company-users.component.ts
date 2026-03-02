@@ -1,11 +1,19 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RequestFilters } from '../../core/models/poll';
+import { PollResponse, RequestFilters } from '../../core/models/poll';
 import { PagedList } from '../../core/models/service-result';
 import { UserService } from '../../core/services/user.service';
-import { CompanyUserInviteResponse, CreateCompanyUserInviteRequest, CreateCompanyUserRecordRequest, CreateCompanyUserRecordResponse } from '../../core/models/company-user-record';
+import {
+  CompanyPollAccessLinkResponse,
+  CompanyUserInviteResponse,
+  CreateCompanyPollAccessLinkRequest,
+  CreateCompanyUserInviteRequest,
+  CreateCompanyUserRecordRequest,
+  CreateCompanyUserRecordResponse
+} from '../../core/models/company-user-record';
 import { UiFeedbackService } from '../../core/services/ui-feedback.service';
+import { PollService } from '../../core/services/poll.service';
 
 @Component({
   selector: 'app-company-users',
@@ -18,6 +26,7 @@ export class CompanyUsersComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly userService = inject(UserService);
   private readonly uiFeedback = inject(UiFeedbackService);
+  private readonly pollService = inject(PollService);
 
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
@@ -29,6 +38,8 @@ export class CompanyUsersComponent implements OnInit {
   readonly stats = signal({ totalRecords: 0, shortIdentifiers: 0, longIdentifiers: 0 });
   readonly invites = signal<CompanyUserInviteResponse[]>([]);
   readonly inviteUrl = signal('');
+  readonly polls = signal<PollResponse[]>([]);
+  readonly pollAccessLink = signal<CompanyPollAccessLinkResponse | null>(null);
   readonly totalPages = computed(() => this.recordsPage().totalPages || 1);
   readonly pagedRecords = computed(() => this.recordsPage().items);
   readonly recordsCount = computed(() => this.stats().totalRecords);
@@ -46,6 +57,11 @@ export class CompanyUsersComponent implements OnInit {
     email: [''],
     mobile: [''],
     expiresInMinutes: [15]
+  });
+
+  readonly pollAccessForm = this.fb.group({
+    pollId: ['', [Validators.required]],
+    expiresInMinutes: [240, [Validators.min(30), Validators.max(4320)]]
   });
 
   createRecord(): void {
@@ -80,6 +96,7 @@ export class CompanyUsersComponent implements OnInit {
   ngOnInit(): void {
     this.loadRecords();
     this.loadInvites();
+    this.loadTargetedPolls();
   }
 
   createInvite(): void {
@@ -100,8 +117,33 @@ export class CompanyUsersComponent implements OnInit {
     });
   }
 
+  createPollAccessLink(): void {
+    if (this.pollAccessForm.invalid) {
+      this.pollAccessForm.markAllAsTouched();
+      return;
+    }
+
+    const payload = this.pollAccessForm.getRawValue() as CreateCompanyPollAccessLinkRequest;
+    this.userService.createCompanyPollAccessLink(payload).subscribe({
+      next: (result) => {
+        this.pollAccessLink.set(result);
+        this.uiFeedback.success('Poll access link created', 'QR and link are ready to share with users.');
+      },
+      error: (error) => {
+        this.uiFeedback.error('Generation failed', error?.error?.detail || 'Unable to generate poll access link.');
+      }
+    });
+  }
+
   qrImageUrl(payload: string): string {
     return `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(payload)}`;
+  }
+
+  absoluteUrl(pathOrUrl: string): string {
+    if (!pathOrUrl) return '';
+    if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) return pathOrUrl;
+    if (typeof window === 'undefined') return pathOrUrl;
+    return `${window.location.origin}${pathOrUrl}`;
   }
 
   onSearchInput(event: Event): void {
@@ -156,6 +198,28 @@ export class CompanyUsersComponent implements OnInit {
     this.userService.getCompanyUserInvites().subscribe({
       next: (items) => this.invites.set(items),
       error: () => this.invites.set([])
+    });
+  }
+
+  private loadTargetedPolls(): void {
+    const filters: RequestFilters = {
+      pageNumber: 1,
+      pageSize: 100,
+      sortColumn: 'CreatedOn',
+      sortDirection: 'DESC'
+    };
+
+    this.pollService.getPolls(filters, 'active').subscribe({
+      next: (result) => {
+        this.polls.set(result.items.items);
+        const currentPollId = this.pollAccessForm.controls.pollId.value;
+        if (!currentPollId && result.items.items.length > 0) {
+          this.pollAccessForm.controls.pollId.setValue(result.items.items[0].id);
+        }
+      },
+      error: () => {
+        this.polls.set([]);
+      }
     });
   }
 }

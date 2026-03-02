@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormArray } from '@angular/forms';
 import { VoteService } from '../../core/services/vote.service';
-import { QuestionResponse, VoteAnswerRequest } from '../../core/models/vote';
+import { MyVoteResponse, QuestionResponse } from '../../core/models/vote';
 import { UiFeedbackService } from '../../core/services/ui-feedback.service';
 
 @Component({
@@ -70,6 +70,17 @@ import { UiFeedbackService } from '../../core/services/ui-feedback.service';
         </div>
       </form>
 
+      <div *ngIf="!isLoading() && submittedVote()" class="sb-surface rounded-xl border border-[var(--border)] p-6 space-y-4">
+        <h3 class="text-base font-bold text-[var(--text)]">You already submitted this survey</h3>
+        <p class="text-sm text-[var(--text-soft)]">Submitted on {{ submittedVote()!.submittedOn | date:'medium' }}</p>
+        <div class="space-y-2">
+          <div *ngFor="let item of submittedVote()!.answers" class="text-sm">
+            <span class="font-semibold">{{ item.question }}:</span>
+            <span class="text-[var(--text-soft)]"> {{ item.answer }}</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Empty State -->
       <div *ngIf="!isLoading() && !error() && questions().length === 0" class="sb-surface rounded-xl border border-[var(--border)] p-12 text-center text-sm group">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 mx-auto text-gray-300 mb-4 group-hover:text-gray-400 transition-colors">
@@ -88,6 +99,7 @@ export class VoteComponent implements OnInit {
   pollId: string = '';
 
   questions = signal<QuestionResponse[]>([]);
+  submittedVote = signal<MyVoteResponse | null>(null);
   isLoading = signal<boolean>(true);
   error = signal<string | null>(null);
   isSubmitting = false;
@@ -129,9 +141,29 @@ export class VoteComponent implements OnInit {
         console.error(err);
         if (err.status === 403) {
           this.error.set('You are not authorized to vote on this poll. (Are you a Member?)');
+        } else if (err?.message?.toLowerCase?.().includes('vote already exists')) {
+          this.loadSubmittedVote();
+          return;
+        } else if (err?.message) {
+          this.error.set(err.message);
         } else {
           this.error.set('Failed to load survey questions.');
         }
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  loadSubmittedVote() {
+    this.voteService.getMyVote(this.pollId).subscribe({
+      next: (data) => {
+        this.submittedVote.set(data);
+        this.error.set(null);
+        this.questions.set([]);
+        this.isLoading.set(false);
+      },
+      error: () => {
+        this.error.set('Vote already exists.');
         this.isLoading.set(false);
       }
     });

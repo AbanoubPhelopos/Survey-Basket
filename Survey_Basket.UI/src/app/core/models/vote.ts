@@ -17,3 +17,15 @@ export interface AnswerResponse {
   id: string;
   content: string;
 }
+
+export interface MyVoteAnswerResponse {
+  question: string;
+  answer: string;
+}
+
+export interface MyVoteResponse {
+  pollId: string;
+  pollTitle: string;
+  submittedOn: string;
+  answers: MyVoteAnswerResponse[];
+}

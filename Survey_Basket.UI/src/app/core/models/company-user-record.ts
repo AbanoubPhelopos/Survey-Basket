@@ -33,3 +33,17 @@ export interface CompanyUserInviteResponse {
   mobileHint?: string;
   isUsed: boolean;
 }
+
+export interface CreateCompanyPollAccessLinkRequest {
+  pollId: string;
+  expiresInMinutes?: number;
+}
+
+export interface CompanyPollAccessLinkResponse {
+  linkId: string;
+  companyId: string;
+  pollId: string;
+  joinUrl: string;
+  qrPayload: string;
+  expiresOn: string;
+}

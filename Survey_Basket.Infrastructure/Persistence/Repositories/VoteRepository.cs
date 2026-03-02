@@ -8,11 +8,13 @@ public class VoteRepository : BaseRepository<Vote>, IVoteRepository
 
     public async Task<IEnumerable<VotesPerDayResult>> GetVotesPerDayAsync(Guid pollId, CancellationToken cancellationToken = default)
     {
-        return await _context.Votes
+        var grouped = await _context.Votes
             .Where(x => x.PollId == pollId)
-            .GroupBy(x => new { Data = DateOnly.FromDateTime(x.SubmittedOn) })
-            .Select(g => new VotesPerDayResult(g.Key.Data, g.Count()))
+            .GroupBy(x => x.SubmittedOn.Date)
+            .Select(g => new { Date = g.Key, Count = g.Count() })
             .ToListAsync(cancellationToken);
+
+        return grouped.Select(x => new VotesPerDayResult(DateOnly.FromDateTime(x.Date), x.Count));
     }
 
     public async Task<IEnumerable<VotesPerQuestionResult>> GetVotesPerQuestionAsync(Guid pollId, CancellationToken cancellationToken = default)

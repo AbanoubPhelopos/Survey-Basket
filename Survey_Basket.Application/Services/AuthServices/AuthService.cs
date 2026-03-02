@@ -3,6 +3,7 @@ using Hangfire;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.WebUtilities;
+using System.Net.Mail;
 using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -450,8 +451,21 @@ public class AuthService(
 
         var email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim().ToLowerInvariant();
         var mobile = string.IsNullOrWhiteSpace(request.Mobile) ? null : request.Mobile.Trim();
-        if (string.IsNullOrWhiteSpace(email) && string.IsNullOrWhiteSpace(mobile))
-            return Result.Failure<AuthResponse>(new Error("User.IdentityRequired", "Email or mobile is required.", StatusCodes.Status400BadRequest));
+
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(mobile))
+            return Result.Failure<AuthResponse>(new Error("User.IdentityRequired", "Valid email and mobile are required.", StatusCodes.Status400BadRequest));
+
+        try
+        {
+            _ = new MailAddress(email);
+        }
+        catch
+        {
+            return Result.Failure<AuthResponse>(new Error("User.InvalidEmail", "A valid email address is required.", StatusCodes.Status400BadRequest));
+        }
+
+        if (mobile.Length < 7)
+            return Result.Failure<AuthResponse>(new Error("User.InvalidMobile", "A valid mobile number is required.", StatusCodes.Status400BadRequest));
 
         ApplicationUser? user = null;
         if (!string.IsNullOrWhiteSpace(email))

@@ -3,7 +3,15 @@ import { Injectable } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { API_BASE_URL } from '../constants/api.constants';
 import { UserResponse, UsersStatsResponse } from '../models/user';
-import { CompanyUserInviteResponse, CompanyUserRecordsStatsResponse, CreateCompanyUserInviteRequest, CreateCompanyUserRecordRequest, CreateCompanyUserRecordResponse } from '../models/company-user-record';
+import {
+  CompanyPollAccessLinkResponse,
+  CompanyUserInviteResponse,
+  CompanyUserRecordsStatsResponse,
+  CreateCompanyPollAccessLinkRequest,
+  CreateCompanyUserInviteRequest,
+  CreateCompanyUserRecordRequest,
+  CreateCompanyUserRecordResponse
+} from '../models/company-user-record';
 import { ServiceListResult, ServiceResult } from '../models/service-result';
 import { RequestFilters } from '../models/poll';
 import { AdminCompanyUserListItemResponse, AdminCompanyUsersStatsResponse, CompanyAccountListItemResponse, CompanyAccountsStatsResponse, CompanyMagicLoginLinkResponse } from '../models/company-account';
@@ -122,5 +130,9 @@ export class UserService {
 
   getCompanyUserInvites(): Observable<CompanyUserInviteResponse[]> {
     return this.http.get<CompanyUserInviteResponse[]>(`${this.apiUrl}/company-user-invites`);
+  }
+
+  createCompanyPollAccessLink(request: CreateCompanyPollAccessLinkRequest): Observable<CompanyPollAccessLinkResponse> {
+    return this.http.post<CompanyPollAccessLinkResponse>(`${this.apiUrl}/company-poll-access-links`, request);
   }
 }

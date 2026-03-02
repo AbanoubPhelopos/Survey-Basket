@@ -45,6 +45,27 @@
           </div>
         }
       </div>
+
+      <div class="pt-4 border-t border-[var(--border)] space-y-3">
+        <h3 class="text-sm font-bold">Poll QR Access</h3>
+        <div [formGroup]="pollAccessForm" class="space-y-3">
+          <select class="sb-select w-full" formControlName="pollId">
+            <option value="" disabled>Select an active poll</option>
+            @for (poll of polls(); track poll.id) {
+              <option [value]="poll.id">{{ poll.title }}</option>
+            }
+          </select>
+          <input class="sb-input" type="number" formControlName="expiresInMinutes" placeholder="Expires in minutes (30 to 4320)" />
+          <button class="sb-btn-secondary w-full" type="button" (click)="createPollAccessLink()">Generate Poll QR Link</button>
+        </div>
+
+        @if (pollAccessLink()) {
+          <div class="space-y-2">
+            <img [src]="qrImageUrl(absoluteUrl(pollAccessLink()!.joinUrl))" alt="Poll QR" class="border border-[var(--border)] rounded-lg bg-white p-2" />
+            <code class="block bg-[var(--bg-soft)] border border-[var(--border)] p-2 rounded text-xs break-all">{{ absoluteUrl(pollAccessLink()!.joinUrl) }}</code>
+          </div>
+        }
+      </div>
     </form>
 
     <section class="space-y-3 lg:col-span-7">

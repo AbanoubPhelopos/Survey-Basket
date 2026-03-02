@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Text.Json;
 using Survey_Basket.Application.Abstractions;
@@ -84,6 +85,37 @@ public class VoteService(
         await _unitOfWork.Repository<Vote>().AddAsync(vote, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return Result.Success();
+    }
+
+    public async Task<Result<MyVoteResponse>> GetMyVoteAsync(Guid pollId, Guid userId, CancellationToken cancellationToken = default)
+    {
+        var vote = await _unitOfWork.Repository<Vote>()
+            .GetAsync(
+                x => x.PollId == pollId && x.UserId == userId,
+                [
+                    nameof(Vote.Poll),
+                    nameof(Vote.Answers),
+                    $"{nameof(Vote.Answers)}.{nameof(VoteAnswers.Question)}",
+                    $"{nameof(Vote.Answers)}.{nameof(VoteAnswers.Question)}.{nameof(Question.Answers)}",
+                    $"{nameof(Vote.Answers)}.{nameof(VoteAnswers.Answer)}"
+                ],
+                cancellationToken: cancellationToken);
+
+        if (vote is null)
+            return Result.Failure<MyVoteResponse>(VoteErrors.VoteNotFound);
+
+        var answers = vote.Answers
+            .OrderBy(x => x.Question?.DisplayOrder ?? int.MaxValue)
+            .Select(x => new MyVoteAnswerResponse(
+                x.Question?.Content ?? "Unknown question",
+                FormatVoteAnswer(x)))
+            .ToList();
+
+        return Result.Success(new MyVoteResponse(
+            vote.PollId,
+            vote.Poll?.Title ?? "Survey",
+            vote.SubmittedOn,
+            answers));
     }
 
     private async Task<Result<VoteAnswers>> MapAnswerAsync(Guid pollId, Guid userId, Question question, VoteAnswerRequest request, CancellationToken cancellationToken)
@@ -194,6 +226,49 @@ public class VoteService(
             .ToHashSet();
 
         return audience.Any(x => companyIds.Contains(x.CompanyId));
+    }
+
+    private static string FormatVoteAnswer(VoteAnswers answer)
+    {
+        if (answer.Answer is not null)
+            return answer.Answer.Content;
+
+        if (!string.IsNullOrWhiteSpace(answer.SelectedOptionIdsJson) && answer.Question is not null)
+        {
+            try
+            {
+                var ids = JsonSerializer.Deserialize<List<Guid>>(answer.SelectedOptionIdsJson) ?? [];
+                var selected = answer.Question.Answers
+                    .Where(x => ids.Contains(x.Id))
+                    .Select(x => x.Content)
+                    .ToList();
+
+                if (selected.Count > 0)
+                    return string.Join(", ", selected);
+            }
+            catch
+            {
+            }
+
+            return answer.SelectedOptionIdsJson;
+        }
+
+        if (answer.BoolValue.HasValue)
+            return answer.BoolValue.Value ? "True" : "False";
+
+        if (answer.NumberValue.HasValue)
+            return answer.NumberValue.Value.ToString();
+
+        if (!string.IsNullOrWhiteSpace(answer.CountryCode))
+            return answer.CountryCode;
+
+        if (!string.IsNullOrWhiteSpace(answer.TextValue))
+            return answer.TextValue;
+
+        if (!string.IsNullOrWhiteSpace(answer.FileReference))
+            return "[FILE_UPLOADED]";
+
+        return "[EMPTY]";
     }
 
     private List<string> GetCurrentRoles()

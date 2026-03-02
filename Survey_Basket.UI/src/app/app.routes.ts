@@ -3,6 +3,7 @@ import { LoginComponent } from './pages/auth/login.component';
 import { ActivateCompanyComponent } from './pages/auth/activate-company.component';
 import { CompanyMagicLoginComponent } from './pages/auth/company-magic-login.component';
 import { JoinCompanyComponent } from './pages/auth/join-company.component';
+import { JoinCompanyPollComponent } from './pages/auth/join-company-poll.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { CreatePollComponent } from './pages/polls/create-poll.component';
 import { EditPollComponent } from './pages/polls/edit-poll.component';
@@ -22,6 +23,7 @@ export const routes: Routes = [
   { path: 'activate-company/:companyAccountUserId', component: ActivateCompanyComponent },
   { path: 'company-magic-login', component: CompanyMagicLoginComponent },
   { path: 'join-company', component: JoinCompanyComponent },
+  { path: 'join-company-poll', component: JoinCompanyPollComponent },
   { path: 'company/change-password', component: CompanyChangePasswordComponent, canActivate: [authGuard] },
   {
     path: '',

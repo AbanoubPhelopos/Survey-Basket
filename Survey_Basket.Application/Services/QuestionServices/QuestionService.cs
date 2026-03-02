@@ -185,13 +185,13 @@ public class QuestionService(
         if (hasVote)
             return Result.Failure<IEnumerable<QuestionResponse>>(VoteErrors.VoteAlreadyExists);
 
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var isPollExist = await _unitOfWork.Repository<Poll>().AnyAsync(
-            p => p.Id == pollId && p.IsPublished && p.StartedAt <= today && (!p.EndedAt.HasValue || p.EndedAt >= today),
-            cancellationToken);
-
-        if (!isPollExist)
+        var poll = await _unitOfWork.Repository<Poll>().GetByIdAsync(pollId, cancellationToken);
+        if (poll is null)
             return Result.Failure<IEnumerable<QuestionResponse>>(PollErrors.PollNotFound);
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        if (!poll.IsPublished || poll.StartedAt > today || (poll.EndedAt.HasValue && poll.EndedAt.Value < today))
+            return Result.Failure<IEnumerable<QuestionResponse>>(PollErrors.PollNotActive);
 
         if (!HasAnyRole(currentUser.Value.Roles, DefaultRoles.Admin, DefaultRoles.SystemAdmin))
         {

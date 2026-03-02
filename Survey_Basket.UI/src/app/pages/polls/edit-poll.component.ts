@@ -9,6 +9,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { Question, QuestionRequest, QuestionType } from '../../core/models/question';
 import { UiFeedbackService } from '../../core/services/ui-feedback.service';
 import { RequestFilters } from '../../core/models/poll';
+import { CompanyPollAccessLinkResponse } from '../../core/models/company-user-record';
 
 @Component({
   selector: 'app-edit-poll',
@@ -110,6 +111,36 @@ import { RequestFilters } from '../../core/models/poll';
                     <span class="block text-xs text-[var(--text-soft)] mt-0.5">Make this poll visible to assigned users</span>
                   </div>
               </label>
+
+              @if (isCompanyContext()) {
+                <div class="space-y-3 p-4 border border-[var(--border)] rounded-lg bg-[var(--bg-soft)]">
+                  <div>
+                    <h3 class="text-sm font-semibold">Poll QR Access</h3>
+                    <p class="text-xs text-[var(--text-soft)] mt-1">Generate a shareable QR/link for this poll.</p>
+                  </div>
+                  <div class="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                    <input
+                      type="number"
+                      min="30"
+                      max="4320"
+                      class="sb-input w-full sm:w-56"
+                      [value]="pollQrExpiryMinutes()"
+                      (input)="onPollQrExpiryInput($event)"
+                      placeholder="Expiry in minutes"
+                    />
+                    <button type="button" class="sb-btn-secondary" (click)="generatePollQrLink()" [disabled]="isGeneratingPollQr()">
+                      {{ isGeneratingPollQr() ? 'Generating...' : 'Generate Poll QR' }}
+                    </button>
+                  </div>
+
+                  @if (pollQrLink()) {
+                    <div class="space-y-2">
+                      <img [src]="qrImageUrl(absoluteUrl(pollQrLink()!.joinUrl))" alt="Poll QR" class="border border-[var(--border)] rounded-lg bg-white p-2" />
+                      <code class="block bg-white border border-[var(--border)] p-2 rounded text-xs break-all">{{ absoluteUrl(pollQrLink()!.joinUrl) }}</code>
+                    </div>
+                  }
+                </div>
+              }
             </form>
           </div>
 
@@ -239,6 +270,10 @@ export class EditPollComponent implements OnInit {
   isAdminContext = signal(false);
   audienceError = signal<string | null>(null);
   questionError = signal<string | null>(null);
+  isCompanyContext = signal(false);
+  isGeneratingPollQr = signal(false);
+  pollQrExpiryMinutes = signal(240);
+  pollQrLink = signal<CompanyPollAccessLinkResponse | null>(null);
   isSaving = false;
   isAddingQuestion = false;
 
@@ -296,6 +331,7 @@ export class EditPollComponent implements OnInit {
 
   ngOnInit() {
     this.isAdminContext.set(this.authService.hasAnyRole(['Admin', 'SystemAdmin']));
+    this.isCompanyContext.set(this.authService.hasRole('PartnerCompany'));
     if (this.isAdminContext()) {
       this.loadCompanyOptions();
     }
@@ -364,6 +400,44 @@ export class EditPollComponent implements OnInit {
   isCompanySelected(companyId: string): boolean {
     const selected = this.pollForm.controls['targetCompanyIds'].value ?? [];
     return selected.includes(companyId);
+  }
+
+  onPollQrExpiryInput(event: Event): void {
+    const value = Number((event.target as HTMLInputElement).value || 240);
+    this.pollQrExpiryMinutes.set(Math.min(4320, Math.max(30, value)));
+  }
+
+  generatePollQrLink(): void {
+    if (!this.pollId) {
+      return;
+    }
+
+    this.isGeneratingPollQr.set(true);
+    this.userService.createCompanyPollAccessLink({
+      pollId: this.pollId,
+      expiresInMinutes: this.pollQrExpiryMinutes()
+    }).subscribe({
+      next: (result) => {
+        this.isGeneratingPollQr.set(false);
+        this.pollQrLink.set(result);
+        this.uiFeedback.success('Poll QR generated', 'Share this secure link or QR with your users.');
+      },
+      error: (error) => {
+        this.isGeneratingPollQr.set(false);
+        this.uiFeedback.error('Generation failed', error?.error?.detail || 'Unable to generate poll QR link.');
+      }
+    });
+  }
+
+  qrImageUrl(payload: string): string {
+    return `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(payload)}`;
+  }
+
+  absoluteUrl(pathOrUrl: string): string {
+    if (!pathOrUrl) return '';
+    if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) return pathOrUrl;
+    if (typeof window === 'undefined') return pathOrUrl;
+    return `${window.location.origin}${pathOrUrl}`;
   }
 
   // Question Methods
