@@ -185,6 +185,25 @@ public class QuestionService(
         if (hasVote)
             return Result.Failure<IEnumerable<QuestionResponse>>(VoteErrors.VoteAlreadyExists);
 
+        var currentUserEntity = await _unitOfWork.Repository<ApplicationUser>()
+            .GetByIdAsync(userId, cancellationToken);
+        var normalizedEmail = currentUserEntity?.NormalizedEmail;
+        var phoneNumber = string.IsNullOrWhiteSpace(currentUserEntity?.PhoneNumber) ? null : currentUserEntity.PhoneNumber.Trim();
+
+        if (!string.IsNullOrWhiteSpace(normalizedEmail) || !string.IsNullOrWhiteSpace(phoneNumber))
+        {
+            var duplicateByIdentity = await _unitOfWork.Repository<Vote>()
+                .AnyAsync(x => x.PollId == pollId
+                               && x.UserId != userId
+                               && x.User != null
+                               && ((!string.IsNullOrWhiteSpace(normalizedEmail) && x.User.NormalizedEmail == normalizedEmail)
+                                   || (!string.IsNullOrWhiteSpace(phoneNumber) && x.User.PhoneNumber == phoneNumber)),
+                    cancellationToken);
+
+            if (duplicateByIdentity)
+                return Result.Failure<IEnumerable<QuestionResponse>>(VoteErrors.VoteIdentityAlreadyExists);
+        }
+
         var poll = await _unitOfWork.Repository<Poll>().GetByIdAsync(pollId, cancellationToken);
         if (poll is null)
             return Result.Failure<IEnumerable<QuestionResponse>>(PollErrors.PollNotFound);
