@@ -12,6 +12,7 @@ import { UsersComponent } from './pages/admin/users.component';
 import { CompaniesComponent } from './pages/admin/companies.component';
 import { CompanyUsersComponent } from './pages/admin/company-users.component';
 import { ProfileComponent } from './pages/profile/profile.component';
+import { CompanyChangePasswordComponent } from './pages/company/company-change-password.component';
 import { authGuard } from './core/guards/auth.guard';
 import { AppShellComponent } from './layout/app-shell.component';
 import { RolesComponent } from './pages/admin/roles.component';
@@ -21,6 +22,7 @@ export const routes: Routes = [
   { path: 'activate-company/:companyAccountUserId', component: ActivateCompanyComponent },
   { path: 'company-magic-login', component: CompanyMagicLoginComponent },
   { path: 'join-company', component: JoinCompanyComponent },
+  { path: 'company/change-password', component: CompanyChangePasswordComponent, canActivate: [authGuard] },
   {
     path: '',
     component: AppShellComponent,

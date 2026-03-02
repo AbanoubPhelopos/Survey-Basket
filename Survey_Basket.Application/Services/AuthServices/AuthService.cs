@@ -335,6 +335,7 @@ public class AuthService(
 
         token.UsedOn = DateTime.UtcNow;
         user.IsDisabled = false;
+        user.IsFirstLogin = true;
 
         _unitOfWork.Repository<CompanyMagicLinkToken>().Update(token);
         await _userManager.UpdateAsync(user);

@@ -33,8 +33,13 @@ export class CompanyMagicLoginComponent {
     }
 
     this.authService.redeemCompanyMagicLink({ token }).subscribe({
-      next: () => {
+      next: (response) => {
         this.ui.success('Signed in', 'Company account signed in successfully.');
+        if (response.accountType === 'CompanyAccount' || response.requiresPasswordSetup) {
+          this.router.navigate(['/company/change-password']);
+          return;
+        }
+
         this.router.navigate(['/dashboard']);
       },
       error: () => {
