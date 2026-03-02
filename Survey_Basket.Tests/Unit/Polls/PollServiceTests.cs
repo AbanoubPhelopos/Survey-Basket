@@ -150,7 +150,7 @@ public class PollServiceTests
     public async Task CreatePollAsync_ShouldReturnSuccess_WhenPollDoesNotExist()
     {
         // Arrange
-        var request = new CreatePollRequests("New Poll", "New Description", DateOnly.MinValue, null);
+        var request = new CreatePollRequests("New Poll", "New Description", false, DateOnly.MinValue, null);
 
         _pollRepoMock
             .Setup(r => r.AnyAsync(It.IsAny<Expression<Func<Poll, bool>>>(), It.IsAny<CancellationToken>()))
@@ -183,7 +183,7 @@ public class PollServiceTests
     public async Task CreatePollAsync_ShouldReturnFailure_WhenPollAlreadyExists()
     {
         // Arrange
-        var request = new CreatePollRequests("Existing Poll", "Description", DateOnly.MinValue, null);
+        var request = new CreatePollRequests("Existing Poll", "Description", false, DateOnly.MinValue, null);
 
         _pollRepoMock
             .Setup(r => r.AnyAsync(It.IsAny<Expression<Func<Poll, bool>>>(), It.IsAny<CancellationToken>()))
@@ -258,7 +258,7 @@ public class PollServiceTests
         // Arrange
         var pollId = Guid.NewGuid();
         var existingPoll = new Poll { Id = pollId, Title = "Old Title", Summary = "Old Summary" };
-        var updateRequest = new UpdatePollRequests("New Title", "New Description", DateOnly.MinValue, null);
+        var updateRequest = new UpdatePollRequests("New Title", "New Description", false, DateOnly.MinValue, null);
 
         _pollRepoMock
             .Setup(r => r.GetByIdAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()))
@@ -292,7 +292,7 @@ public class PollServiceTests
             .ReturnsAsync((Poll?)null);
 
         // Act
-        var result = await _sut.UpdatePoll(Guid.NewGuid(), new UpdatePollRequests("Title", "Desc", DateOnly.MinValue, null));
+        var result = await _sut.UpdatePoll(Guid.NewGuid(), new UpdatePollRequests("Title", "Desc", false, DateOnly.MinValue, null));
 
         // Assert
         result.IsSuccess.Should().BeFalse();
@@ -316,7 +316,7 @@ public class PollServiceTests
             .ReturnsAsync(true);
 
         // Act
-        var result = await _sut.UpdatePoll(pollId, new UpdatePollRequests("Duplicate Title", "Desc", DateOnly.MinValue, null));
+        var result = await _sut.UpdatePoll(pollId, new UpdatePollRequests("Duplicate Title", "Desc", false, DateOnly.MinValue, null));
 
         // Assert
         result.IsSuccess.Should().BeFalse();
