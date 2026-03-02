@@ -4,8 +4,11 @@ import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } fr
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { PollService } from '../../core/services/poll.service';
 import { QuestionService } from '../../core/services/question.service';
+import { UserService } from '../../core/services/user.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Question, QuestionRequest, QuestionType } from '../../core/models/question';
 import { UiFeedbackService } from '../../core/services/ui-feedback.service';
+import { RequestFilters } from '../../core/models/poll';
 
 @Component({
   selector: 'app-edit-poll',
@@ -72,6 +75,33 @@ import { UiFeedbackService } from '../../core/services/ui-feedback.service';
                   <input type="date" formControlName="endedAt" class="sb-input">
                 </label>
               </div>
+
+              @if (isAdminContext()) {
+                <div class="space-y-3">
+                  <div>
+                    <h3 class="text-sm font-semibold">Target Companies</h3>
+                    <p class="text-xs text-[var(--text-soft)] mt-1">Only selected companies can access this poll.</p>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-auto border border-[var(--border)] rounded-lg p-3">
+                    @for (company of companyOptions(); track company.id) {
+                      <label class="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          [checked]="isCompanySelected(company.id)"
+                          (change)="toggleCompanySelection(company.id, $any($event.target).checked)"
+                        />
+                        <span>{{ company.name }}</span>
+                      </label>
+                    }
+                    @if (!companyOptions().length) {
+                      <p class="text-xs text-[var(--text-soft)]">No active companies available.</p>
+                    }
+                  </div>
+                  @if (audienceError()) {
+                    <p class="text-sm text-red-700">{{ audienceError() }}</p>
+                  }
+                </div>
+              }
 
               <label class="flex items-center gap-3 p-4 border border-[var(--border)] rounded-lg bg-[var(--bg-soft)] cursor-pointer hover:bg-[var(--sidebar-hover)] transition-colors">
                   <input type="checkbox" formControlName="isPublished" class="w-4 h-4 rounded border-gray-300 text-[var(--accent)] focus:ring-[var(--accent)]">
@@ -205,9 +235,19 @@ export class EditPollComponent implements OnInit {
   questionForm: FormGroup;
 
   questions = signal<Question[]>([]);
+  companyOptions = signal<Array<{ id: string; name: string }>>([]);
+  isAdminContext = signal(false);
+  audienceError = signal<string | null>(null);
   questionError = signal<string | null>(null);
   isSaving = false;
   isAddingQuestion = false;
+
+  private readonly companyFilters: RequestFilters = {
+    pageNumber: 1,
+    pageSize: 200,
+    sortColumn: 'CompanyName',
+    sortDirection: 'ASC'
+  };
 
   readonly questionTypeOptions: Array<{ value: QuestionType; label: string }> = [
     { value: 'SingleChoice', label: 'Single choice (MCQ)' },
@@ -223,6 +263,8 @@ export class EditPollComponent implements OnInit {
   private router = inject(Router);
   private pollService = inject(PollService);
   private questionService = inject(QuestionService);
+  private userService = inject(UserService);
+  private authService = inject(AuthService);
   private uiFeedback = inject(UiFeedbackService);
   private fb = inject(FormBuilder);
 
@@ -232,7 +274,8 @@ export class EditPollComponent implements OnInit {
       summary: ['', Validators.required],
       startedAt: ['', Validators.required],
       endedAt: [''],
-      isPublished: [false]
+      isPublished: [false],
+      targetCompanyIds: [[] as string[]]
     });
 
     this.questionForm = this.fb.group({
@@ -252,6 +295,11 @@ export class EditPollComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.isAdminContext.set(this.authService.hasAnyRole(['Admin', 'SystemAdmin']));
+    if (this.isAdminContext()) {
+      this.loadCompanyOptions();
+    }
+
     this.pollId = this.route.snapshot.paramMap.get('id') || '';
     if (this.pollId) {
       this.loadPoll();
@@ -266,7 +314,8 @@ export class EditPollComponent implements OnInit {
         summary: poll.summary,
         startedAt: poll.startedAt,
         endedAt: poll.endedAt,
-        isPublished: poll.isPublished
+        isPublished: poll.isPublished,
+        targetCompanyIds: poll.targetCompanyIds ?? []
       });
     });
   }
@@ -279,6 +328,12 @@ export class EditPollComponent implements OnInit {
 
   savePoll() {
     if (this.pollForm.valid) {
+      const selectedCompanyIds = this.pollForm.controls['targetCompanyIds'].value ?? [];
+      if (this.isAdminContext() && selectedCompanyIds.length === 0) {
+        this.audienceError.set('Select at least one company to target this poll.');
+        return;
+      }
+
       this.isSaving = true;
       this.pollService.updatePoll(this.pollId, this.pollForm.value).subscribe({
         next: () => {
@@ -291,6 +346,24 @@ export class EditPollComponent implements OnInit {
         }
       });
     }
+  }
+
+  toggleCompanySelection(companyId: string, checked: boolean): void {
+    const selected = this.pollForm.controls['targetCompanyIds'].value ?? [];
+    if (checked) {
+      if (!selected.includes(companyId)) {
+        this.pollForm.controls['targetCompanyIds'].setValue([...selected, companyId]);
+      }
+      this.audienceError.set(null);
+      return;
+    }
+
+    this.pollForm.controls['targetCompanyIds'].setValue(selected.filter((id: string) => id !== companyId));
+  }
+
+  isCompanySelected(companyId: string): boolean {
+    const selected = this.pollForm.controls['targetCompanyIds'].value ?? [];
+    return selected.includes(companyId);
   }
 
   // Question Methods
@@ -423,6 +496,20 @@ export class EditPollComponent implements OnInit {
   toggleQuestionStatus(q: Question) {
     this.questionService.toggleStatus(this.pollId, q.id).subscribe(() => {
       q.isActive = !q.isActive;
+    });
+  }
+
+  private loadCompanyOptions(): void {
+    this.userService.getCompanyAccounts(this.companyFilters, 'active').subscribe({
+      next: (result) => {
+        const unique = new Map<string, string>();
+        result.items.items.forEach((item) => {
+          unique.set(item.companyId, item.companyName);
+        });
+
+        this.companyOptions.set(Array.from(unique.entries()).map(([id, name]) => ({ id, name })));
+      },
+      error: () => this.uiFeedback.error('Load failed', 'Unable to load companies for poll targeting.')
     });
   }
 }

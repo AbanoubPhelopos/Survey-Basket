@@ -5,6 +5,7 @@ export interface Poll {
   isPublished: boolean;
   startedAt: string;
   endedAt?: string;
+  targetCompanyIds?: string[];
 }
 
 export interface PollResponse {
@@ -14,6 +15,7 @@ export interface PollResponse {
   isPublished: boolean;
   startedAt: string;
   endedAt?: string;
+  targetCompanyIds?: string[];
 }
 
 export interface CreatePollRequest {
@@ -22,6 +24,7 @@ export interface CreatePollRequest {
   isPublished: boolean;
   startedAt: string;
   endedAt?: string;
+  targetCompanyIds?: string[];
 }
 
 export interface UpdatePollRequest {
@@ -30,6 +33,7 @@ export interface UpdatePollRequest {
   isPublished: boolean;
   startedAt: string;
   endedAt?: string;
+  targetCompanyIds?: string[];
 }
 
 export interface RequestFilters {

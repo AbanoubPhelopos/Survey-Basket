@@ -98,10 +98,23 @@ public class PollService(
 
     public async Task<Result<PollResponse>> Get(Guid id, CancellationToken cancellationToken = default)
     {
-        var poll = await _unitOfWork.Repository<Poll>().GetByIdAsync(id, cancellationToken);
-        return poll is not null
-            ? Result.Success(poll.Adapt<PollResponse>())
-            : Result.Failure<PollResponse>(PollErrors.PollNotFound);
+        var poll = await _unitOfWork.Repository<Poll>()
+            .GetAsync(x => x.Id == id, [nameof(Poll.Audiences)], cancellationToken: cancellationToken);
+
+        if (poll is null)
+            return Result.Failure<PollResponse>(PollErrors.PollNotFound);
+
+        var targetCompanyIds = poll.Audiences.Select(x => x.CompanyId).Distinct().ToList();
+        var response = new PollResponse(
+            poll.Id,
+            poll.Title,
+            poll.Summary,
+            poll.IsPublished,
+            poll.StartedAt,
+            poll.EndedAt,
+            targetCompanyIds);
+
+        return Result.Success(response);
     }
 
     public async Task<Result<PagedList<PollResponse>>> Get(RequestFilters filters, CancellationToken cancellationToken = default)
@@ -136,15 +149,7 @@ public class PollService(
 
     public async Task<Result<ServiceListResult<PollResponse, PollStatsResponse>>> GetFilterResult(RequestFilters filters, string? status, Guid userId, IEnumerable<string> roles, CancellationToken cancellationToken = default)
     {
-        HashSet<Guid>? visiblePollIds = null;
-        if (HasAnyRole(roles, DefaultRoles.PartnerCompany)
-            && !HasAnyRole(roles, DefaultRoles.Admin, DefaultRoles.SystemAdmin))
-        {
-            visiblePollIds = (await _unitOfWork.Repository<PollOwner>()
-                .GetAllAsync(x => x.UserId == userId, cancellationToken))
-                .Select(x => x.PollId)
-                .ToHashSet();
-        }
+        var visiblePollIds = await ResolveVisiblePollIdsAsync(userId, roles, cancellationToken);
 
         var normalizedStatus = status?.Trim().ToLowerInvariant();
 
@@ -171,15 +176,7 @@ public class PollService(
 
     public async Task<Result<PollStatsResponse>> GetStats(Guid userId, IEnumerable<string> roles, CancellationToken cancellationToken = default)
     {
-        HashSet<Guid>? visiblePollIds = null;
-        if (HasAnyRole(roles, DefaultRoles.PartnerCompany)
-            && !HasAnyRole(roles, DefaultRoles.Admin, DefaultRoles.SystemAdmin))
-        {
-            visiblePollIds = (await _unitOfWork.Repository<PollOwner>()
-                .GetAllAsync(x => x.UserId == userId, cancellationToken))
-                .Select(x => x.PollId)
-                .ToHashSet();
-        }
+        var visiblePollIds = await ResolveVisiblePollIdsAsync(userId, roles, cancellationToken);
 
         var polls = await _unitOfWork.Repository<Poll>()
             .GetAllAsync(x => visiblePollIds == null || visiblePollIds.Contains(x.Id), cancellationToken);
@@ -354,20 +351,33 @@ public class PollService(
 
     private static List<string> ReadRoles(ClaimsPrincipal user)
     {
+        var roles = new List<string>();
+
         var rolesClaim = user.Claims.FirstOrDefault(x => x.Type == "roles")?.Value;
-
-        if (string.IsNullOrWhiteSpace(rolesClaim))
-            return [];
-
-        try
+        if (!string.IsNullOrWhiteSpace(rolesClaim))
         {
-            var parsed = JsonSerializer.Deserialize<List<string>>(rolesClaim);
-            return parsed ?? [];
+            try
+            {
+                var parsed = JsonSerializer.Deserialize<List<string>>(rolesClaim);
+                if (parsed is { Count: > 0 })
+                    roles.AddRange(parsed.Where(x => !string.IsNullOrWhiteSpace(x))!);
+            }
+            catch
+            {
+                roles.Add(rolesClaim);
+            }
         }
-        catch
-        {
-            return [];
-        }
+
+        var roleClaims = user.Claims
+            .Where(x => x.Type == ClaimTypes.Role || x.Type == "role")
+            .Select(x => x.Value)
+            .Where(x => !string.IsNullOrWhiteSpace(x));
+
+        roles.AddRange(roleClaims);
+
+        return roles
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     private static bool HasAnyRole(IEnumerable<string> roles, params string[] expected)
@@ -452,5 +462,63 @@ public class PollService(
         });
 
         await _unitOfWork.Repository<PollAudience>().AddRangeAsync(newAudience, cancellationToken);
+    }
+
+    private async Task<HashSet<Guid>?> ResolveVisiblePollIdsAsync(Guid userId, IEnumerable<string> roles, CancellationToken cancellationToken)
+    {
+        var roleList = roles.ToList();
+
+        if (HasAnyRole(roleList, DefaultRoles.Admin, DefaultRoles.SystemAdmin))
+            return null;
+
+        if (HasAnyRole(roleList, DefaultRoles.PartnerCompany))
+        {
+            var ownerPollIds = (await _unitOfWork.Repository<PollOwner>()
+                .GetAllAsync(x => x.UserId == userId, cancellationToken))
+                .Select(x => x.PollId)
+                .ToHashSet();
+
+            var companyIds = (await _unitOfWork.Repository<CompanyUser>()
+                .GetAllAsync(x => x.UserId == userId && x.IsActive, cancellationToken))
+                .Select(x => x.CompanyId)
+                .ToHashSet();
+
+            var legacyOwnerPollIds = (await _unitOfWork.Repository<Poll>()
+                .GetAllAsync(x => x.CreatedById == userId || (x.OwnerCompanyId.HasValue && companyIds.Contains(x.OwnerCompanyId.Value)), cancellationToken))
+                .Select(x => x.Id)
+                .ToHashSet();
+
+            ownerPollIds.UnionWith(legacyOwnerPollIds);
+
+            if (companyIds.Count > 0)
+            {
+                var partnerAudiencePollIds = (await _unitOfWork.Repository<PollAudience>()
+                    .GetAllAsync(x => companyIds.Contains(x.CompanyId), cancellationToken))
+                    .Select(x => x.PollId)
+                    .ToHashSet();
+
+                ownerPollIds.UnionWith(partnerAudiencePollIds);
+            }
+
+            return ownerPollIds;
+        }
+
+        if (!HasAnyRole(roleList, DefaultRoles.CompanyUser, DefaultRoles.Member))
+            return null;
+
+        var memberCompanyIds = (await _unitOfWork.Repository<CompanyUser>()
+            .GetAllAsync(x => x.UserId == userId && x.IsActive, cancellationToken))
+            .Select(x => x.CompanyId)
+            .ToHashSet();
+
+        if (memberCompanyIds.Count == 0)
+            return [];
+
+        var audiencePollIds = (await _unitOfWork.Repository<PollAudience>()
+            .GetAllAsync(x => memberCompanyIds.Contains(x.CompanyId), cancellationToken))
+            .Select(x => x.PollId)
+            .ToHashSet();
+
+        return audiencePollIds;
     }
 }

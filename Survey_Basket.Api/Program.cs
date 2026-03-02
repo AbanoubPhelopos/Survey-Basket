@@ -1,4 +1,5 @@
 using Hangfire;
+using Hangfire.PostgreSql;
 using Microsoft.Extensions.Hosting;
 using HangfireBasicAuthenticationFilter;
 using Microsoft.OpenApi.Models;
@@ -99,15 +100,21 @@ try
             //IsReadOnlyFunc = (DashboardContext context) => true
         });
 
-        var scopeFactory = app.Services.GetRequiredService<IServiceScopeFactory>();
-        using var scope = scopeFactory.CreateScope();
-        var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
-
-        RecurringJob.AddOrUpdate(
-            "send-daily-poll-notification",
-            () => notificationService.SendNewPollsNotification(null),
-            Cron.Daily
-        );
+        try
+        {
+            RecurringJob.AddOrUpdate<INotificationService>(
+                "send-daily-poll-notification",
+                service => service.SendNewPollsNotification(null),
+                Cron.Daily);
+        }
+        catch (PostgreSqlDistributedLockException ex)
+        {
+            Log.Warning(ex, "Skipping recurring job registration because Hangfire lock is currently held by another node.");
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Skipping recurring job registration due to startup error.");
+        }
     }
 
 

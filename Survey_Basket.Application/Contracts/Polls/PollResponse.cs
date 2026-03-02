@@ -6,5 +6,6 @@ public sealed record PollResponse(
     string Summary,
     bool IsPublished,
     DateOnly StartedAt,
-    DateOnly? EndedAt
+    DateOnly? EndedAt,
+    IEnumerable<Guid>? TargetCompanyIds = null
 );

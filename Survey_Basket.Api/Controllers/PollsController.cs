@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using System.Text.Json;
 using Survey_Basket.Api.Models;
 using Survey_Basket.Application.Abstractions.Const;
@@ -130,17 +131,32 @@ public class PollsController(IPollService pollService, ILogger<PollsController> 
 
     private List<string> ReadRoles()
     {
-        var rolesClaim = User.Claims.FirstOrDefault(x => x.Type == "roles")?.Value;
-        if (string.IsNullOrWhiteSpace(rolesClaim))
-            return [];
+        var roles = new List<string>();
 
-        try
+        var rolesClaim = User.Claims.FirstOrDefault(x => x.Type == "roles")?.Value;
+        if (!string.IsNullOrWhiteSpace(rolesClaim))
         {
-            return JsonSerializer.Deserialize<List<string>>(rolesClaim) ?? [];
+            try
+            {
+                var parsed = JsonSerializer.Deserialize<List<string>>(rolesClaim);
+                if (parsed is { Count: > 0 })
+                    roles.AddRange(parsed.Where(x => !string.IsNullOrWhiteSpace(x))!);
+            }
+            catch
+            {
+                roles.Add(rolesClaim);
+            }
         }
-        catch
-        {
-            return [];
-        }
+
+        var roleClaims = User.Claims
+            .Where(x => x.Type == ClaimTypes.Role || x.Type == "role")
+            .Select(x => x.Value)
+            .Where(x => !string.IsNullOrWhiteSpace(x));
+
+        roles.AddRange(roleClaims);
+
+        return roles
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 }
